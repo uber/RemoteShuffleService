@@ -2,3 +2,5 @@ language: java
 dist: trusty
 jdk:
   - openjdk8
+script:
+  - jdk_switcher use openjdk8
