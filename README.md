@@ -26,7 +26,7 @@ This command creates **remote-shuffle-service-xxx-server.jar** file for RSS serv
 mvn clean package -Pclient -DskipTests
 ```
 
-This command creates **remote-shuffle-service-xxx-client.jar** file for RSS server, e.g. target/remote-shuffle-service-0.0.9-client.jar.
+This command creates **remote-shuffle-service-xxx-client.jar** file for RSS client, e.g. target/remote-shuffle-service-0.0.9-client.jar.
 
 ## How to Run
 
