@@ -7,7 +7,7 @@
 
     <groupId>com.uber</groupId>
     <artifactId>remote-shuffle-service</artifactId>
-    <version>0.0.9-SNAPSHOT</version>
+    <version>0.0.9</version>
     <name>remote-shuffle-service</name>
     <description>A shuffle manager prototype.</description>
     <url></url>
