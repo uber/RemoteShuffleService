@@ -66,4 +66,9 @@ public class FileUtilsTest {
     public void checkDiskFreeSpace_NotEnoughFreeSpace() {
         FileUtils.checkDiskFreeSpace(1, Long.MAX_VALUE);
     }
+
+    @Test
+    public void getFileStoreUsableSpace() {
+        Assert.assertTrue(FileUtils.getFileStoreUsableSpace() > 1);
+    }
 }

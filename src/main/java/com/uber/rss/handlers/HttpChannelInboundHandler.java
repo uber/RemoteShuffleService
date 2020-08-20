@@ -38,10 +38,11 @@ public class HttpChannelInboundHandler extends ChannelInboundHandlerAdapter {
             String responseMessage;
             // TODO More detailed HTTP server, for now it's just the health check
             if (request.uri().startsWith("/health")) {
-                logger.info("Hit /health endpoint sysenv: " + System.getenv("UBER_HEALTH_CHECK_TIMEOUT_RSS"));
                 Stopwatch checkFreeSpaceLatencyTimerStopwatch = M3Stats.getDefaultScope().timer("checkFreeSpaceLatency").start();
                 try {
-                    FileUtils.checkDiskFreeSpace(MIN_TOTAL_DISK_SPACE, MIN_FREE_DISK_SPACE);
+                    logger.info("Hit /health endpoint sysenv: " + System.getenv("UBER_HEALTH_CHECK_TIMEOUT_RSS"));
+                    // disable checkDiskFreeSpace for long time spending to minute level
+                    // FileUtils.checkDiskFreeSpace(MIN_TOTAL_DISK_SPACE, MIN_FREE_DISK_SPACE);
                 } catch(Throwable ex) {
                     logger.error("Failed at checkDiskFreeSpace", ex);
                     M3Stats.addException(ex, this.getClass().getSimpleName()+"CheckDiskFreeSpace");

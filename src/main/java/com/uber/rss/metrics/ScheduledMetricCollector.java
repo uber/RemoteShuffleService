@@ -5,6 +5,7 @@ import com.uber.m3.tally.Gauge;
 import com.uber.rss.common.LogWrapper;
 import com.uber.rss.common.ServerDetail;
 import com.uber.rss.metadata.ServiceRegistry;
+import com.uber.rss.util.FileUtils;
 import com.uber.rss.util.NetworkUtils;
 import com.uber.rss.util.SystemUtils;
 import io.netty.buffer.PooledByteBufAllocator;
@@ -20,6 +21,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Random;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -36,18 +38,21 @@ public class ScheduledMetricCollector {
     private static final Gauge jvmUsedHeapMemory = M3Stats.getDefaultScope().gauge("jvmUsedHeapMemory");
     private static final Gauge unreachableHosts = M3Stats.getDefaultScope().gauge("unreachableHosts");
     private static final Gauge unreachableHostsCheckLatency = M3Stats.getDefaultScope().gauge("unreachableHostsCheckLatency");
+    private static final Gauge fileStoreUsableSpace = M3Stats.getDefaultScope().gauge("fileStoreUsableSpace");
     
     private final MemoryMXBean memoryMXBean = ManagementFactory.getMemoryMXBean();
     
-    private final int metricCollectingIntervalSeconds = 30;
+    private final int metricCollectingIntervalSeconds = 60;
     
     public ScheduledMetricCollector(ServiceRegistry serviceRegistry) {
         this.serviceRegistry = serviceRegistry;
     }
 
     public void scheduleCollectingMetrics(ScheduledExecutorService scheduledExecutorService, String dataCenter, String cluster) {
+        Random random = new Random();
+        int scheduleInitialDelay = random.nextInt(metricCollectingIntervalSeconds);
         scheduledExecutorService.scheduleAtFixedRate(() -> collectMetrics(dataCenter, cluster),
-                metricCollectingIntervalSeconds, 
+                scheduleInitialDelay,
                 metricCollectingIntervalSeconds, 
                 TimeUnit.SECONDS);
     }
@@ -67,10 +72,10 @@ public class ScheduledMetricCollector {
             MemoryUsage memoryUsage = memoryMXBean.getHeapMemoryUsage();
             jvmUsedHeapMemory.update(memoryUsage.getUsed());
 
+            // check whether current host is first server.
+            // if current host is first server, check whether other servers are reachable.
+            // this is to make sure there is only one server to do such checking to avoid servers ping each other too much
             if (nodes != null && !nodes.isEmpty()) {
-                // check whether current host is first server.
-                // if current host is first server, check whether other servers are reachable.
-                // this is to make sure there is only one server to do such checking to avoid servers ping each other too much
                 String firstServerConnectionString = nodes.stream().min(new Comparator<ServerDetail>() {
                     @Override
                     public int compare(ServerDetail o1, ServerDetail o2) {
@@ -101,6 +106,10 @@ public class ScheduledMetricCollector {
                     unreachableHostsCheckLatency.update(System.currentTimeMillis() - startTime);
                 }
             }
+
+            // check disk storage available space
+            long usableSpace = FileUtils.getFileStoreUsableSpace();
+            fileStoreUsableSpace.update(usableSpace);
         } catch (Throwable ex) {
             M3Stats.addException(ex, this.getClass().getSimpleName());
             logger.warn("Failed to collect metrics", ex);

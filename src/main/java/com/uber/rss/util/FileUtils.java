@@ -90,6 +90,22 @@ public class FileUtils {
         }
     }
 
+    public static long getFileStoreUsableSpace() {
+        long maxUsableSpace = 0;
+        for (Path root: FileSystems.getDefault().getRootDirectories()) {
+            try {
+                FileStore store = Files.getFileStore(root);
+                long storeUsableSpace = store.getUsableSpace();
+                if (maxUsableSpace < storeUsableSpace){
+                    maxUsableSpace = storeUsableSpace;
+                }
+            } catch (Throwable e) {
+                logger.warn(String.format("Failed to check file store size for %s", root), e);
+            }
+        }
+        return maxUsableSpace;
+    }
+
     public static long getFileContentSize(String filePath) {
         try (RandomAccessFile file = new RandomAccessFile(filePath, "r")) {
             return file.length();

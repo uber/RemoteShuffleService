@@ -46,8 +46,8 @@ public class NotifyServerHandler {
         metrics.getNumApplicationJobs().inc(1);
 
         String exceptionDetail = msg.getExceptionDetail();
-        if (MonitorUtils.hasRssError(exceptionDetail)) {
-            metrics.getNumFailedJobs().inc(1);
+        if (MonitorUtils.hasRssException(exceptionDetail)) {
+            metrics.getNumRssExceptionJobs().inc(1);
         }
     }
 
