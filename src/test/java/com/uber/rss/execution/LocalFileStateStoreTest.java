@@ -1,0 +1,274 @@
+package com.uber.rss.execution;
+
+import com.uber.rss.clients.ShuffleWriteConfig;
+import com.uber.rss.common.AppShuffleId;
+import com.uber.rss.common.MapTaskAttemptId;
+import com.uber.rss.common.PartitionFilePathAndLength;
+import com.uber.rss.messages.BaseMessage;
+import com.uber.rss.messages.ShuffleStageStatus;
+import com.uber.rss.messages.StageInfoStateItem;
+import com.uber.rss.messages.TaskAttemptCommitStateItem;
+import org.testng.Assert;
+import org.testng.annotations.Test;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Arrays;
+import java.util.Iterator;
+import java.util.List;
+import java.util.stream.Collectors;
+
+public class LocalFileStateStoreTest {
+
+  @Test
+  public void testConstructor() throws IOException {
+    Path tempPath = Files.createTempDirectory("StateStoreTest");
+    tempPath.toFile().deleteOnExit();
+
+    new LocalFileStateStore(tempPath.toString());
+
+    List<Path> fileList = Files.list(Paths.get(tempPath.toString(), LocalFileStateStore.STATE_DIR_NAME)).collect(Collectors.toList());
+    Assert.assertEquals(fileList.size(), 1);
+    Assert.assertTrue(fileList.get(0).toString().endsWith(".0000"));
+
+    new LocalFileStateStore(tempPath.toString());
+
+    fileList = Files.list(Paths.get(tempPath.toString(), LocalFileStateStore.STATE_DIR_NAME)).collect(Collectors.toList());
+    Assert.assertEquals(fileList.size(), 2);
+    Assert.assertTrue(fileList.get(0).toString().endsWith(".0000") || fileList.get(0).toString().endsWith(".0001"));
+    Assert.assertTrue(fileList.get(1).toString().endsWith(".0000") || fileList.get(1).toString().endsWith(".0001"));
+  }
+
+  @Test
+  public void testFileRotation() throws IOException {
+    Path tempPath = Files.createTempDirectory("StateStoreTest");
+    tempPath.toFile().deleteOnExit();
+
+    long fileRotationMillis = 0;
+    LocalFileStateStore stateStore = new LocalFileStateStore(tempPath.toString(), fileRotationMillis, LocalFileStateStore.DEFAULT_RETENTION_MILLIS);
+
+    List<Path> fileList = Files.list(Paths.get(tempPath.toString(), LocalFileStateStore.STATE_DIR_NAME)).collect(Collectors.toList());
+    Assert.assertEquals(fileList.size(), 1);
+    Assert.assertTrue(fileList.get(0).toString().endsWith(".0000"));
+
+    stateStore.commit();
+
+    fileList = Files.list(Paths.get(tempPath.toString(), LocalFileStateStore.STATE_DIR_NAME)).collect(Collectors.toList());
+    Assert.assertEquals(fileList.size(), 2);
+    Assert.assertTrue(fileList.get(0).toString().endsWith(".0000") || fileList.get(0).toString().endsWith(".0001"));
+    Assert.assertTrue(fileList.get(1).toString().endsWith(".0000") || fileList.get(1).toString().endsWith(".0001"));
+
+    stateStore.commit();
+
+    fileList = Files.list(Paths.get(tempPath.toString(), LocalFileStateStore.STATE_DIR_NAME)).collect(Collectors.toList());
+    Assert.assertEquals(fileList.size(), 3);
+  }
+
+  @Test
+  public void testFileRetention() throws IOException {
+    Path tempPath = Files.createTempDirectory("StateStoreTest");
+    tempPath.toFile().deleteOnExit();
+
+    long fileRotationMillis = 0;
+    long fileRetentionMillis = -1000;
+    LocalFileStateStore stateStore = new LocalFileStateStore(tempPath.toString(), fileRotationMillis, fileRetentionMillis);
+
+    List<Path> fileList = Files.list(Paths.get(tempPath.toString(), LocalFileStateStore.STATE_DIR_NAME)).collect(Collectors.toList());
+    Assert.assertEquals(fileList.size(), 1);
+    Assert.assertTrue(fileList.get(0).toString().endsWith(".0000"));
+
+    stateStore.commit();
+
+    fileList = Files.list(Paths.get(tempPath.toString(), LocalFileStateStore.STATE_DIR_NAME)).collect(Collectors.toList());
+    Assert.assertEquals(fileList.size(), 1);
+    Assert.assertTrue(fileList.get(0).toString().endsWith(".0000"));
+
+    stateStore.commit();
+
+    fileList = Files.list(Paths.get(tempPath.toString(), LocalFileStateStore.STATE_DIR_NAME)).collect(Collectors.toList());
+    Assert.assertEquals(fileList.size(), 1);
+    Assert.assertTrue(fileList.get(0).toString().endsWith(".0000"));
+  }
+
+  @Test
+  public void testLoadData() throws IOException {
+    Path tempPath = Files.createTempDirectory("StateStoreTest");
+    tempPath.toFile().deleteOnExit();
+
+    LocalFileStateStore stateStore = new LocalFileStateStore(tempPath.toString());
+    Iterator<BaseMessage> iterator = stateStore.loadData();
+    Assert.assertFalse(iterator.hasNext());
+
+    AppShuffleId appShuffleId1 = new AppShuffleId("app1", "1", 2);
+    AppShuffleId appShuffleId2 = new AppShuffleId("app1", "1", 20);
+    ShuffleWriteConfig shuffleWriteConfig1 = new ShuffleWriteConfig("gzip", (short)6);
+    ShuffleWriteConfig shuffleWriteConfig2 = new ShuffleWriteConfig("snappy", (short)60);
+    StagePersistentInfo stageInfo1 = new StagePersistentInfo(10, 20, 30, shuffleWriteConfig1, ShuffleStageStatus.FILE_STATUS_OK);
+    StagePersistentInfo stageInfo2 = new StagePersistentInfo(100, 200, 300, shuffleWriteConfig2, ShuffleStageStatus.FILE_STATUS_CORRUPTED);
+
+    stateStore.storeStageInfo(appShuffleId1, stageInfo1);
+    stateStore.storeTaskAttemptCommit(appShuffleId1,
+        Arrays.asList(new MapTaskAttemptId(1, 2), new MapTaskAttemptId(3, 4)),
+        Arrays.asList(new PartitionFilePathAndLength(1, "p1", 10), new PartitionFilePathAndLength(2, "p2", 11)));
+    stateStore.storeStageInfo(appShuffleId2, stageInfo2);
+    stateStore.storeTaskAttemptCommit(appShuffleId1,
+        Arrays.asList(new MapTaskAttemptId(30, 40)),
+        Arrays.asList(new PartitionFilePathAndLength(9, "p9", 0), new PartitionFilePathAndLength(10, "p10", 100)));
+
+    // load data before commit, should get no data
+    iterator = stateStore.loadData();
+    Assert.assertFalse(iterator.hasNext());
+    Assert.assertNull(iterator.next());
+
+    // commit data in state store, now we should get data
+    stateStore.commit();
+
+    // load data
+    iterator = stateStore.loadData();
+
+    Assert.assertTrue(iterator.hasNext());
+    StageInfoStateItem stageInfoStateItem = (StageInfoStateItem)iterator.next();
+    Assert.assertEquals(stageInfoStateItem.getAppShuffleId(), appShuffleId1);
+    Assert.assertEquals(stageInfoStateItem.getNumMaps(), 10);
+    Assert.assertEquals(stageInfoStateItem.getNumPartitions(), 20);
+    Assert.assertEquals(stageInfoStateItem.getFileStartIndex(), 30);
+    Assert.assertEquals(stageInfoStateItem.getWriteConfig(), shuffleWriteConfig1);
+    Assert.assertEquals(stageInfoStateItem.getFileStatus(), ShuffleStageStatus.FILE_STATUS_OK);
+
+    Assert.assertTrue(iterator.hasNext());
+    TaskAttemptCommitStateItem taskAttemptCommitStateItem = (TaskAttemptCommitStateItem)iterator.next();
+    Assert.assertEquals(taskAttemptCommitStateItem.getAppShuffleId(), appShuffleId1);
+    Assert.assertEquals(taskAttemptCommitStateItem.getMapTaskAttemptIds(), Arrays.asList(new MapTaskAttemptId(1, 2), new MapTaskAttemptId(3, 4)));
+    Assert.assertEquals(taskAttemptCommitStateItem.getPartitionFilePathAndLengths(),
+        Arrays.asList(new PartitionFilePathAndLength(1, "p1", 10),
+          new PartitionFilePathAndLength(2, "p2", 11)));
+
+    Assert.assertTrue(iterator.hasNext());
+    stageInfoStateItem = (StageInfoStateItem)iterator.next();
+    Assert.assertEquals(stageInfoStateItem.getAppShuffleId(), appShuffleId2);
+    Assert.assertEquals(stageInfoStateItem.getNumMaps(), 100);
+    Assert.assertEquals(stageInfoStateItem.getNumPartitions(), 200);
+    Assert.assertEquals(stageInfoStateItem.getFileStartIndex(), 300);
+    Assert.assertEquals(stageInfoStateItem.getWriteConfig(), shuffleWriteConfig2);
+    Assert.assertEquals(stageInfoStateItem.getFileStatus(), ShuffleStageStatus.FILE_STATUS_CORRUPTED);
+
+    Assert.assertTrue(iterator.hasNext());
+    taskAttemptCommitStateItem = (TaskAttemptCommitStateItem)iterator.next();
+    Assert.assertEquals(taskAttemptCommitStateItem.getAppShuffleId(), appShuffleId1);
+    Assert.assertEquals(taskAttemptCommitStateItem.getMapTaskAttemptIds(), Arrays.asList(new MapTaskAttemptId(30, 40)));
+    Assert.assertEquals(taskAttemptCommitStateItem.getPartitionFilePathAndLengths(),
+        Arrays.asList(new PartitionFilePathAndLength(9, "p9", 0),
+            new PartitionFilePathAndLength(10, "p10", 100)));
+
+    Assert.assertFalse(iterator.hasNext());
+    Assert.assertNull(iterator.next());
+
+    // write another batch of data without commit
+    for (int i = 0; i < 10000; i++) {
+      stateStore.storeStageInfo(appShuffleId1, stageInfo1);
+      stateStore.storeTaskAttemptCommit(appShuffleId1,
+          Arrays.asList(new MapTaskAttemptId(1000, 2000)),
+          Arrays.asList(new PartitionFilePathAndLength(1000, "p1000", 10000),
+              new PartitionFilePathAndLength(2000, "p2000", 11000)));
+    }
+
+    // load data
+    iterator = stateStore.loadData();
+
+    Assert.assertTrue(iterator.hasNext());
+    stageInfoStateItem = (StageInfoStateItem)iterator.next();
+    Assert.assertEquals(stageInfoStateItem.getAppShuffleId(), appShuffleId1);
+    Assert.assertEquals(stageInfoStateItem.getNumMaps(), 10);
+    Assert.assertEquals(stageInfoStateItem.getNumPartitions(), 20);
+    Assert.assertEquals(stageInfoStateItem.getFileStartIndex(), 30);
+    Assert.assertEquals(stageInfoStateItem.getWriteConfig(), shuffleWriteConfig1);
+
+    Assert.assertTrue(iterator.hasNext());
+    taskAttemptCommitStateItem = (TaskAttemptCommitStateItem)iterator.next();
+    Assert.assertEquals(taskAttemptCommitStateItem.getAppShuffleId(), appShuffleId1);
+    Assert.assertEquals(taskAttemptCommitStateItem.getMapTaskAttemptIds(), Arrays.asList(new MapTaskAttemptId(1, 2), new MapTaskAttemptId(3, 4)));
+    Assert.assertEquals(taskAttemptCommitStateItem.getPartitionFilePathAndLengths(),
+        Arrays.asList(new PartitionFilePathAndLength(1, "p1", 10),
+            new PartitionFilePathAndLength(2, "p2", 11)));
+
+    Assert.assertTrue(iterator.hasNext());
+    stageInfoStateItem = (StageInfoStateItem)iterator.next();
+    Assert.assertEquals(stageInfoStateItem.getAppShuffleId(), appShuffleId2);
+    Assert.assertEquals(stageInfoStateItem.getNumMaps(), 100);
+    Assert.assertEquals(stageInfoStateItem.getNumPartitions(), 200);
+    Assert.assertEquals(stageInfoStateItem.getFileStartIndex(), 300);
+    Assert.assertEquals(stageInfoStateItem.getWriteConfig(), shuffleWriteConfig2);
+
+    Assert.assertTrue(iterator.hasNext());
+    taskAttemptCommitStateItem = (TaskAttemptCommitStateItem)iterator.next();
+    Assert.assertEquals(taskAttemptCommitStateItem.getAppShuffleId(), appShuffleId1);
+    Assert.assertEquals(taskAttemptCommitStateItem.getMapTaskAttemptIds(), Arrays.asList(new MapTaskAttemptId(30, 40)));
+    Assert.assertEquals(taskAttemptCommitStateItem.getPartitionFilePathAndLengths(),
+        Arrays.asList(new PartitionFilePathAndLength(9, "p9", 0),
+            new PartitionFilePathAndLength(10, "p10", 100)));
+
+    Assert.assertFalse(iterator.hasNext());
+    Assert.assertNull(iterator.next());
+
+    // commit data
+    stateStore.commit();
+
+    // load data
+    iterator = stateStore.loadData();
+
+    Assert.assertTrue(iterator.hasNext());
+    stageInfoStateItem = (StageInfoStateItem)iterator.next();
+    Assert.assertEquals(stageInfoStateItem.getAppShuffleId(), appShuffleId1);
+    Assert.assertEquals(stageInfoStateItem.getNumMaps(), 10);
+    Assert.assertEquals(stageInfoStateItem.getNumPartitions(), 20);
+    Assert.assertEquals(stageInfoStateItem.getFileStartIndex(), 30);
+    Assert.assertEquals(stageInfoStateItem.getWriteConfig(), shuffleWriteConfig1);
+
+    Assert.assertTrue(iterator.hasNext());
+    taskAttemptCommitStateItem = (TaskAttemptCommitStateItem)iterator.next();
+    Assert.assertEquals(taskAttemptCommitStateItem.getAppShuffleId(), appShuffleId1);
+    Assert.assertEquals(taskAttemptCommitStateItem.getMapTaskAttemptIds(), Arrays.asList(new MapTaskAttemptId(1, 2), new MapTaskAttemptId(3, 4)));
+    Assert.assertEquals(taskAttemptCommitStateItem.getPartitionFilePathAndLengths(),
+        Arrays.asList(new PartitionFilePathAndLength(1, "p1", 10),
+            new PartitionFilePathAndLength(2, "p2", 11)));
+
+    Assert.assertTrue(iterator.hasNext());
+    stageInfoStateItem = (StageInfoStateItem)iterator.next();
+    Assert.assertEquals(stageInfoStateItem.getAppShuffleId(), appShuffleId2);
+    Assert.assertEquals(stageInfoStateItem.getNumMaps(), 100);
+    Assert.assertEquals(stageInfoStateItem.getNumPartitions(), 200);
+    Assert.assertEquals(stageInfoStateItem.getFileStartIndex(), 300);
+    Assert.assertEquals(stageInfoStateItem.getWriteConfig(), shuffleWriteConfig2);
+
+    Assert.assertTrue(iterator.hasNext());
+    taskAttemptCommitStateItem = (TaskAttemptCommitStateItem)iterator.next();
+    Assert.assertEquals(taskAttemptCommitStateItem.getAppShuffleId(), appShuffleId1);
+    Assert.assertEquals(taskAttemptCommitStateItem.getMapTaskAttemptIds(), Arrays.asList(new MapTaskAttemptId(30, 40)));
+    Assert.assertEquals(taskAttemptCommitStateItem.getPartitionFilePathAndLengths(),
+        Arrays.asList(new PartitionFilePathAndLength(9, "p9", 0),
+            new PartitionFilePathAndLength(10, "p10", 100)));
+
+    for (int i = 0; i < 10000; i++) {
+      Assert.assertTrue(iterator.hasNext());
+      stageInfoStateItem = (StageInfoStateItem)iterator.next();
+      Assert.assertEquals(stageInfoStateItem.getAppShuffleId(), appShuffleId1);
+      Assert.assertEquals(stageInfoStateItem.getNumMaps(), 10);
+      Assert.assertEquals(stageInfoStateItem.getNumPartitions(), 20);
+      Assert.assertEquals(stageInfoStateItem.getFileStartIndex(), 30);
+      Assert.assertEquals(stageInfoStateItem.getWriteConfig(), shuffleWriteConfig1);
+
+      Assert.assertTrue(iterator.hasNext());
+      taskAttemptCommitStateItem = (TaskAttemptCommitStateItem)iterator.next();
+      Assert.assertEquals(taskAttemptCommitStateItem.getAppShuffleId(), appShuffleId1);
+      Assert.assertEquals(taskAttemptCommitStateItem.getMapTaskAttemptIds(), Arrays.asList(new MapTaskAttemptId(1000, 2000)));
+      Assert.assertEquals(taskAttemptCommitStateItem.getPartitionFilePathAndLengths(),
+          Arrays.asList(new PartitionFilePathAndLength(1000, "p1000", 10000),
+              new PartitionFilePathAndLength(2000, "p2000", 11000)));
+    }
+
+    Assert.assertFalse(iterator.hasNext());
+    Assert.assertNull(iterator.next());
+  }
+}

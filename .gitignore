@@ -1,0 +1,60 @@
+.*
+!.gitignore
+!.gitmodules
+!.jenkins/
+
+# Java
+*.class
+
+# Intellij
+*.iml
+*.iws
+
+classes/
+
+log/
+tmp/
+temp/
+out/
+
+# Others
+*.out
+*.test
+# *.xml
+*.swp
+.idea/
+*.cov
+*.tmp
+.DS_Store
+*.log*
+*coverage*
+.cache
+.idea
+*.pyc
+*.egg-info
+*.orig
+tmp.yaml
+out.txt
+.coverage
+coverage.xml
+cover
+jenkins.xml
+.cache
+.vscode/
+target/
+
+# Ignore any mocks sub-directory.
+mocks/
+
+# Ignore docker generated files.
+docker/pip.conf
+
+# Emacs
+*~
+.\#*
+\#*\#
+.unison.*.tmp
+workspace/
+
+# Vim
+tags

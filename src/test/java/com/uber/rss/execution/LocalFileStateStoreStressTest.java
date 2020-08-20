@@ -1,0 +1,109 @@
+package com.uber.rss.execution;
+
+import com.uber.rss.clients.ShuffleWriteConfig;
+import com.uber.rss.common.AppShuffleId;
+import com.uber.rss.common.AppTaskAttemptId;
+import com.uber.rss.common.MapTaskAttemptId;
+import com.uber.rss.common.PartitionFilePathAndLength;
+import com.uber.rss.messages.ShuffleStageStatus;
+import com.uber.rss.util.FileUtils;
+import org.testng.Assert;
+import org.testng.annotations.AfterMethod;
+import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.Test;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Arrays;
+import java.util.Random;
+import java.util.concurrent.ConcurrentLinkedQueue;
+
+public class LocalFileStateStoreStressTest {
+
+  private Path tempPath;
+  private LocalFileStateStore stateStore;
+
+  @BeforeMethod
+  public void beforeMethod() throws IOException {
+    tempPath = Files.createTempDirectory("StateStoreTest");
+    tempPath.toFile().deleteOnExit();
+
+    stateStore = new LocalFileStateStore(tempPath.toString(), 10, 100);
+  }
+
+  @AfterMethod
+  public void afterMethod() {
+    stateStore.close();
+
+    FileUtils.cleanupOldFiles(tempPath.toString(), System.currentTimeMillis() + 1000);
+  }
+
+  @Test
+  public void test() throws InterruptedException {
+    int numThreads = 100;
+    long runningMillis = 200;
+    Thread[] threads = new Thread[numThreads];
+
+    AppShuffleId appShuffleId = new AppShuffleId("app1", "1", 2);
+    AppTaskAttemptId appTaskAttemptId = new AppTaskAttemptId(appShuffleId, 1, 99L);
+    ShuffleWriteConfig shuffleWriteConfig = new ShuffleWriteConfig("gzip", (short) 6);
+    PartitionFilePathAndLength partitionFilePathAndLength = new PartitionFilePathAndLength(1, "file1", 123);
+
+    ConcurrentLinkedQueue<Throwable> exceptions = new ConcurrentLinkedQueue<>();
+
+    for (int i = 0; i < threads.length; i++) {
+      int threadIndex = i;
+      Thread thread = new Thread(() -> {
+        System.out.println(String.format("Thread started: %s", threadIndex));
+        Random random = new Random();
+        long startTime = System.currentTimeMillis();
+        while (System.currentTimeMillis() - startTime <= runningMillis) {
+          int randomInt = random.nextInt(10);
+          switch (randomInt) {
+            case 0:
+              stateStore.storeStageInfo(appShuffleId,
+                  new StagePersistentInfo(1, 2, 3, shuffleWriteConfig,  ShuffleStageStatus.FILE_STATUS_OK));
+              break;
+            case 1:
+              stateStore.storeTaskAttemptCommit(appShuffleId,
+                  Arrays.asList(new MapTaskAttemptId(1, 2)),
+                  Arrays.asList(partitionFilePathAndLength));
+              break;
+            case 2:
+              stateStore.storeAppDeletion("app1");
+              break;
+            case 3:
+              stateStore.storeStageCorruption(appShuffleId);
+              break;
+            case 4:
+              stateStore.commit();
+              break;
+            default:
+              break;
+          }
+        }
+        System.out.println(String.format("Thread exited: %s", threadIndex));
+      });
+      thread.setUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {
+        @Override
+        public void uncaughtException(Thread t, Throwable e) {
+          exceptions.add(e);
+          e.printStackTrace();
+        }
+      });
+      threads[i] = thread;
+    }
+
+    for (int i = 0; i < threads.length; i++) {
+      threads[i].start();
+    }
+
+    for (int i = 0; i < threads.length; i++) {
+      threads[i].join();
+    }
+
+    Assert.assertEquals(exceptions.size(), 0);
+  }
+
+}

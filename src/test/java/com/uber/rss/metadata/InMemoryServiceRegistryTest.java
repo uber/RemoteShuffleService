@@ -1,0 +1,110 @@
+package com.uber.rss.metadata;
+
+import com.uber.rss.exceptions.RssException;
+import com.uber.rss.common.ServerDetail;
+import org.testng.Assert;
+import org.testng.annotations.Test;
+
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
+
+public class InMemoryServiceRegistryTest {
+    @Test
+    public void registerServer() {
+        InMemoryServiceRegistry serviceRegistry = new InMemoryServiceRegistry();
+
+        Assert.assertEquals(serviceRegistry.getServers("dc1", "cluster1", 0, Collections.emptyList()).size(), 0);
+
+        serviceRegistry.registerServer("dc1", "cluster1", "server1", "v1", "node1:1");
+        serviceRegistry.registerServer("dc1", "cluster1", "server2", "v1", "node2:2");
+
+        List<ServerDetail> result = serviceRegistry.getServers("dc1", "cluster1", Integer.MAX_VALUE, Collections.emptyList());
+        result.sort(Comparator.comparing(ServerDetail::getServerId));
+        Assert.assertEquals(result,
+                Arrays.asList(new ServerDetail("server1", "v1", "node1:1"), new ServerDetail("server2", "v1", "node2:2")));
+
+        result = serviceRegistry.lookupServers("dc1", "cluster1", Arrays.asList("server1", "server2"));
+        Assert.assertEquals(result,
+                Arrays.asList(new ServerDetail("server1", "v1", "node1:1"), new ServerDetail("server2", "v1", "node2:2")));
+    }
+
+    @Test(expectedExceptions = {IllegalArgumentException.class})
+    public void registerServer_NullDataCenter() {
+        InMemoryServiceRegistry serviceRegistry = new InMemoryServiceRegistry();
+        serviceRegistry.registerServer(null, "cluster1", "server1", "v1", "node1:1");
+    }
+
+    @Test(expectedExceptions = {IllegalArgumentException.class})
+    public void registerServer_EmptyDataCenter() {
+        InMemoryServiceRegistry serviceRegistry = new InMemoryServiceRegistry();
+        serviceRegistry.registerServer("", "cluster1", "server1", "v1", "node1:1");
+    }
+
+    @Test(expectedExceptions = {IllegalArgumentException.class})
+    public void registerServer_NullCluster() {
+        InMemoryServiceRegistry serviceRegistry = new InMemoryServiceRegistry();
+        serviceRegistry.registerServer("dc1", null, "server1", "v1", "node1:1");
+    }
+
+    @Test(expectedExceptions = {IllegalArgumentException.class})
+    public void registerServer_EmptyCluster() {
+        InMemoryServiceRegistry serviceRegistry = new InMemoryServiceRegistry();
+        serviceRegistry.registerServer("dc1", "", "server1", "v1", "node1:1");
+    }
+
+    @Test(expectedExceptions = {IllegalArgumentException.class})
+    public void registerServer_NullHostPort() {
+        InMemoryServiceRegistry serviceRegistry = new InMemoryServiceRegistry();
+        serviceRegistry.registerServer("dc1", "cluster1", "server1", "v1", null);
+    }
+
+    @Test(expectedExceptions = {IllegalArgumentException.class})
+    public void registerServer_EmptyHostPort() {
+        InMemoryServiceRegistry serviceRegistry = new InMemoryServiceRegistry();
+        serviceRegistry.registerServer("dc1", "cluster1", "server1", "v1", "");
+    }
+
+    @Test(expectedExceptions = {IllegalArgumentException.class})
+    public void registerServer_NullServerId() {
+        InMemoryServiceRegistry serviceRegistry = new InMemoryServiceRegistry();
+        serviceRegistry.registerServer("dc1", "cluster1", null, "v1", "node1:1");
+    }
+
+    @Test(expectedExceptions = {IllegalArgumentException.class})
+    public void registerServer_EmptyServerId() {
+        InMemoryServiceRegistry serviceRegistry = new InMemoryServiceRegistry();
+        serviceRegistry.registerServer("dc1", "cluster1", "", "v1", "node1:1");
+    }
+
+    @Test
+    public void lookupServers_emptyList() {
+        InMemoryServiceRegistry serviceRegistry = new InMemoryServiceRegistry();
+        ServiceRegistryTestUtil.lookupServers_emptyList(serviceRegistry);
+    }
+
+    @Test(expectedExceptions = {RssException.class})
+    public void lookupServers_dcWithoutServerRegistered() {
+        InMemoryServiceRegistry serviceRegistry = new InMemoryServiceRegistry();
+        ServiceRegistryTestUtil.lookupServers_dcWithoutServerRegistered(serviceRegistry);
+    }
+
+    @Test(expectedExceptions = {RssException.class})
+    public void lookupServers_clusterWithoutServerRegistered() {
+        InMemoryServiceRegistry serviceRegistry = new InMemoryServiceRegistry();
+        ServiceRegistryTestUtil.lookupServers_clusterWithoutServerRegistered(serviceRegistry);
+    }
+
+    @Test(expectedExceptions = {RssException.class})
+    public void lookupServers_badServerIds() {
+        InMemoryServiceRegistry serviceRegistry = new InMemoryServiceRegistry();
+        ServiceRegistryTestUtil.lookupServers_badServerIds(serviceRegistry);
+    }
+
+    @Test(expectedExceptions = {RssException.class})
+    public void lookupServers_oneGoodServerIdOneBad() {
+        InMemoryServiceRegistry serviceRegistry = new InMemoryServiceRegistry();
+        ServiceRegistryTestUtil.lookupServers_oneGoodServerIdOneBad(serviceRegistry);
+    }
+}

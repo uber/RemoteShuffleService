@@ -1,0 +1,45 @@
+package com.uber.rss.metrics;
+
+import com.uber.m3.tally.Counter;
+import com.uber.m3.tally.Scope;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.HashMap;
+import java.util.Map;
+
+public class ServerHandlerMetrics extends MetricGroup<NettyServerSideMetricsKey> {
+    private static final Logger logger = LoggerFactory.getLogger(ServerHandlerMetrics.class);
+
+    private final Counter numIncomingBytes;
+    private final Counter numIncomingRequests;
+    private final Counter numIncomingBlocks;
+    
+    public ServerHandlerMetrics(NettyServerSideMetricsKey key) {
+        super(key);
+
+        this.numIncomingBytes = scope.counter("numIncomingBytes");
+        this.numIncomingRequests = scope.counter("numIncomingRequests");
+        this.numIncomingBlocks = scope.counter("numIncomingBlocks");
+    }
+
+    public Counter getNumIncomingBytes() {
+        return numIncomingBytes;
+    }
+
+    public Counter getNumIncomingRequests() {
+        return numIncomingRequests;
+    }
+
+    public Counter getNumIncomingBlocks() {
+        return numIncomingBlocks;
+    }
+
+    @Override
+    protected Scope createScope(NettyServerSideMetricsKey key) {
+        Map<String, String> tags = new HashMap<>();
+        tags.put(M3Stats.TAG_NAME_SOURCE, M3Stats.TAG_VALUE_SERVER_HANDLER);
+        tags.put(M3Stats.TAG_NAME_USER, key.getUser());
+        return M3Stats.createSubScope(tags);
+    }
+}

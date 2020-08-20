@@ -1,0 +1,577 @@
+package com.uber.rss.clients;
+
+import com.uber.rss.common.AppTaskAttemptId;
+import com.uber.rss.common.ServerDetail;
+import com.uber.rss.common.ServerReplicationGroup;
+import com.uber.rss.testutil.StreamServerTestUtils;
+import com.uber.rss.testutil.TestConstants;
+import com.uber.rss.testutil.TestStreamServer;
+import org.testng.Assert;
+import org.testng.annotations.DataProvider;
+import org.testng.annotations.Test;
+
+import java.nio.ByteBuffer;
+import java.util.Arrays;
+import java.util.List;
+
+public class ReplicatedWriteClientTest {
+
+    @DataProvider(name = "data-provider")
+    public Object[][] dataProviderMethod() {
+        return new Object[][] { { true, true, 0 }, { false, false, TestConstants.COMPRESSION_BUFFER_SIZE } };
+    }
+    
+    @Test(dataProvider = "data-provider")
+    public void closeClientMultiTimes(boolean finishUploadAck, boolean usePooledConnection, int compressionBufferSize) {
+        TestStreamServer testServer1 = TestStreamServer.createRunningServer();
+
+        AppTaskAttemptId appTaskAttemptId = new AppTaskAttemptId("app1", "exec1", 1, 2, 0L);
+
+        ServerReplicationGroup serverReplicationGroup = new ServerReplicationGroup(Arrays.asList(
+            new ServerDetail(testServer1.getServerId(), testServer1.getRunningVersion(), String.format("localhost:%s", testServer1.getShufflePort()))));
+
+        try (ReplicatedWriteClient writeClient = new ReplicatedWriteClient(
+            serverReplicationGroup,
+            TestConstants.NETWORK_TIMEOUT,
+            finishUploadAck,
+            usePooledConnection,
+            compressionBufferSize,
+            "user1",
+            appTaskAttemptId.getAppId(),
+            appTaskAttemptId.getAppAttempt(),
+            new ShuffleWriteConfig()
+        )) {
+            writeClient.connect();
+            writeClient.close();
+            writeClient.close();
+        } finally {
+            testServer1.shutdown();
+        }
+    }
+
+    @Test(dataProvider = "data-provider")
+    public void writeAndReadRecords_oneServer(boolean finishUploadAck, boolean usePooledConnection, int compressionBufferSize) {
+        TestStreamServer testServer1 = TestStreamServer.createRunningServer();
+
+        int numMaps = 1;
+        AppTaskAttemptId appTaskAttemptId = new AppTaskAttemptId("app1", "exec1", 1, 2, 0L);
+
+        ServerReplicationGroup serverReplicationGroup = new ServerReplicationGroup(Arrays.asList(
+            new ServerDetail(testServer1.getServerId(), testServer1.getRunningVersion(), String.format("localhost:%s", testServer1.getShufflePort()))));
+
+        try (ReplicatedWriteClient writeClient = new ReplicatedWriteClient(
+            serverReplicationGroup,
+            TestConstants.NETWORK_TIMEOUT,
+            finishUploadAck,
+            usePooledConnection,
+            compressionBufferSize,
+            "user1",
+            appTaskAttemptId.getAppId(),
+            appTaskAttemptId.getAppAttempt(),
+            new ShuffleWriteConfig()
+        )) {
+            writeClient.connect();
+            writeClient.startUpload(appTaskAttemptId, numMaps, 20);
+
+            writeClient.sendRecord(0, null, null);
+
+            writeClient.sendRecord(1,
+                    ByteBuffer.wrap(new byte[0]),
+                    ByteBuffer.wrap(new byte[0]));
+            writeClient.sendRecord(1,
+                    ByteBuffer.wrap(new byte[0]),
+                    ByteBuffer.wrap(new byte[0]));
+
+            writeClient.finishUpload();
+
+            Assert.assertTrue(writeClient.getShuffleWriteBytes() > 0);
+
+            List<RecordKeyValuePair> records = StreamServerTestUtils.readAllRecords(testServer1.getShufflePort(), appTaskAttemptId.getAppShuffleId(), 0, Arrays.asList(appTaskAttemptId.getTaskAttemptId()), compressionBufferSize > 0);
+            Assert.assertEquals(records.size(), 1);
+
+            records = StreamServerTestUtils.readAllRecords(testServer1.getShufflePort(), appTaskAttemptId.getAppShuffleId(), 1, Arrays.asList(appTaskAttemptId.getTaskAttemptId()), compressionBufferSize > 0);
+            Assert.assertEquals(records.size(), 2);
+
+            records = StreamServerTestUtils.readAllRecords(testServer1.getShufflePort(), appTaskAttemptId.getAppShuffleId(), 2, Arrays.asList(appTaskAttemptId.getTaskAttemptId()), compressionBufferSize > 0);
+            Assert.assertEquals(records.size(), 0);
+
+          long shuffleWriteBytes = writeClient.getShuffleWriteBytes();
+          Assert.assertTrue(shuffleWriteBytes > 0);
+
+          writeClient.close();
+
+          long shuffleWriteBytes2 = writeClient.getShuffleWriteBytes();
+          Assert.assertEquals(shuffleWriteBytes2, shuffleWriteBytes);
+        } finally {
+            testServer1.shutdown();
+        }
+    }
+
+    @Test(dataProvider = "data-provider")
+    public void writeAndReadRecords_twoServers(boolean finishUploadAck, boolean usePooledConnection, int compressionBufferSize) {
+        TestStreamServer testServer1 = TestStreamServer.createRunningServer();
+        TestStreamServer testServer2 = TestStreamServer.createRunningServer();
+
+        int numMaps = 1;
+        AppTaskAttemptId appTaskAttemptId = new AppTaskAttemptId("app1", "exec1", 1, 2, 0L);
+
+        ServerReplicationGroup serverReplicationGroup = new ServerReplicationGroup(Arrays.asList(
+            new ServerDetail(testServer1.getServerId(), testServer1.getRunningVersion(), String.format("localhost:%s", testServer1.getShufflePort())),
+            new ServerDetail(testServer2.getServerId(), testServer2.getRunningVersion(), String.format("localhost:%s", testServer2.getShufflePort()))
+        ));
+
+        try (ReplicatedWriteClient writeClient = new ReplicatedWriteClient(
+            serverReplicationGroup,
+            TestConstants.NETWORK_TIMEOUT,
+            finishUploadAck,
+            usePooledConnection,
+            compressionBufferSize,
+            "user1",
+            appTaskAttemptId.getAppId(),
+            appTaskAttemptId.getAppAttempt(),
+            new ShuffleWriteConfig()
+        )) {
+            writeClient.connect();
+            writeClient.startUpload(appTaskAttemptId, numMaps, 20);
+
+            writeClient.sendRecord(0, null, null);
+
+            writeClient.sendRecord(1,
+                ByteBuffer.wrap(new byte[0]),
+                ByteBuffer.wrap(new byte[0]));
+            writeClient.sendRecord(1,
+                ByteBuffer.wrap(new byte[0]),
+                ByteBuffer.wrap(new byte[0]));
+
+            writeClient.finishUpload();
+
+            Assert.assertTrue(writeClient.getShuffleWriteBytes() > 0);
+
+            // read records from server 1
+            List<RecordKeyValuePair> records = StreamServerTestUtils.readAllRecords(testServer1.getShufflePort(), appTaskAttemptId.getAppShuffleId(), 0, Arrays.asList(appTaskAttemptId.getTaskAttemptId()), compressionBufferSize > 0);
+            Assert.assertEquals(records.size(), 1);
+
+            records = StreamServerTestUtils.readAllRecords(testServer1.getShufflePort(), appTaskAttemptId.getAppShuffleId(), 1, Arrays.asList(appTaskAttemptId.getTaskAttemptId()), compressionBufferSize > 0);
+            Assert.assertEquals(records.size(), 2);
+
+            records = StreamServerTestUtils.readAllRecords(testServer1.getShufflePort(), appTaskAttemptId.getAppShuffleId(), 2, Arrays.asList(appTaskAttemptId.getTaskAttemptId()), compressionBufferSize > 0);
+            Assert.assertEquals(records.size(), 0);
+
+            // read records from server 2
+            records = StreamServerTestUtils.readAllRecords(testServer2.getShufflePort(), appTaskAttemptId.getAppShuffleId(), 0, Arrays.asList(appTaskAttemptId.getTaskAttemptId()), compressionBufferSize > 0);
+            Assert.assertEquals(records.size(), 1);
+
+            records = StreamServerTestUtils.readAllRecords(testServer2.getShufflePort(), appTaskAttemptId.getAppShuffleId(), 1, Arrays.asList(appTaskAttemptId.getTaskAttemptId()), compressionBufferSize > 0);
+            Assert.assertEquals(records.size(), 2);
+
+            records = StreamServerTestUtils.readAllRecords(testServer2.getShufflePort(), appTaskAttemptId.getAppShuffleId(), 2, Arrays.asList(appTaskAttemptId.getTaskAttemptId()), compressionBufferSize > 0);
+            Assert.assertEquals(records.size(), 0);
+
+          long shuffleWriteBytes = writeClient.getShuffleWriteBytes();
+          Assert.assertTrue(shuffleWriteBytes > 0);
+
+          writeClient.close();
+
+          long shuffleWriteBytes2 = writeClient.getShuffleWriteBytes();
+          Assert.assertEquals(shuffleWriteBytes2, shuffleWriteBytes);
+        } finally {
+            testServer1.shutdown();
+            testServer2.shutdown();
+        }
+    }
+
+  @Test(dataProvider = "data-provider")
+  public void writeAndReadRecords_oneBadServerBeforeConnect(boolean finishUploadAck, boolean usePooledConnection, int compressionBufferSize) {
+    TestStreamServer testServer1 = TestStreamServer.createRunningServer();
+    TestStreamServer testServer2 = TestStreamServer.createRunningServer();
+
+    int numMaps = 1;
+    AppTaskAttemptId appTaskAttemptId = new AppTaskAttemptId("app1", "exec1", 1, 2, 0L);
+
+    ServerReplicationGroup serverReplicationGroup = new ServerReplicationGroup(Arrays.asList(
+        new ServerDetail(testServer1.getServerId(), testServer1.getRunningVersion(), String.format("localhost:%s", testServer1.getShufflePort())),
+        new ServerDetail(testServer2.getServerId(), testServer2.getRunningVersion(), String.format("localhost:%s", testServer2.getShufflePort()))
+    ));
+
+    try (ReplicatedWriteClient writeClient = new ReplicatedWriteClient(
+        serverReplicationGroup,
+        TestConstants.NETWORK_TIMEOUT,
+        finishUploadAck,
+        usePooledConnection,
+        compressionBufferSize,
+        "user1",
+        appTaskAttemptId.getAppId(),
+        appTaskAttemptId.getAppAttempt(),
+        new ShuffleWriteConfig()
+    )) {
+      testServer1.shutdown();
+
+      writeClient.connect();
+      writeClient.startUpload(appTaskAttemptId, numMaps, 20);
+
+      writeClient.sendRecord(0, null, null);
+
+      writeClient.sendRecord(1,
+          ByteBuffer.wrap(new byte[0]),
+          ByteBuffer.wrap(new byte[0]));
+      writeClient.sendRecord(1,
+          ByteBuffer.wrap(new byte[0]),
+          ByteBuffer.wrap(new byte[0]));
+
+      writeClient.finishUpload();
+
+      Assert.assertTrue(writeClient.getShuffleWriteBytes() > 0);
+
+      // read records from server 2
+      List<RecordKeyValuePair> records = StreamServerTestUtils.readAllRecords(testServer2.getShufflePort(), appTaskAttemptId.getAppShuffleId(), 0, Arrays.asList(appTaskAttemptId.getTaskAttemptId()), compressionBufferSize > 0);
+      Assert.assertEquals(records.size(), 1);
+
+      records = StreamServerTestUtils.readAllRecords(testServer2.getShufflePort(), appTaskAttemptId.getAppShuffleId(), 1, Arrays.asList(appTaskAttemptId.getTaskAttemptId()), compressionBufferSize > 0);
+      Assert.assertEquals(records.size(), 2);
+
+      records = StreamServerTestUtils.readAllRecords(testServer2.getShufflePort(), appTaskAttemptId.getAppShuffleId(), 2, Arrays.asList(appTaskAttemptId.getTaskAttemptId()), compressionBufferSize > 0);
+      Assert.assertEquals(records.size(), 0);
+
+      long shuffleWriteBytes = writeClient.getShuffleWriteBytes();
+      Assert.assertTrue(shuffleWriteBytes > 0);
+
+      writeClient.close();
+
+      long shuffleWriteBytes2 = writeClient.getShuffleWriteBytes();
+      Assert.assertEquals(shuffleWriteBytes2, shuffleWriteBytes);
+    } finally {
+      testServer1.shutdown();
+      testServer2.shutdown();
+    }
+  }
+
+  @Test(dataProvider = "data-provider")
+  public void writeAndReadRecords_oneBadServerAfterConnect(boolean finishUploadAck, boolean usePooledConnection, int compressionBufferSize) {
+    TestStreamServer testServer1 = TestStreamServer.createRunningServer();
+    TestStreamServer testServer2 = TestStreamServer.createRunningServer();
+
+    int numMaps = 1;
+    AppTaskAttemptId appTaskAttemptId = new AppTaskAttemptId("app1", "exec1", 1, 2, 0L);
+
+    ServerReplicationGroup serverReplicationGroup = new ServerReplicationGroup(Arrays.asList(
+        new ServerDetail(testServer1.getServerId(), testServer1.getRunningVersion(), String.format("localhost:%s", testServer1.getShufflePort())),
+        new ServerDetail(testServer2.getServerId(), testServer2.getRunningVersion(), String.format("localhost:%s", testServer2.getShufflePort()))
+    ));
+
+    try (ReplicatedWriteClient writeClient = new ReplicatedWriteClient(
+        serverReplicationGroup,
+        TestConstants.NETWORK_TIMEOUT,
+        finishUploadAck,
+        usePooledConnection,
+        compressionBufferSize,
+        "user1",
+        appTaskAttemptId.getAppId(),
+        appTaskAttemptId.getAppAttempt(),
+        new ShuffleWriteConfig()
+    )) {
+      writeClient.connect();
+
+      testServer1.shutdown();
+
+      writeClient.startUpload(appTaskAttemptId, numMaps, 20);
+
+      writeClient.sendRecord(0, null, null);
+
+      writeClient.sendRecord(1,
+          ByteBuffer.wrap(new byte[0]),
+          ByteBuffer.wrap(new byte[0]));
+      writeClient.sendRecord(1,
+          ByteBuffer.wrap(new byte[0]),
+          ByteBuffer.wrap(new byte[0]));
+
+      writeClient.finishUpload();
+
+      Assert.assertTrue(writeClient.getShuffleWriteBytes() > 0);
+
+      // read records from server 2
+      List<RecordKeyValuePair> records = StreamServerTestUtils.readAllRecords(testServer2.getShufflePort(), appTaskAttemptId.getAppShuffleId(), 0, Arrays.asList(appTaskAttemptId.getTaskAttemptId()), compressionBufferSize > 0);
+      Assert.assertEquals(records.size(), 1);
+
+      records = StreamServerTestUtils.readAllRecords(testServer2.getShufflePort(), appTaskAttemptId.getAppShuffleId(), 1, Arrays.asList(appTaskAttemptId.getTaskAttemptId()), compressionBufferSize > 0);
+      Assert.assertEquals(records.size(), 2);
+
+      records = StreamServerTestUtils.readAllRecords(testServer2.getShufflePort(), appTaskAttemptId.getAppShuffleId(), 2, Arrays.asList(appTaskAttemptId.getTaskAttemptId()), compressionBufferSize > 0);
+      Assert.assertEquals(records.size(), 0);
+
+      long shuffleWriteBytes = writeClient.getShuffleWriteBytes();
+      Assert.assertTrue(shuffleWriteBytes > 0);
+
+      writeClient.close();
+
+      long shuffleWriteBytes2 = writeClient.getShuffleWriteBytes();
+      Assert.assertEquals(shuffleWriteBytes2, shuffleWriteBytes);
+    } finally {
+      testServer1.shutdown();
+      testServer2.shutdown();
+    }
+  }
+
+  @Test(dataProvider = "data-provider")
+  public void writeAndReadRecords_oneBadServerAfterStartUpload(boolean finishUploadAck, boolean usePooledConnection, int compressionBufferSize) {
+    TestStreamServer testServer1 = TestStreamServer.createRunningServer();
+    TestStreamServer testServer2 = TestStreamServer.createRunningServer();
+
+    int numMaps = 1;
+    AppTaskAttemptId appTaskAttemptId = new AppTaskAttemptId("app1", "exec1", 1, 2, 0L);
+
+    ServerReplicationGroup serverReplicationGroup = new ServerReplicationGroup(Arrays.asList(
+        new ServerDetail(testServer1.getServerId(), testServer1.getRunningVersion(), String.format("localhost:%s", testServer1.getShufflePort())),
+        new ServerDetail(testServer2.getServerId(), testServer2.getRunningVersion(), String.format("localhost:%s", testServer2.getShufflePort()))
+    ));
+
+    try (ReplicatedWriteClient writeClient = new ReplicatedWriteClient(
+        serverReplicationGroup,
+        TestConstants.NETWORK_TIMEOUT,
+        finishUploadAck,
+        usePooledConnection,
+        compressionBufferSize,
+        "user1",
+        appTaskAttemptId.getAppId(),
+        appTaskAttemptId.getAppAttempt(),
+        new ShuffleWriteConfig()
+    )) {
+      writeClient.connect();
+
+      writeClient.startUpload(appTaskAttemptId, numMaps, 20);
+
+      testServer1.shutdown();
+
+      writeClient.sendRecord(0, null, null);
+
+      writeClient.sendRecord(1,
+          ByteBuffer.wrap(new byte[0]),
+          ByteBuffer.wrap(new byte[0]));
+      writeClient.sendRecord(1,
+          ByteBuffer.wrap(new byte[0]),
+          ByteBuffer.wrap(new byte[0]));
+
+      writeClient.finishUpload();
+
+      Assert.assertTrue(writeClient.getShuffleWriteBytes() > 0);
+
+      // read records from server 2
+      List<RecordKeyValuePair> records = StreamServerTestUtils.readAllRecords(testServer2.getShufflePort(), appTaskAttemptId.getAppShuffleId(), 0, Arrays.asList(appTaskAttemptId.getTaskAttemptId()), compressionBufferSize > 0);
+      Assert.assertEquals(records.size(), 1);
+
+      records = StreamServerTestUtils.readAllRecords(testServer2.getShufflePort(), appTaskAttemptId.getAppShuffleId(), 1, Arrays.asList(appTaskAttemptId.getTaskAttemptId()), compressionBufferSize > 0);
+      Assert.assertEquals(records.size(), 2);
+
+      records = StreamServerTestUtils.readAllRecords(testServer2.getShufflePort(), appTaskAttemptId.getAppShuffleId(), 2, Arrays.asList(appTaskAttemptId.getTaskAttemptId()), compressionBufferSize > 0);
+      Assert.assertEquals(records.size(), 0);
+
+      long shuffleWriteBytes = writeClient.getShuffleWriteBytes();
+      Assert.assertTrue(shuffleWriteBytes > 0);
+
+      writeClient.close();
+
+      long shuffleWriteBytes2 = writeClient.getShuffleWriteBytes();
+      Assert.assertEquals(shuffleWriteBytes2, shuffleWriteBytes);
+    } finally {
+      testServer1.shutdown();
+      testServer2.shutdown();
+    }
+  }
+
+  @Test(dataProvider = "data-provider")
+  public void writeAndReadRecords_oneBadServerAfterSendRecord(boolean finishUploadAck, boolean usePooledConnection, int compressionBufferSize) {
+    TestStreamServer testServer1 = TestStreamServer.createRunningServer();
+    TestStreamServer testServer2 = TestStreamServer.createRunningServer();
+
+    int numMaps = 1;
+    AppTaskAttemptId appTaskAttemptId = new AppTaskAttemptId("app1", "exec1", 1, 2, 0L);
+
+    ServerReplicationGroup serverReplicationGroup = new ServerReplicationGroup(Arrays.asList(
+        new ServerDetail(testServer1.getServerId(), testServer1.getRunningVersion(), String.format("localhost:%s", testServer1.getShufflePort())),
+        new ServerDetail(testServer2.getServerId(), testServer2.getRunningVersion(), String.format("localhost:%s", testServer2.getShufflePort()))
+    ));
+
+    try (ReplicatedWriteClient writeClient = new ReplicatedWriteClient(
+        serverReplicationGroup,
+        TestConstants.NETWORK_TIMEOUT,
+        finishUploadAck,
+        usePooledConnection,
+        compressionBufferSize,
+        "user1",
+        appTaskAttemptId.getAppId(),
+        appTaskAttemptId.getAppAttempt(),
+        new ShuffleWriteConfig()
+    )) {
+      writeClient.connect();
+
+      writeClient.startUpload(appTaskAttemptId, numMaps, 20);
+
+      writeClient.sendRecord(0, null, null);
+
+      testServer1.shutdown();
+
+      writeClient.sendRecord(1,
+          ByteBuffer.wrap(new byte[0]),
+          ByteBuffer.wrap(new byte[0]));
+      writeClient.sendRecord(1,
+          ByteBuffer.wrap(new byte[0]),
+          ByteBuffer.wrap(new byte[0]));
+
+      writeClient.finishUpload();
+
+      Assert.assertTrue(writeClient.getShuffleWriteBytes() > 0);
+
+      // read records from server 2
+      List<RecordKeyValuePair> records = StreamServerTestUtils.readAllRecords(testServer2.getShufflePort(), appTaskAttemptId.getAppShuffleId(), 0, Arrays.asList(appTaskAttemptId.getTaskAttemptId()), compressionBufferSize > 0);
+      Assert.assertEquals(records.size(), 1);
+
+      records = StreamServerTestUtils.readAllRecords(testServer2.getShufflePort(), appTaskAttemptId.getAppShuffleId(), 1, Arrays.asList(appTaskAttemptId.getTaskAttemptId()), compressionBufferSize > 0);
+      Assert.assertEquals(records.size(), 2);
+
+      records = StreamServerTestUtils.readAllRecords(testServer2.getShufflePort(), appTaskAttemptId.getAppShuffleId(), 2, Arrays.asList(appTaskAttemptId.getTaskAttemptId()), compressionBufferSize > 0);
+      Assert.assertEquals(records.size(), 0);
+
+      long shuffleWriteBytes = writeClient.getShuffleWriteBytes();
+      Assert.assertTrue(shuffleWriteBytes > 0);
+
+      writeClient.close();
+
+      long shuffleWriteBytes2 = writeClient.getShuffleWriteBytes();
+      Assert.assertEquals(shuffleWriteBytes2, shuffleWriteBytes);
+    } finally {
+      testServer1.shutdown();
+      testServer2.shutdown();
+    }
+  }
+
+  @Test(dataProvider = "data-provider")
+  public void writeAndReadRecords_oneBadServerAfterSendAllRecords(boolean finishUploadAck, boolean usePooledConnection, int compressionBufferSize) {
+    TestStreamServer testServer1 = TestStreamServer.createRunningServer();
+    TestStreamServer testServer2 = TestStreamServer.createRunningServer();
+
+    int numMaps = 1;
+    AppTaskAttemptId appTaskAttemptId = new AppTaskAttemptId("app1", "exec1", 1, 2, 0L);
+
+    ServerReplicationGroup serverReplicationGroup = new ServerReplicationGroup(Arrays.asList(
+        new ServerDetail(testServer1.getServerId(), testServer1.getRunningVersion(), String.format("localhost:%s", testServer1.getShufflePort())),
+        new ServerDetail(testServer2.getServerId(), testServer2.getRunningVersion(), String.format("localhost:%s", testServer2.getShufflePort()))
+    ));
+
+    try (ReplicatedWriteClient writeClient = new ReplicatedWriteClient(
+        serverReplicationGroup,
+        TestConstants.NETWORK_TIMEOUT,
+        finishUploadAck,
+        usePooledConnection,
+        compressionBufferSize,
+        "user1",
+        appTaskAttemptId.getAppId(),
+        appTaskAttemptId.getAppAttempt(),
+        new ShuffleWriteConfig()
+    )) {
+      writeClient.connect();
+
+      writeClient.startUpload(appTaskAttemptId, numMaps, 20);
+
+      writeClient.sendRecord(0, null, null);
+
+      writeClient.sendRecord(1,
+          ByteBuffer.wrap(new byte[0]),
+          ByteBuffer.wrap(new byte[0]));
+      writeClient.sendRecord(1,
+          ByteBuffer.wrap(new byte[0]),
+          ByteBuffer.wrap(new byte[0]));
+
+      testServer1.shutdown();
+
+      writeClient.finishUpload();
+
+      Assert.assertTrue(writeClient.getShuffleWriteBytes() > 0);
+
+      // read records from server 2
+      List<RecordKeyValuePair> records = StreamServerTestUtils.readAllRecords(testServer2.getShufflePort(), appTaskAttemptId.getAppShuffleId(), 0, Arrays.asList(appTaskAttemptId.getTaskAttemptId()), compressionBufferSize > 0);
+      Assert.assertEquals(records.size(), 1);
+
+      records = StreamServerTestUtils.readAllRecords(testServer2.getShufflePort(), appTaskAttemptId.getAppShuffleId(), 1, Arrays.asList(appTaskAttemptId.getTaskAttemptId()), compressionBufferSize > 0);
+      Assert.assertEquals(records.size(), 2);
+
+      records = StreamServerTestUtils.readAllRecords(testServer2.getShufflePort(), appTaskAttemptId.getAppShuffleId(), 2, Arrays.asList(appTaskAttemptId.getTaskAttemptId()), compressionBufferSize > 0);
+      Assert.assertEquals(records.size(), 0);
+
+      long shuffleWriteBytes = writeClient.getShuffleWriteBytes();
+      Assert.assertTrue(shuffleWriteBytes > 0);
+
+      writeClient.close();
+
+      long shuffleWriteBytes2 = writeClient.getShuffleWriteBytes();
+      Assert.assertEquals(shuffleWriteBytes2, shuffleWriteBytes);
+    } finally {
+      testServer1.shutdown();
+      testServer2.shutdown();
+    }
+  }
+
+  @Test(dataProvider = "data-provider")
+  public void writeAndReadRecords_oneBadServerAfterFinishUpload(boolean finishUploadAck, boolean usePooledConnection, int compressionBufferSize) {
+    TestStreamServer testServer1 = TestStreamServer.createRunningServer();
+    TestStreamServer testServer2 = TestStreamServer.createRunningServer();
+
+    int numMaps = 1;
+    AppTaskAttemptId appTaskAttemptId = new AppTaskAttemptId("app1", "exec1", 1, 2, 0L);
+
+    ServerReplicationGroup serverReplicationGroup = new ServerReplicationGroup(Arrays.asList(
+        new ServerDetail(testServer1.getServerId(), testServer1.getRunningVersion(), String.format("localhost:%s", testServer1.getShufflePort())),
+        new ServerDetail(testServer2.getServerId(), testServer2.getRunningVersion(), String.format("localhost:%s", testServer2.getShufflePort()))
+    ));
+
+    try (ReplicatedWriteClient writeClient = new ReplicatedWriteClient(
+        serverReplicationGroup,
+        TestConstants.NETWORK_TIMEOUT,
+        finishUploadAck,
+        usePooledConnection,
+        compressionBufferSize,
+        "user1",
+        appTaskAttemptId.getAppId(),
+        appTaskAttemptId.getAppAttempt(),
+        new ShuffleWriteConfig()
+    )) {
+      writeClient.connect();
+
+      writeClient.startUpload(appTaskAttemptId, numMaps, 20);
+
+      writeClient.sendRecord(0, null, null);
+
+      writeClient.sendRecord(1,
+          ByteBuffer.wrap(new byte[0]),
+          ByteBuffer.wrap(new byte[0]));
+      writeClient.sendRecord(1,
+          ByteBuffer.wrap(new byte[0]),
+          ByteBuffer.wrap(new byte[0]));
+
+      writeClient.finishUpload();
+
+      testServer1.shutdown();
+
+      Assert.assertTrue(writeClient.getShuffleWriteBytes() > 0);
+
+      // read records from server 2
+      List<RecordKeyValuePair> records = StreamServerTestUtils.readAllRecords(testServer2.getShufflePort(), appTaskAttemptId.getAppShuffleId(), 0, Arrays.asList(appTaskAttemptId.getTaskAttemptId()), compressionBufferSize > 0);
+      Assert.assertEquals(records.size(), 1);
+
+      records = StreamServerTestUtils.readAllRecords(testServer2.getShufflePort(), appTaskAttemptId.getAppShuffleId(), 1, Arrays.asList(appTaskAttemptId.getTaskAttemptId()), compressionBufferSize > 0);
+      Assert.assertEquals(records.size(), 2);
+
+      records = StreamServerTestUtils.readAllRecords(testServer2.getShufflePort(), appTaskAttemptId.getAppShuffleId(), 2, Arrays.asList(appTaskAttemptId.getTaskAttemptId()), compressionBufferSize > 0);
+      Assert.assertEquals(records.size(), 0);
+
+      long shuffleWriteBytes = writeClient.getShuffleWriteBytes();
+      Assert.assertTrue(shuffleWriteBytes > 0);
+
+      writeClient.close();
+
+      long shuffleWriteBytes2 = writeClient.getShuffleWriteBytes();
+      Assert.assertEquals(shuffleWriteBytes2, shuffleWriteBytes);
+    } finally {
+      testServer1.shutdown();
+      testServer2.shutdown();
+    }
+  }
+}
