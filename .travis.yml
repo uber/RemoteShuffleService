@@ -1,6 +1,6 @@
 language: java
 dist: trusty
 jdk:
-  - openjdk8
+  - oraclejdk8
 script:
-  - jdk_switcher use openjdk8
+  - jdk_switcher use oraclejdk8
