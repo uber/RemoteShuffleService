@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+
+RESOURCE_DIR="$1"
+mkdir -p "$RESOURCE_DIR"
+RSS_BUILD_INFO="${RESOURCE_DIR}"/rss-build-info.properties
+
+echo Generating resource file: "$RSS_BUILD_INFO"
+
+echo_properties() {
+  echo version=$1
+  echo revision=$(git rev-parse HEAD)
+}
+
+echo_properties $2 > "$RSS_BUILD_INFO"
+
+
