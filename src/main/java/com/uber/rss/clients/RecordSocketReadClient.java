@@ -45,6 +45,7 @@ public abstract class RecordSocketReadClient implements AutoCloseable, SingleSer
   private final DataBlockSocketReadClient dataBlockSocketReadClient;
 
   private Map<Long, KeyValueStreamDecoder> taskAttemptStreamData = new HashMap<>();
+  private int taskAttemptStreamDataBufferSize = 0;
 
   private LinkedList<KeyValueRecord> decodedRecords = new LinkedList<>();
 
@@ -75,6 +76,7 @@ public abstract class RecordSocketReadClient implements AutoCloseable, SingleSer
       logger.warn(String.format("Failed to close %s", this), ex);
     }
     taskAttemptStreamData.clear();
+    metrics.getBufferSize().update(0);
     decodedRecords.clear();
 
     closeMetrics();
@@ -174,23 +176,19 @@ public abstract class RecordSocketReadClient implements AutoCloseable, SingleSer
     result = createKeyValueStreamDecoder();
     taskAttemptStreamData.put(taskAttemptId, result);
 
-    int size = 0;
-    for (KeyValueStreamDecoder entry: taskAttemptStreamData.values()) {
-      size += entry.getBufferSize();
-    }
-    metrics.getBufferSize().update(size);
+    taskAttemptStreamDataBufferSize += result.getBufferSize();
+    metrics.getBufferSize().update(taskAttemptStreamDataBufferSize);
 
     return result;
   }
 
   private void removeTaskAttemptDecoder(long taskAttemptId) {
-    taskAttemptStreamData.remove(taskAttemptId);
+    KeyValueStreamDecoder entry = taskAttemptStreamData.remove(taskAttemptId);
 
-    int size = 0;
-    for (KeyValueStreamDecoder entry: taskAttemptStreamData.values()) {
-      size += entry.getBufferSize();
+    if (entry != null) {
+      taskAttemptStreamDataBufferSize -= entry.getBufferSize();
+      metrics.getBufferSize().update(taskAttemptStreamDataBufferSize);
     }
-    metrics.getBufferSize().update(size);
   }
 
   private void closeMetrics() {
