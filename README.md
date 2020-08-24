@@ -57,7 +57,7 @@ spark.shuffle.rss.dataCenter=dc1
 
 ## Run with High Availability
 
-Remote Shuffle Service could use a [[Apache ZooKeeper](https://zookeeper.apache.org/)] cluster and register live service 
+Remote Shuffle Service could use a [Apache ZooKeeper](https://zookeeper.apache.org/) cluster and register live service 
 instances in ZooKeeper. Spark applications will look up ZooKeeper to find and use active Remote Shuffle Service instances. 
 In this configuration, ZooKeeper serves as a Service Registry for Remote Shuffle Service, and we need to add those 
 parameters when starting RSS server and Spark application.
