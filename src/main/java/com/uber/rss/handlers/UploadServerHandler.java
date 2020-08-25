@@ -16,7 +16,6 @@ package com.uber.rss.handlers;
 
 import com.uber.rss.clients.ShuffleWriteConfig;
 import com.uber.rss.common.AppMapId;
-import com.uber.rss.common.AppShuffleId;
 import com.uber.rss.common.AppTaskAttemptId;
 import com.uber.rss.common.Compression;
 import com.uber.rss.exceptions.RssInvalidDataException;
@@ -39,11 +38,8 @@ import java.util.concurrent.ConcurrentHashMap;
 public class UploadServerHandler {
     private static final Logger logger = LoggerFactory.getLogger(UploadServerHandler.class);
 
-    private final String serverId;
-    private final String runningVersion;
     private final ShuffleExecutor executor;
     private final UploadChannelManager channelManager;
-    private final String networkCompressionCodec;
 
     private final ConcurrentHashMap<Long, AppMapId> taskAttemptMap = new ConcurrentHashMap<>();
 
@@ -55,12 +51,9 @@ public class UploadServerHandler {
 
     private final ConcurrentHashMap<Long, Boolean> taskAttemptUploadStarted = new ConcurrentHashMap<>();
 
-    public UploadServerHandler(String serverId, String runningVersion, ShuffleExecutor executor, UploadChannelManager channelManager, String networkCompressionCodec) {
-        this.serverId = serverId;
-        this.runningVersion = runningVersion;
+    public UploadServerHandler(ShuffleExecutor executor, UploadChannelManager channelManager) {
         this.executor = executor;
         this.channelManager = channelManager;
-        this.networkCompressionCodec = networkCompressionCodec;
 
         channelManager.incNumConnections();
     }
@@ -89,7 +82,7 @@ public class UploadServerHandler {
         if (networkCompressionCodecName != null && !networkCompressionCodecName.isEmpty()) {
             if (networkCompressionCodecName.equals(Compression.COMPRESSION_CODEC_LZ4)) {
                 ctx.pipeline().addFirst(new Lz4FrameDecoder());
-                logger.debug("Added LZ4 decoder, " + connectionInfo);
+                logger.debug("Added LZ4 decoder, {}", connectionInfo);
             } else {
                 logger.warn(String.format("Invalid compression codec %s, will fallback to not compression, %s", networkCompressionCodecName, connectionInfo));
             }

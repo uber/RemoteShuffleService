@@ -60,7 +60,6 @@ public class DownloadChannelInboundHandler extends ChannelInboundHandlerAdapter 
     private final DownloadServerHandler downloadServerHandler;
 
     private String connectionInfo = "";
-    private String user = "unknown";
     private AppShufflePartitionId appShufflePartitionId = null;
     private List<Long> knownLatestTaskAttemptIds = new ArrayList<>();
 
@@ -85,7 +84,7 @@ public class DownloadChannelInboundHandler extends ChannelInboundHandlerAdapter 
         numChannelActive.inc(1);
         numConcurrentChannels.update(concurrentChannelsAtomicInteger.incrementAndGet());
         connectionInfo = NettyUtils.getServerConnectionInfo(ctx);
-        logger.info(String.format("Channel active: %s", connectionInfo));
+        logger.info("Channel active: {}", connectionInfo);
     }
 
     @Override
@@ -94,25 +93,21 @@ public class DownloadChannelInboundHandler extends ChannelInboundHandlerAdapter 
         
         numChannelInactive.inc(1);
         numConcurrentChannels.update(concurrentChannelsAtomicInteger.decrementAndGet());
-        logger.info(String.format("Channel inactive: %s", connectionInfo));
+        logger.info("Channel inactive: {}", connectionInfo);
     }
 
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) {
         try {
-            if (logger.isTraceEnabled()) {
-                logger.trace("Got incoming message: " + msg + ", " + connectionInfo);
-            }
+            logger.debug("Got incoming message: {}, {}", msg, connectionInfo);
 
             // Process other messages. We assume the header messages are already processed, thus some fields of this
             // class are already populated with proper values, e.g. user field.
 
             if (msg instanceof ConnectDownloadRequest) {
-                // TODO remove "msg instanceof ConnectDownloadRequest" code block later
-                logger.info(msg + ", " + connectionInfo);
+                logger.info("ConnectDownloadRequest: {}, {}", msg, connectionInfo);
 
                 ConnectDownloadRequest connectRequest = (ConnectDownloadRequest) msg;
-                user = connectRequest.getUser();
                 appShufflePartitionId = new AppShufflePartitionId(
                     connectRequest.getAppId(),
                     connectRequest.getAppAttempt(),
@@ -143,7 +138,6 @@ public class DownloadChannelInboundHandler extends ChannelInboundHandlerAdapter 
                 ConnectDownloadResponse connectResponse = new ConnectDownloadResponse(serverId, RssBuildInfo.Version, runningVersion, fileCompressionCodec, mapTaskCommitStatus, dataAvailable);
                 sendResponseAndFiles(ctx, dataAvailable, shuffleStageStatus, connectResponse);
             } else if (msg instanceof GetDataAvailabilityRequest) {
-                logger.debug(msg + ", " + connectionInfo);
                 ShuffleStageStatus shuffleStageStatus = downloadServerHandler.getShuffleStageStatus(appShufflePartitionId.getAppShuffleId());
                 MapTaskCommitStatus mapTaskCommitStatus = shuffleStageStatus.getMapTaskCommitStatus();
                 boolean dataAvailable;

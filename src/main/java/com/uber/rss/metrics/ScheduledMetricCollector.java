@@ -16,7 +16,6 @@ package com.uber.rss.metrics;
 
 import com.google.common.net.HostAndPort;
 import com.uber.m3.tally.Gauge;
-import com.uber.rss.common.LogWrapper;
 import com.uber.rss.common.ServerDetail;
 import com.uber.rss.metadata.ServiceRegistry;
 import com.uber.rss.util.FileUtils;

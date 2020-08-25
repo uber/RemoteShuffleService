@@ -205,7 +205,7 @@ public class StreamServer {
         String serverId = getServerId();
 
         Supplier<ChannelHandler[]> streamHandlers = () -> new ChannelHandler[]{
-            new StreamServerVersionDecoder(serverId, runningVersion, serverConfig.getIdleTimeoutMillis(), shuffleExecutor, channelManager, serverConfig.getNetworkCompressionCodec(), serverDetailCollection)
+            new StreamServerVersionDecoder(serverId, runningVersion, serverConfig.getIdleTimeoutMillis(), shuffleExecutor, channelManager, serverDetailCollection)
         };
         ServerBootstrap streamServerBootstrap = bootstrapChannel(shuffleBossGroup, shuffleWorkerGroup, serverConfig.getNetworkBacklog(), serverConfig.getNetworkTimeout(), streamHandlers);
 

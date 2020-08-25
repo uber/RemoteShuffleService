@@ -146,8 +146,8 @@ public class ShuffleExecutor {
                            String fileCompressionCodec,
                            long appMaxWriteBytes,
                            long stateCommitIntervalMillis) {
-        logger.info(String.format("Started with rootDir=%s, storage=%s, fsyncEnabled=%s, useDaemonThread=%s, numSplits=%d, appRetentionMillis=%d",
-                rootDir, storage, fsyncEnabled, useDaemonThread, numSplits, appRetentionMillis));
+        logger.info("Started with rootDir={}, storage={}, fsyncEnabled={}, useDaemonThread={}, numSplits={}, appRetentionMillis={}",
+                rootDir, storage, fsyncEnabled, useDaemonThread, numSplits, appRetentionMillis);
         this.rootDir = rootDir;
         this.stateStore = new LocalFileStateStore(rootDir);
         this.storage = storage;
@@ -209,9 +209,9 @@ public class ShuffleExecutor {
         } finally {
             long durationMillis = System.currentTimeMillis() - startTime;
             stateLoadTime.update(durationMillis);
-            logger.info(String.format(
-                "Finished loading state, duration: %s milliseconds, %s",
-                durationMillis, loadResult));
+            logger.info(
+                "Finished loading state, duration: {} milliseconds, {}",
+                durationMillis, loadResult);
         }
     }
 
@@ -230,19 +230,7 @@ public class ShuffleExecutor {
     }
 
     public void startUpload(AppTaskAttemptId appTaskAttemptId) {
-        LogWrapper.logAsJson(logger,
-                "event",
-                "startUpload",
-                "appId",
-                appTaskAttemptId.getAppId(),
-                "appAttempt",
-                appTaskAttemptId.getAppAttempt(),
-                "shuffleId",
-                appTaskAttemptId.getShuffleId(),
-                "mapId",
-                appTaskAttemptId.getMapId(),
-                "taskAttemptId",
-                appTaskAttemptId.getTaskAttemptId());
+        logger.debug("startUpload, {}", appTaskAttemptId);
 
         ExecutorAppState appState = updateLiveness(appTaskAttemptId.getAppId());
 
@@ -319,22 +307,6 @@ public class ShuffleExecutor {
     private void addFinishUploadOperationImpl(AppTaskAttemptId appTaskAttemptId) {
         ExecutorAppState appState = getAppState(appTaskAttemptId.getAppId());
         appState.updateLivenessTimestamp();
-
-        LogWrapper.logAsJson(logger,
-            "event",
-            "finishUpload",
-            "appId",
-            appTaskAttemptId.getAppId(),
-            "appAttempt",
-            appTaskAttemptId.getAppAttempt(),
-            "shuffleId",
-            appTaskAttemptId.getShuffleId(),
-            "mapId",
-            appTaskAttemptId.getMapId(),
-            "taskAttemptId",
-            appTaskAttemptId.getTaskAttemptId(),
-            "writeBytes",
-            appState.getNumWriteBytes());
 
         // ===================== TODO close all files if there are only stale attempts
 
@@ -647,7 +619,7 @@ public class ShuffleExecutor {
               stageState.flushAllPartitions();
               for (AppTaskAttemptId appTaskAttemptId: appTaskAttemptIds) {
                   stageState.commitMapTask(appTaskAttemptId.getMapId(), appTaskAttemptId.getTaskAttemptId());
-                  logger.info(String.format("Commit task attempt: %s", appTaskAttemptId));
+                  logger.info("CommitTask, {}, task {}.{}", appShuffleId, appTaskAttemptId.getMapId(), appTaskAttemptId.getTaskAttemptId());
               }
               List<MapTaskAttemptId> mapTaskAttemptIds = appTaskAttemptIds.stream()
                   .map(t->new MapTaskAttemptId(t.getMapId(), t.getTaskAttemptId())).collect(Collectors.toList());
@@ -706,7 +678,7 @@ public class ShuffleExecutor {
             if (entry.getValue().getLivenessTimestamp() < currentMillis - appRetentionMillis) {
                 String appId = entry.getKey();
                 expiredAppIds.add(appId);
-                logger.info(String.format("Found expired application: %s", appId));
+                logger.info("Found expired application: {}", appId);
             }
         }
 
@@ -734,10 +706,9 @@ public class ShuffleExecutor {
               logger.warn("Failed to add app deletion in state store when removing expired application", ex);
             }
 
-            logger.info(String.format(
-                    "Removed expired application from internal state: %s, number of app shuffle id: %s",
+            logger.info("Removed expired application from internal state: {}, number of app shuffle id: {}",
                     appId,
-                    expiredAppShuffleIds.size()));
+                    expiredAppShuffleIds.size());
         }
 
         numLiveApplications.update(appStates.size());
@@ -745,10 +716,10 @@ public class ShuffleExecutor {
         for (String appId: expiredAppIds) {
             String appDir = ShuffleFileUtils.getAppShuffleDir(rootDir, appId);
             try {
-                logger.info(String.format("Deleting expired application directory: %s", appDir));
+                logger.info("Deleting expired application directory: {}", appDir);
                 storage.deleteDirectory(appDir);
             } catch (Throwable ex) {
-                logger.info(String.format("Failed to delete expired application directory: %s", appDir), ex);
+                logger.warn(String.format("Failed to delete expired application directory: %s", appDir), ex);
             }
         }
     }
@@ -861,14 +832,14 @@ public class ShuffleExecutor {
                 if (oldStageState.getFileStartIndex() < newStartIndex) {
                     int oldStartIndex = oldStageState.getFileStartIndex();
                     oldStageState.setFileStartIndex(newStartIndex);
-                    logger.info(String.format(
-                        "Bump file start index for %s from %s to %s, splits: %s",
-                        appShuffleId, oldStartIndex, newStartIndex, writeConfig.getNumSplits()));
+                    logger.info(
+                        "Bump file start index for {} from {} to {}, splits: {}",
+                        appShuffleId, oldStartIndex, newStartIndex, writeConfig.getNumSplits());
                 }
             }
             if (fileStatus == ShuffleStageStatus.FILE_STATUS_CORRUPTED) {
                 effectiveStageState.setFileCorrupted();
-                logger.info(String.format("Mark stage %s as corrupted due to loaded state marking it as corrupted", appShuffleId));
+                logger.info("Mark stage {} as corrupted due to loaded state marking it as corrupted", appShuffleId);
                 corruptedStages.add(appShuffleId);
             }
             if (corruptedStages.contains(appShuffleId)) {

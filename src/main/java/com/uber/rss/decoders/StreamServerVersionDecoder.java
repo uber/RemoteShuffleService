@@ -43,7 +43,6 @@ public class StreamServerVersionDecoder extends ByteToMessageDecoder {
     private final long idleTimeoutMillis;
     private final ShuffleExecutor executor;
     private final UploadChannelManager channelManager;
-    private final String networkCompressionCodec;
 
     // this is used when the shuffle server could serve as a registry server
     private final ServerDetailCollection serverDetailCollection;
@@ -53,14 +52,12 @@ public class StreamServerVersionDecoder extends ByteToMessageDecoder {
                                       long idleTimeoutMillis,
                                       ShuffleExecutor executor,
                                       UploadChannelManager channelManager,
-                                      String networkCompressionCodec,
                                       ServerDetailCollection serverDetailCollection) {
         this.serverId = serverId;
         this.runningVersion = runningVersion;
         this.idleTimeoutMillis = idleTimeoutMillis;
         this.executor = executor;
         this.channelManager = channelManager;
-        this.networkCompressionCodec = networkCompressionCodec;
         this.serverDetailCollection = serverDetailCollection;
     }
 
@@ -72,7 +69,7 @@ public class StreamServerVersionDecoder extends ByteToMessageDecoder {
 
         if (type == MessageConstants.UPLOAD_UPLINK_MAGIC_BYTE && version == MessageConstants.UPLOAD_UPLINK_VERSION_3) {
             newDecoder = new StreamServerMessageDecoder();
-            UploadChannelInboundHandler channelInboundHandler = new UploadChannelInboundHandler(serverId, runningVersion, idleTimeoutMillis, executor, channelManager, networkCompressionCodec);
+            UploadChannelInboundHandler channelInboundHandler = new UploadChannelInboundHandler(serverId, runningVersion, idleTimeoutMillis, executor, channelManager);
             channelInboundHandler.processChannelActive(ctx);
             newHandler = channelInboundHandler;
         } else if (type == MessageConstants.DOWNLOAD_UPLINK_MAGIC_BYTE && version == MessageConstants.DOWNLOAD_UPLINK_VERSION_3) {

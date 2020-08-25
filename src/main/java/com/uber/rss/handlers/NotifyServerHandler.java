@@ -14,7 +14,6 @@
 
 package com.uber.rss.handlers;
 
-import com.uber.rss.common.LogWrapper;
 import com.uber.rss.messages.FinishApplicationJobRequestMessage;
 import com.uber.rss.messages.FinishApplicationAttemptRequestMessage;
 import com.uber.rss.messages.MessageConstants;
@@ -66,13 +65,7 @@ public class NotifyServerHandler {
     }
 
     public void handleMessage(ChannelHandlerContext ctx, FinishApplicationAttemptRequestMessage msg) {
-        LogWrapper.logAsJson(logger,
-                "event",
-                "finishApplicationAttempt",
-                "appId",
-                msg.getAppId(),
-                "appAttempt",
-                msg.getAppAttempt());
+        logger.info("finishApplicationAttempt, appId: {}, appAttempt: {}", msg.getAppId(), msg.getAppAttempt());
 
         writeAndFlushByte(ctx, MessageConstants.RESPONSE_STATUS_OK);
 

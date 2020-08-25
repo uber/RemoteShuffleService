@@ -35,7 +35,6 @@ import com.uber.rss.metrics.M3Stats;
 import com.uber.rss.util.ExceptionUtils;
 import com.uber.rss.util.NettyUtils;
 import io.netty.buffer.ByteBuf;
-import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
@@ -66,7 +65,6 @@ public class UploadChannelInboundHandler extends ChannelInboundHandlerAdapter {
     private final UploadServerHandler uploadServerHandler;
 
     private String connectionInfo = "";
-    private String user = "unknown";
     private String appId = null;
     private String appAttempt = null;
 
@@ -78,11 +76,10 @@ public class UploadChannelInboundHandler extends ChannelInboundHandlerAdapter {
                                        String runningVersion,
                                        long idleTimeoutMillis,
                                        ShuffleExecutor executor,
-                                       UploadChannelManager channelManager,
-                                       String networkCompressionCodec) {
+                                       UploadChannelManager channelManager) {
         this.serverId = serverId;
         this.runningVersion = runningVersion;
-        this.uploadServerHandler = new UploadServerHandler(serverId, runningVersion, executor, channelManager, networkCompressionCodec);
+        this.uploadServerHandler = new UploadServerHandler(executor, channelManager);
         this.idleTimeoutMillis = idleTimeoutMillis;
     }
 
@@ -94,7 +91,7 @@ public class UploadChannelInboundHandler extends ChannelInboundHandlerAdapter {
     }
 
     public void processChannelActive(final ChannelHandlerContext ctx) {
-        logger.info(String.format("Channel active: %s", connectionInfo));
+        logger.info("Channel active: {}", connectionInfo);
         numChannelActive.inc(1);
         numConcurrentChannels.update(concurrentChannelsAtomicInteger.incrementAndGet());
         connectionInfo = NettyUtils.getServerConnectionInfo(ctx);
@@ -107,7 +104,7 @@ public class UploadChannelInboundHandler extends ChannelInboundHandlerAdapter {
     public void channelInactive(ChannelHandlerContext ctx) throws Exception {
         super.channelInactive(ctx);
 
-        logger.info(String.format("Channel inactive: %s", connectionInfo));
+        logger.info("Channel inactive: {}", connectionInfo);
         numChannelInactive.inc(1);
         numConcurrentChannels.update(concurrentChannelsAtomicInteger.decrementAndGet());
         uploadServerHandler.onChannelInactive();
@@ -120,9 +117,7 @@ public class UploadChannelInboundHandler extends ChannelInboundHandlerAdapter {
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) {
         try {
-            if (logger.isTraceEnabled()) {
-                logger.trace("Got incoming message: " + msg + ", " + connectionInfo);
-            }
+            logger.debug("Got incoming message: {}, {}", msg, connectionInfo);
 
             if (idleCheck != null) {
                 idleCheck.updateLastReadTime();
@@ -132,14 +127,12 @@ public class UploadChannelInboundHandler extends ChannelInboundHandlerAdapter {
             // class are already populated with proper values, e.g. user field.
 
             if (msg instanceof ConnectUploadRequest) {
-                logger.info(msg + ", " + connectionInfo);
-
                 try {
                     uploadServerHandler.checkMaxConnections();
                 } catch (RssMaxConnectionsException e) {
-                    logger.info(String.format(
-                        "Cannot handle new connection due to server capacity. Closing current connection: %s. %s",
-                        connectionInfo, ExceptionUtils.getSimpleMessage(e)));
+                    logger.info(
+                        "Cannot handle new connection due to server capacity. Closing current connection: {}. {}",
+                        connectionInfo, ExceptionUtils.getSimpleMessage(e));
                     M3Stats.addException(e, M3Stats.TAG_VALUE_SERVER_HANDLER);
                     ByteBuf buf = ctx.alloc().buffer(1);
                     buf.writeByte(MessageConstants.RESPONSE_STATUS_SERVER_BUSY);
@@ -148,17 +141,15 @@ public class UploadChannelInboundHandler extends ChannelInboundHandlerAdapter {
                 }
 
                 ConnectUploadRequest connectUploadRequest = (ConnectUploadRequest)msg;
-                user = connectUploadRequest.getUser();
                 appId = connectUploadRequest.getAppId();
                 appAttempt = connectUploadRequest.getAppAttempt();
 
                 try {
                     uploadServerHandler.checkAppMaxWriteBytes(appId);
                 } catch (RssTooMuchDataException e) {
-                    logger.info(String.format(
-                        "Cannot handle new connection due to writing too much data from app (%s). Closing current connection: %s. %s",
-                        appId, connectionInfo, ExceptionUtils.getSimpleMessage(e)),
-                        e);
+                    logger.info(
+                        "Cannot handle new connection due to writing too much data from app (%s). Closing current connection: {}. {}",
+                        appId, connectionInfo, ExceptionUtils.getSimpleMessage(e));
                     M3Stats.addException(e, M3Stats.TAG_VALUE_SERVER_HANDLER);
                     ByteBuf buf = ctx.alloc().buffer(1);
                     buf.writeByte(MessageConstants.RESPONSE_STATUS_APP_TOO_MUCH_DATA);
@@ -168,7 +159,6 @@ public class UploadChannelInboundHandler extends ChannelInboundHandlerAdapter {
                 ConnectUploadResponse connectUploadResponse = new ConnectUploadResponse(serverId, RssBuildInfo.Version, runningVersion);
                 HandlerUtil.writeResponseMsg(ctx, MessageConstants.RESPONSE_STATUS_OK, connectUploadResponse, true);
             } else if (msg instanceof StartUploadMessage) {
-                logger.debug(msg + ", " + connectionInfo);
                 startUploadMessage = (StartUploadMessage)msg;
 
                 AppTaskAttemptId appTaskAttemptId = new AppTaskAttemptId(appId,
@@ -180,12 +170,12 @@ public class UploadChannelInboundHandler extends ChannelInboundHandlerAdapter {
                 ShuffleWriteConfig writeConfig = new ShuffleWriteConfig(startUploadMessage.getFileCompressionCodec(), startUploadMessage.getNumSplits());
                 uploadServerHandler.initializeAppTaskAttempt(appTaskAttemptId, startUploadMessage.getNumMaps(), startUploadMessage.getNumPartitions(), writeConfig, ctx);
             } else if (msg instanceof FinishUploadMessage) {
-                logger.info(msg + ", " + connectionInfo);
+                logger.info("FinishUploadMessage, {}, {}", msg, connectionInfo);
                 FinishUploadMessage finishUploadMessage = (FinishUploadMessage)msg;
                 finishUploadRequestLag.update(System.currentTimeMillis() - finishUploadMessage.getTimestamp());
                 uploadServerHandler.finishUpload(finishUploadMessage.getTaskAttemptId());
             } else if (msg instanceof FinishUpload2Message) {
-                logger.info(msg + ", " + connectionInfo);
+                logger.info("FinishUploadMessage, {}, {}", msg, connectionInfo);
                 FinishUpload2Message finishUploadMessage = (FinishUpload2Message)msg;
                 finishUploadRequestLag.update(System.currentTimeMillis() - finishUploadMessage.getTimestamp());
                 byte ackFlag = finishUploadMessage.getAckFlag();
@@ -199,7 +189,6 @@ public class UploadChannelInboundHandler extends ChannelInboundHandlerAdapter {
                 ShuffleDataWrapper shuffleDataWrapper = (ShuffleDataWrapper)msg;
                 uploadServerHandler.writeRecord(shuffleDataWrapper);
             } else if (msg instanceof CloseConnectionMessage) {
-                logger.debug(msg + ", " + connectionInfo);
                 ctx.close();
             } else {
                 throw new RssInvalidDataException(String.format("Unsupported message: %s, %s", msg, connectionInfo));
@@ -262,7 +251,7 @@ public class UploadChannelInboundHandler extends ChannelInboundHandlerAdapter {
         private void checkIdle(ChannelHandlerContext ctx) {
             if (System.currentTimeMillis() - lastReadTime >= idleTimeoutMillis) {
                 closedIdleUploadChannels.inc(1);
-                logger.info(String.format("Closing idle connection %s", NettyUtils.getServerConnectionInfo(ctx)));
+                logger.info("Closing idle connection {}", NettyUtils.getServerConnectionInfo(ctx));
                 ctx.close();
                 return;
             }

@@ -19,31 +19,29 @@ import com.uber.m3.tally.Gauge;
 import com.uber.rss.clients.ShuffleWriteConfig;
 import com.uber.rss.common.AppShuffleId;
 import com.uber.rss.common.FilePathAndLength;
-import com.uber.rss.exceptions.RssFileCorruptedException;
 import com.uber.rss.exceptions.RssInvalidStateException;
 import com.uber.rss.exceptions.RssShuffleCorruptedException;
 import com.uber.rss.execution.ShuffleExecutor;
 import com.uber.rss.messages.ConnectDownloadRequest;
 import com.uber.rss.messages.ShuffleStageStatus;
-import com.uber.rss.storage.ShuffleFileStorage;
-import com.uber.rss.storage.ShuffleFileUtils;
-import com.uber.rss.storage.ShuffleStorage;
 import com.uber.rss.metrics.M3Stats;
-import com.uber.rss.util.FileUtils;
+import com.uber.rss.storage.ShuffleFileStorage;
+import com.uber.rss.storage.ShuffleStorage;
 import com.uber.rss.util.LogUtils;
 import com.uber.rss.util.NettyUtils;
-import io.netty.channel.*;
+import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelProgressiveFuture;
+import io.netty.channel.ChannelProgressiveFutureListener;
+import io.netty.channel.DefaultFileRegion;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
@@ -114,9 +112,9 @@ public class DownloadServerHandler {
 
         long totalFileLength = persistedBytes.stream().mapToLong(t->t.getLength()).sum();
         if (totalFileLength == 0) {
-            logger.info(String.format(
-                "Total file length is zero: %s, %s",
-                StringUtils.join(persistedBytes, ','), connectionInfoForLogging));
+            logger.info(
+                "Total file length is zero: {}, {}",
+                StringUtils.join(persistedBytes, ','), connectionInfoForLogging);
             return new ArrayList<>();
         } else if (totalFileLength < 0) {
             throw new RssInvalidStateException(String.format(
@@ -135,9 +133,9 @@ public class DownloadServerHandler {
             final int fileIndex = i;
             String splitFile = nonEmptyFiles.get(fileIndex).getPath();
             long fileLength = nonEmptyFiles.get(fileIndex).getLength();
-            logger.info(String.format(
-                "Downloader server sending file: %s (%s of %s, %s bytes), %s",
-                splitFile, fileIndex + 1, nonEmptyFiles.size(), fileLength, connectionInfo));
+            logger.info(
+                "Downloader server sending file: {} ({} of {}, {} bytes), {}",
+                splitFile, fileIndex + 1, nonEmptyFiles.size(), fileLength, connectionInfo);
             // TODO support HDFS in future? need to remove code depending
             // on local file: new File(path)
             // TODO is storage.size(splitFile) reliable or consistent when finishing writing a file?
@@ -165,14 +163,14 @@ public class DownloadServerHandler {
                             ExceptionUtils.getStackTrace(future.cause()));
                     }
                     double dataSpeed = LogUtils.calculateMegaBytesPerSecond(System.currentTimeMillis() - sendFileStartTime, fileLength);
-                    logger.info(String.format(
-                        "Finished sending file: %s (%s of %s), success: %s (%.2f mbs, total %s bytes), connection: %s %s",
-                        splitFile, fileIndex + 1, nonEmptyFiles.size(), future.isSuccess(), dataSpeed, fileLength, connectionInfo, exceptionInfo));
+                    logger.info(
+                        "Finished sending file: {} ({} of {}), success: {} ({} mbs, total {} bytes), connection: {} {}",
+                        splitFile, fileIndex + 1, nonEmptyFiles.size(), future.isSuccess(), dataSpeed, fileLength, connectionInfo, exceptionInfo);
 
                     if (fileIndex == nonEmptyFiles.size() - 1) {
-                        logger.debug(String.format(
-                            "Closing server side channel after sending last file: %s, %s",
-                            splitFile, connectionInfo));
+                        logger.debug(
+                            "Closing server side channel after sending last file: {}, {}",
+                            splitFile, connectionInfo);
                         future.channel().close();
                     }
                 }
@@ -180,9 +178,9 @@ public class DownloadServerHandler {
                 @Override
                 public void operationProgressed(ChannelProgressiveFuture future, long progress, long total) throws Exception {
                     double dataSpeed = LogUtils.calculateMegaBytesPerSecond(System.currentTimeMillis() - sendFileStartTime, progress);
-                    logger.debug(String.format(
-                        "Sending file: %s, progress: %s out of %s bytes, %.2f mbs, %s",
-                        splitFile, progress, total, dataSpeed, connectionInfo));
+                    logger.debug(
+                        "Sending file: {}, progress: {} out of {} bytes, {} mbs, {}",
+                        splitFile, progress, total, dataSpeed, connectionInfo);
                     executor.updateLiveness(appShuffleId.getAppId());
                 }
             });
