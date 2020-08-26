@@ -19,9 +19,9 @@ import com.uber.rss.util.ByteBufUtils;
 public class DataBlockHeader {
   public static int NUM_BYTES = Long.BYTES + Integer.BYTES;
 
-  public static byte[] serializeToBytes(long taskAttemptId, int length) {
+  public static byte[] serializeToBytes(byte[] taskAttemptIdBytes, int length) {
     byte[] bytes = new byte[NUM_BYTES];
-    ByteBufUtils.writeLong(bytes, 0, taskAttemptId);
+    System.arraycopy(taskAttemptIdBytes, 0, bytes, 0, Long.BYTES);
     ByteBufUtils.writeInt(bytes, Long.BYTES, length);
     return bytes;
   }

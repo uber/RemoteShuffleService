@@ -41,6 +41,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
@@ -91,6 +92,10 @@ public class DownloadServerHandler {
             .filter(t->t.getLength() > 0)
             .collect(Collectors.toList());
 
+        if (persistedBytes.isEmpty()) {
+            return Collections.emptyList();
+        }
+
         for (FilePathAndLength filePathAndLength: persistedBytes) {
             if (!storage.exists(filePathAndLength.getPath())) {
                 throw new RssShuffleCorruptedException(String.format(
@@ -115,7 +120,7 @@ public class DownloadServerHandler {
             logger.info(
                 "Total file length is zero: {}, {}",
                 StringUtils.join(persistedBytes, ','), connectionInfoForLogging);
-            return new ArrayList<>();
+            return Collections.emptyList();
         } else if (totalFileLength < 0) {
             throw new RssInvalidStateException(String.format(
                 "Invalid total file length: %s, %s",

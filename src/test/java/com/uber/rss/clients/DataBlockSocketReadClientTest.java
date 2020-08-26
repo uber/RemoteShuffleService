@@ -216,6 +216,40 @@ public class DataBlockSocketReadClientTest {
     }
 
     @Test
+    public void readEmptyShuffleData() {
+        TestStreamServer testServer1 = TestStreamServer.createRunningServer();
+
+        try {
+            String appId = "app1";
+            String appAttempt = "attempt1";
+            int shuffleId = 1;
+            int numMaps = 1;
+            int numPartitions = 10;
+            int mapId = 2;
+            long taskAttemptId = 3;
+            int partitionId = 2;
+            AppTaskAttemptId appTaskAttemptId = new AppTaskAttemptId(appId, appAttempt, shuffleId, mapId, taskAttemptId);
+
+            try (DataBlockSyncWriteClient writeClient = new DataBlockSyncWriteClient("localhost", testServer1.getShufflePort(), TestConstants.NETWORK_TIMEOUT, "user1", "app1", appAttempt)) {
+                writeClient.connect();
+
+                writeClient.startUpload(appTaskAttemptId.getShuffleMapTaskAttemptId(), numMaps, numPartitions, new ShuffleWriteConfig());
+                writeClient.finishUpload(appTaskAttemptId.getTaskAttemptId());
+            }
+
+            AppShufflePartitionId appShufflePartitionId = new AppShufflePartitionId(appId, appAttempt, shuffleId, partitionId);
+            try (DataBlockSocketReadClient readClient = new DataBlockSocketReadClient("localhost", testServer1.getShufflePort(), TestConstants.NETWORK_TIMEOUT, "user1", appShufflePartitionId, Arrays.asList(appTaskAttemptId.getTaskAttemptId()), TestConstants.DATA_AVAILABLE_POLL_INTERVAL, TestConstants.DATA_AVAILABLE_TIMEOUT)) {
+                readClient.connect();
+
+                DataBlock dataBlock = readClient.readDataBlock();
+                Assert.assertNull(dataBlock);
+            }
+        } finally {
+            testServer1.shutdown();
+        }
+    }
+
+    @Test
     public void readLargeData() {
         TestStreamServer testServer1 = TestStreamServer.createRunningServer();
 

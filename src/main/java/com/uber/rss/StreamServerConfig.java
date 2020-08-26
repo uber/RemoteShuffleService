@@ -84,7 +84,7 @@ public class StreamServerConfig {
 
   private String registryServer = null;
 
-  private int maxConnections = 20000;
+  private int maxConnections = 40000;
 
   private int bufferSize = ShuffleFileStorage.DEFAULT_BUFFER_SIZE;
 

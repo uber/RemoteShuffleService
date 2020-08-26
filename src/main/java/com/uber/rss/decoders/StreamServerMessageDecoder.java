@@ -40,6 +40,7 @@ import com.uber.rss.messages.StartUploadMessage;
 import com.uber.rss.metrics.M3Stats;
 import com.uber.rss.metrics.NettyServerSideMetricGroupContainer;
 import com.uber.rss.metrics.ServerHandlerMetrics;
+import com.uber.rss.util.ByteBufUtils;
 import com.uber.rss.util.LogUtils;
 import com.uber.rss.util.NettyUtils;
 import io.netty.buffer.ByteBuf;
@@ -81,6 +82,8 @@ public class StreamServerMessageDecoder extends ByteToMessageDecoder {
   private int controlMessageType = INVALID_CONTROL_MESSAGE_TYPE;
   private int partitionId = INVALID_PARTITION_ID;
   private long taskAttemptId = INVALID_TASK_ATTEMPT_ID;
+  // store bytes for taskAttemptId to speed up serialization in DataBlockHeader.serializeToBytes
+  private final byte[] taskAttemptIdBytes = new byte[Long.BYTES];
 
   private long startTime = System.currentTimeMillis();
   private long numIncomingBytes = 0;
@@ -241,7 +244,8 @@ public class StreamServerMessageDecoder extends ByteToMessageDecoder {
         if (in.readableBytes() < Long.BYTES) {
           return;
         }
-        taskAttemptId = in.readLong();
+        in.readBytes(taskAttemptIdBytes);
+        taskAttemptId = ByteBufUtils.readLong(taskAttemptIdBytes, 0);
         if (taskAttemptId < 0) {
           throw new RssInvalidDataException(String.format(
               "Invalid task attempt id: %s, %s",
@@ -358,7 +362,7 @@ public class StreamServerMessageDecoder extends ByteToMessageDecoder {
 
   private ShuffleDataWrapper createShuffleDataWrapper(ByteBuf in, int byteCount) {
     metrics.getNumIncomingBlocks().inc(1);
-    byte[] headerBytes = DataBlockHeader.serializeToBytes(taskAttemptId, byteCount);
+    byte[] headerBytes = DataBlockHeader.serializeToBytes(taskAttemptIdBytes, byteCount);
     byte[] bytes = new byte[headerBytes.length + byteCount];
     System.arraycopy(headerBytes, 0, bytes, 0, headerBytes.length);
     in.readBytes(bytes, headerBytes.length, byteCount);

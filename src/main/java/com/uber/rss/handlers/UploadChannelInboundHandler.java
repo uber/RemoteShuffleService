@@ -117,7 +117,9 @@ public class UploadChannelInboundHandler extends ChannelInboundHandlerAdapter {
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) {
         try {
-            logger.debug("Got incoming message: {}, {}", msg, connectionInfo);
+            if (logger.isDebugEnabled() && !(msg instanceof ShuffleDataWrapper)) {
+                logger.debug("Got incoming message: {}, {}", msg, connectionInfo);
+            }
 
             if (idleCheck != null) {
                 idleCheck.updateLastReadTime();
