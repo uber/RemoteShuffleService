@@ -14,6 +14,7 @@
 
 package com.uber.rss.handlers;
 
+import com.uber.m3.tally.Gauge;
 import com.uber.m3.tally.Stopwatch;
 import com.uber.rss.metrics.M3Stats;
 import com.uber.rss.tools.FileDescriptorStressTest;
@@ -38,10 +39,7 @@ import static io.netty.buffer.Unpooled.copiedBuffer;
 public class HttpChannelInboundHandler extends ChannelInboundHandlerAdapter {
     private static final Logger logger = LoggerFactory.getLogger(HttpChannelInboundHandler.class);
 
-    private static final RateLimiter nonHealthCheckRateLimiter = RateLimiter.create(10);
-
-    private static final long MIN_TOTAL_DISK_SPACE = 50L * 1024L * 1024L * 1024L; // 50GB
-    private static final long MIN_FREE_DISK_SPACE = 10L * 1024L * 1024L * 1024L; // 10GB
+    private final Gauge healthServerLatency = M3Stats.getDefaultScope().gauge("healthServerLatency");
 
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
@@ -52,7 +50,7 @@ public class HttpChannelInboundHandler extends ChannelInboundHandlerAdapter {
             String responseMessage;
             // TODO More detailed HTTP server, for now it's just the health check
             if (request.uri().startsWith("/health")) {
-                Stopwatch checkFreeSpaceLatencyTimerStopwatch = M3Stats.getDefaultScope().timer("checkFreeSpaceLatency").start();
+                long startTime = System.currentTimeMillis();
                 try {
                     logger.info("Hit /health endpoint sysenv: " + System.getenv("UBER_HEALTH_CHECK_TIMEOUT_RSS"));
                     // disable checkDiskFreeSpace for long time spending to minute level
@@ -64,16 +62,14 @@ public class HttpChannelInboundHandler extends ChannelInboundHandlerAdapter {
                 } finally {
                     responseMessage = "OK";
                     status = HttpResponseStatus.OK;
-                    checkFreeSpaceLatencyTimerStopwatch.stop();
+                    healthServerLatency.update(System.currentTimeMillis() - startTime);
                 }
             } else if (request.uri().startsWith("/threadDump")) {
-                nonHealthCheckRateLimiter.acquire();
                 responseMessage = Arrays.stream(org.apache.spark.util.Utils.getThreadDump())
                         .map(t->String.valueOf(t))
                         .collect(Collectors.joining(System.lineSeparator() + "----------" + System.lineSeparator()));
                 status = HttpResponseStatus.OK;
             } else {
-                nonHealthCheckRateLimiter.acquire();
                 responseMessage = String.format("%s not found", request.uri());
                 status = HttpResponseStatus.NOT_FOUND;
             }

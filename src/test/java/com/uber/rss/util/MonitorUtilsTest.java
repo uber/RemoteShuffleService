@@ -32,6 +32,9 @@ public class MonitorUtilsTest {
         Assert.assertFalse(MonitorUtils.hasRssException("  abc \n def \r abc.RuntimeException() \n\r"));
         Assert.assertTrue(MonitorUtils.hasRssException("  abc \n def \r abc.RssException() \n\r"));
         Assert.assertTrue(MonitorUtils.hasRssException("  abc \n def \r abc.RssXyzException() \n\r"));
+
+        Assert.assertTrue(MonitorUtils.hasRssException("  abc \n def \r abc.OutOfMemoryError() \n\r"));
+        Assert.assertTrue(MonitorUtils.hasRssException("  abc \n def \r abc.KryoException() \n\r"));
     }
 
 }

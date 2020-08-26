@@ -25,6 +25,14 @@ public class MonitorUtils {
       return false;
     }
 
+    if (str.contains("OutOfMemoryError")) {
+      return true;
+    }
+
+    if (str.contains("KryoException")) {
+      return true;
+    }
+
     return pattern.matcher(str).find();
   }
 }
