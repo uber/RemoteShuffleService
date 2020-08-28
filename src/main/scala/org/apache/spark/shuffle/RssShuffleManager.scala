@@ -170,7 +170,7 @@ class RssShuffleManager(conf: SparkConf) extends ShuffleManager with Logging {
     }
 
     val stageAttemptNumber = context.stageAttemptNumber()
-    logInfo(s"getWriter: Use ShuffleManager: ${this.getClass().getSimpleName()}, $handle, mapId: $mapId, stageId: ${context.stageId()}, stageAttemptNumber: $stageAttemptNumber")
+    logInfo(s"getWriter: Use ShuffleManager: ${this.getClass().getSimpleName()}, $handle, mapId: $mapId, stageId: ${context.stageId()}, stageAttemptNumber: $stageAttemptNumber, shuffleId: ${handle.shuffleId}")
 
     handle match {
       case rssShuffleHandle: RssShuffleHandle[K@unchecked, V@unchecked, _] => {
@@ -216,7 +216,7 @@ class RssShuffleManager(conf: SparkConf) extends ShuffleManager with Logging {
               throw new FetchFailedException(
                 bmAddress = RssUtils.createMapTaskDummyBlockManagerId(mapInfo.getMapId, mapInfo.getTaskAttemptId, stageAttemptNumber),
                 shuffleId = rssShuffleHandle.shuffleId,
-                mapId = mapId,
+                mapId = -1,
                 reduceId = 0,
                 message = s"Failed to get server detail for $serverId from shuffle handle: $rssShuffleHandle")
             }
@@ -237,7 +237,7 @@ class RssShuffleManager(conf: SparkConf) extends ShuffleManager with Logging {
               throw new FetchFailedException(
                 bmAddress = RssUtils.createMapTaskDummyBlockManagerId(mapInfo.getMapId, mapInfo.getTaskAttemptId, stageAttemptNumber),
                 shuffleId = rssShuffleHandle.shuffleId,
-                mapId = mapId,
+                mapId = -1,
                 reduceId = 0,
                 message = s"Detected server restart, current server: $refreshedServer, previous server: $serverDetailInShuffleHandle")
             }
@@ -339,7 +339,6 @@ class RssShuffleManager(conf: SparkConf) extends ShuffleManager with Logging {
         endPartition)
     }
 
-    val bufferSize = conf.get(RssOpts.readerBufferSize)
     val queueSize = conf.get(RssOpts.readerQueueSize)
 
     // TODO use serializer from depedency.serializer, which may be UnsafeRowSerializerInstance and does not implement method to serialize single object
@@ -367,7 +366,6 @@ class RssShuffleManager(conf: SparkConf) extends ShuffleManager with Logging {
       dataAvailablePollInterval = pollInterval,
       dataAvailableWaitTime = dataAvailableWaitTime,
       dataCompressed = rssCompressionBufferSize > 0,
-      bufferSize = bufferSize,
       queueSize = queueSize,
       shuffleReplicas = rssReplicas,
       checkShuffleReplicaConsistency = rssCheckReplicaConsistency)

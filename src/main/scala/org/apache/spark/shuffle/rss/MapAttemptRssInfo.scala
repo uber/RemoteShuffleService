@@ -28,6 +28,6 @@ import com.uber.rss.common.ServerList
 case class MapAttemptRssInfo(mapId: Int, taskAttemptId: Long, stageAttemptNumber: Int, rssServers: ServerList) {
   override def toString: String = {
     val rssServersStr = JavaConversions.asScalaBuffer(rssServers.getSevers).mkString(",")
-    s"MapAttemptRssServers(mapId: $mapId, taskAttemptId: $taskAttemptId, stageAttemptNumber: $stageAttemptNumber, rssServers: $rssServersStr)"
+    s"MapAttemptRssInfo(mapId: $mapId, taskAttemptId: $taskAttemptId, stageAttemptNumber: $stageAttemptNumber, rssServers: $rssServersStr)"
   }
 }

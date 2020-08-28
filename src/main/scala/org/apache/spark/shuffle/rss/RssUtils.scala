@@ -25,12 +25,13 @@ import com.uber.rss.common.{AppShufflePartitionId, ServerDetail, ServerList, Ser
 import com.uber.rss.exceptions.RssException
 import com.uber.rss.util.RetryUtils
 import org.apache.spark.SparkEnv
+import org.apache.spark.internal.Logging
 import org.apache.spark.shuffle.RssShuffleServerHandle
 import org.apache.spark.storage.BlockManagerId
 
 import scala.collection.{JavaConverters, immutable}
 
-object RssUtils {
+object RssUtils extends Logging {
 
   def getRssServerReplicationGroups(rssServers: ServerList, numReplicas: Int, partitionId: Int, partitionFanout: Int): java.util.List[ServerReplicationGroup] = {
     ServerReplicationGroupUtil.createReplicationGroupsForPartition(rssServers.getSevers, numReplicas, partitionId, partitionFanout)
@@ -91,7 +92,7 @@ object RssUtils {
   def getRssInfoFromMapOutputTracker(shuffleId: Int, partition: Int, retryIntervalMillis: Long, maxRetryMillis: Long): MapOutputRssInfo = {
     // this hash map stores rss servers for each map task's latest attempt
     val mapLatestAttemptRssServers = scala.collection.mutable.HashMap[Int, MapAttemptRssInfo]()
-    val rssServerInfoList =
+    val mapAttemptRssInfoList =
       RetryUtils.retry(retryIntervalMillis,
         retryIntervalMillis * 10,
         maxRetryMillis,
@@ -103,16 +104,19 @@ object RssUtils {
           }
         })
 
-    if (rssServerInfoList.isEmpty) {
+    if (mapAttemptRssInfoList.isEmpty) {
       throw new RssException(s"Failed to get information from map output tracker, shuffleId: $shuffleId, partition: $partition")
     }
-    val stageAttemptNumber = rssServerInfoList.map(_.stageAttemptNumber).max
-    for (mapAttemptRssServers <- rssServerInfoList) {
-      if (mapAttemptRssServers.stageAttemptNumber == stageAttemptNumber) {
-        val mapId = mapAttemptRssServers.mapId
+    val stageAttemptNumbers = mapAttemptRssInfoList.map(_.stageAttemptNumber).distinct.toList
+    val stageAttemptNumbersStr = stageAttemptNumbers.mkString(",")
+    val stageAttemptNumber = stageAttemptNumbers.max
+    logInfo(s"Found ${stageAttemptNumbers.size} stage attempts for shuffle $shuffleId: $stageAttemptNumbersStr, use $stageAttemptNumber as latest stage attempt number")
+    for (mapAttemptRssInfo <- mapAttemptRssInfoList) {
+      if (mapAttemptRssInfo.stageAttemptNumber == stageAttemptNumber) {
+        val mapId = mapAttemptRssInfo.mapId
         val oldValue = mapLatestAttemptRssServers.get(mapId)
-        if (oldValue.isEmpty || oldValue.get.taskAttemptId < mapAttemptRssServers.taskAttemptId) {
-          mapLatestAttemptRssServers.put(mapId, mapAttemptRssServers)
+        if (oldValue.isEmpty || oldValue.get.taskAttemptId < mapAttemptRssInfo.taskAttemptId) {
+          mapLatestAttemptRssServers.put(mapId, mapAttemptRssInfo)
         }
       }
     }
@@ -125,7 +129,7 @@ object RssUtils {
       .map(_.taskAttemptId)
       .toArray
       .distinct
-    new MapOutputRssInfo(numMaps, serverLists, latestTaskAttemptIds)
+    new MapOutputRssInfo(numMaps, serverLists, stageAttemptNumber, latestTaskAttemptIds)
   }
 
   /**

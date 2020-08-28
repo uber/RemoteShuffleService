@@ -49,7 +49,6 @@ class BlockDownloaderPartitionRangeRecordIterator[K, C](
     dataAvailablePollInterval: Long,
     dataAvailableWaitTime: Long,
     dataCompressed: Boolean,
-    bufferSize: Int,
     queueSize: Int,
     shuffleReplicas: Int,
     checkShuffleReplicaConsistency: Boolean,
@@ -157,7 +156,7 @@ class BlockDownloaderPartitionRangeRecordIterator[K, C](
         throw new FetchFailedException(
           RssUtils.createReduceTaskDummyBlockManagerId(shuffleId, partition),
           shuffleId,
-          0,
+          -1,
           partition,
           s"Cannot fetch shuffle $shuffleId partition $partition due to ${ExceptionUtils.getSimpleMessage(ex)})",
           ex)
@@ -206,7 +205,7 @@ class BlockDownloaderPartitionRangeRecordIterator[K, C](
 
     val mapOutputRssInfo = RssUtils.getRssInfoFromMapOutputTracker(shuffleId, partition, dataAvailablePollInterval, maxRetryMillis)
     if (mapOutputRssInfo.numMaps != numMaps) {
-      throw new RssInvalidMapStatusException(s"Invalid number of maps from map output tracker, expected: $numMaps, got: ${mapOutputRssInfo.numMaps}")
+      throw new RssInvalidMapStatusException(s"Invalid number of maps from map output tracker, expected: $numMaps, got: ${mapOutputRssInfo.numMaps}, more info: $mapOutputRssInfo")
     }
 
     val arrayOfRssServerLists = mapOutputRssInfo.serverLists

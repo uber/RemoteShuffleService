@@ -30,6 +30,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class UploadChannelManager {
+    public static final int DEFAULT_MAX_CONNECTIONS = 40000;
+
     private static final Logger logger = LoggerFactory.getLogger(UploadChannelManager.class);
     
     // TODO monitor and clean up channels
@@ -37,7 +39,7 @@ public class UploadChannelManager {
 
     private AtomicInteger numConnections = new AtomicInteger();
 
-    private int maxConnections = 10000;
+    private int maxConnections = DEFAULT_MAX_CONNECTIONS;
     
     public UploadChannelManager(ScheduledExecutorService scheduledExecutorService, int throttleMemoryPercentage, long maxUploadPauseMillis) {
         MemoryMonitor memoryMonitor = new MemoryMonitor();

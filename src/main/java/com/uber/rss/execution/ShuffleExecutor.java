@@ -614,7 +614,6 @@ public class ShuffleExecutor {
         AppShuffleId appShuffleId = appShuffleIds.get(0);
         ExecutorShuffleStageState stageState = getStageState(appShuffleId);
         synchronized (stageState) {
-          logger.info(String.format("flushPartitions: %s, number of task attempts: %s", appShuffleId, appTaskAttemptIds.size()));
           try {
               stageState.flushAllPartitions();
               for (AppTaskAttemptId appTaskAttemptId: appTaskAttemptIds) {

@@ -77,11 +77,6 @@ object RssOpts {
       .doc("max wait time in shuffle reader to wait data ready in the shuffle server.")
       .longConf
       .createWithDefault(6*60*1000L)
-  val readerBufferSize: ConfigEntry[Int] =
-    ConfigBuilder("spark.shuffle.rss.reader.bufferSize")
-      .doc("buffer size to use for shuffle reader to read from shuffle server.")
-      .intConf
-      .createWithDefault(ShuffleFileStorage.DEFAULT_BUFFER_SIZE)
   val readerQueueSize: ConfigEntry[Int] =
     ConfigBuilder("spark.shuffle.rss.reader.queueSize")
       .doc("reader queue size to use for shuffle reader to read from shuffle server when using background threads.")
@@ -116,7 +111,7 @@ object RssOpts {
     ConfigBuilder("spark.shuffle.rss.compressionBufferSize")
       .doc("compression buffer size if using compressed clients.")
       .intConf
-      .createWithDefault(64 * 1024)
+      .createWithDefault(32 * 1024)
   val fileCompressionCodec: ConfigEntry[String] =
     ConfigBuilder("spark.shuffle.rss.fileCompressionCodec")
       .doc("shuffle file compression codec.")

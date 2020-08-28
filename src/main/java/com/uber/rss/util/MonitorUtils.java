@@ -33,6 +33,10 @@ public class MonitorUtils {
       return true;
     }
 
+    if (str.contains("exceeding memory limits")) {
+      return true;
+    }
+
     return pattern.matcher(str).find();
   }
 }

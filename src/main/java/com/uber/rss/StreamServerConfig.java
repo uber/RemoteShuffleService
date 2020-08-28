@@ -17,6 +17,7 @@ package com.uber.rss;
 import com.uber.rss.clients.ClientConstants;
 import com.uber.rss.common.Compression;
 import com.uber.rss.execution.ShuffleExecutor;
+import com.uber.rss.handlers.UploadChannelManager;
 import com.uber.rss.metadata.ServiceRegistry;
 import com.uber.rss.metadata.ZooKeeperServiceRegistry;
 import com.uber.rss.storage.ShuffleFileStorage;
@@ -84,7 +85,7 @@ public class StreamServerConfig {
 
   private String registryServer = null;
 
-  private int maxConnections = 40000;
+  private int maxConnections = UploadChannelManager.DEFAULT_MAX_CONNECTIONS;
 
   private int bufferSize = ShuffleFileStorage.DEFAULT_BUFFER_SIZE;
 
