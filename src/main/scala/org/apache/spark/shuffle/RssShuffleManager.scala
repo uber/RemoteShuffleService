@@ -30,13 +30,8 @@ import org.apache.commons.lang3.StringUtils
 import org.apache.spark._
 import org.apache.spark.internal.Logging
 import org.apache.spark.shuffle.rss.{RssSparkListener, RssUtils}
-import org.apache.spark.shuffle.sort.SortShuffleManager
 
 import scala.collection.JavaConverters
-
-object RssShuffleManager {
-  val numFallbackSortShuffle = M3Stats.getDefaultScope.counter("numFallbackSortShuffle")
-}
 
 class RssShuffleManager(conf: SparkConf) extends ShuffleManager with Logging {
   logInfo(s"Creating ShuffleManager instance: ${this.getClass.getSimpleName}, version: ${RssBuildInfo.Version}, revision: ${RssBuildInfo.Revision}")
@@ -61,16 +56,6 @@ class RssShuffleManager(conf: SparkConf) extends ShuffleManager with Logging {
 
   private val rssCompressionBufferSize = conf.get(RssOpts.compressionBufferSize)
 
-  // This is for test support only
-  private var fallbackToOriginalSparkShuffleTestFlag = false
-  private var sortShuffleManager: SortShuffleManager = null
-  def fallbackToOriginalSparkShuffle(fallback: Boolean): Unit = {
-    if (fallback) {
-      RssShuffleManager.numFallbackSortShuffle.inc(1)
-    }
-    fallbackToOriginalSparkShuffleTestFlag = fallback
-  }
-
   private def getSparkContext = {
     SparkContext.getActive.get
   }
@@ -81,12 +66,8 @@ class RssShuffleManager(conf: SparkConf) extends ShuffleManager with Logging {
     // RSS does not support speculation yet, due to the random task attempt ids (finished map task attempt id not always increasing).
     // We will fall back to SortShuffleManager if speculation is configured to true.
     val useSpeculation = conf.getBoolean("spark.speculation", false)
-    if (fallbackToOriginalSparkShuffleTestFlag || useSpeculation) {
-      if (sortShuffleManager == null) {
-        sortShuffleManager = new SortShuffleManager(conf)
-      }
-      logInfo(s"Use ShuffleManager: ${sortShuffleManager.getClass().getSimpleName()}")
-      return sortShuffleManager.registerShuffle(shuffleId, numMaps, dependency)
+    if (useSpeculation) {
+      throw new RssException("Do not support speculation in Remote Shuffle Service")
     }
 
     logInfo(s"Use ShuffleManager: ${this.getClass().getSimpleName()}")
@@ -106,32 +87,15 @@ class RssShuffleManager(conf: SparkConf) extends ShuffleManager with Logging {
     val excludeHostsConfigValue = conf.get(RssOpts.excludeHosts)
     val excludeHosts = excludeHostsConfigValue.split(",").filter(!_.isEmpty).distinct
 
-    try {
-      rssServerSelectionResult = getRssServers(numMaps, numPartitions, excludeHosts)
-      val rssServers = rssServerSelectionResult.servers
-      logInfo(s"Selected ${rssServers.size} RSS servers for shuffle $shuffleId, maps: $numMaps, partitions: $numPartitions, replicas: ${rssServerSelectionResult.replicas}, partition fanout: ${rssServerSelectionResult.partitionFanout}, ${rssServers.mkString(",")}")
+    rssServerSelectionResult = getRssServers(numMaps, numPartitions, excludeHosts)
+    val rssServers = rssServerSelectionResult.servers
+    logInfo(s"Selected ${rssServers.size} RSS servers for shuffle $shuffleId, maps: $numMaps, partitions: $numPartitions, replicas: ${rssServerSelectionResult.replicas}, partition fanout: ${rssServerSelectionResult.partitionFanout}, ${rssServers.mkString(",")}")
 
-      val tagMap = new java.util.HashMap[String, String]()
-      tagMap.put(RssDataCenterTagName, dataCenter)
-      tagMap.put(RssClusterTagName, cluster)
-      tagMap.put(UserMetricTagName, user)
-      M3Stats.getDefaultScope.tagged(tagMap).gauge(NumRssServersMetricName).update(rssServers.length)
-    } catch {
-      case e: Throwable => {
-        M3Stats.addException( e, this.getClass().getSimpleName() )
-
-        val tagMap = new java.util.HashMap[String, String]()
-        tagMap.put(RssDataCenterTagName, dataCenter)
-        tagMap.put(RssClusterTagName, cluster)
-        tagMap.put(UserMetricTagName, user)
-        M3Stats.getDefaultScope.tagged(tagMap).counter(FailToGetRssServersMetricName).inc(1)
-
-        logWarning( s"Fallback to sort shuffle because failed to get remote shuffle servers", e )
-        fallbackToOriginalSparkShuffle( true )
-        sortShuffleManager = new SortShuffleManager( conf )
-        return sortShuffleManager.registerShuffle( shuffleId, numMaps, dependency )
-      }
-    }
+    val tagMap = new java.util.HashMap[String, String]()
+    tagMap.put(RssDataCenterTagName, dataCenter)
+    tagMap.put(RssClusterTagName, cluster)
+    tagMap.put(UserMetricTagName, user)
+    M3Stats.getDefaultScope.tagged(tagMap).gauge(NumRssServersMetricName).update(rssServers.length)
 
     RssSparkListener.registerSparkListenerOnlyOnce(sparkContext, () =>
       new RssSparkListener(
@@ -164,11 +128,6 @@ class RssShuffleManager(conf: SparkConf) extends ShuffleManager with Logging {
 
   // This method is called in Spark executor, getting information from Spark driver via the ShuffleHandle.
   override def getWriter[K, V](handle: ShuffleHandle, mapId: Int, context: TaskContext): ShuffleWriter[K, V] = {
-    if (checkShuffleHandleAndFallbackToOriginalSparkShuffle(handle)) {
-      logInfo(s"getWriter: Use ShuffleManager: ${sortShuffleManager.getClass().getSimpleName()}, $handle, mapId: $mapId")
-      return sortShuffleManager.getWriter(handle, mapId, context)
-    }
-
     val stageAttemptNumber = context.stageAttemptNumber()
     logInfo(s"getWriter: Use ShuffleManager: ${this.getClass().getSimpleName()}, $handle, mapId: $mapId, stageId: ${context.stageId()}, stageAttemptNumber: $stageAttemptNumber, shuffleId: ${handle.shuffleId}")
 
@@ -318,11 +277,6 @@ class RssShuffleManager(conf: SparkConf) extends ShuffleManager with Logging {
 
   // This method is called in Spark executor, getting information from Spark driver via the ShuffleHandle.
   override def getReader[K, C](handle: ShuffleHandle, startPartition: Int, endPartition: Int, context: TaskContext): ShuffleReader[K, C] = {
-    if (checkShuffleHandleAndFallbackToOriginalSparkShuffle(handle)) {
-      logInfo(s"getReader: Use ShuffleManager: ${sortShuffleManager.getClass().getSimpleName()}, $handle, partitions: [$startPartition, $endPartition)")
-      return sortShuffleManager.getReader(handle, startPartition, endPartition, context)
-    }
-
     logInfo(s"getReader: Use ShuffleManager: ${this.getClass().getSimpleName()}, $handle, partitions: [$startPartition, $endPartition)")
 
     val rssShuffleHandle = handle.asInstanceOf[RssShuffleHandle[K, _, C]]
@@ -372,10 +326,6 @@ class RssShuffleManager(conf: SparkConf) extends ShuffleManager with Logging {
   }
 
   override def unregisterShuffle(shuffleId: Int): Boolean = {
-    if (sortShuffleManager != null) {
-      return sortShuffleManager.unregisterShuffle(shuffleId)
-    }
-    
     if (shuffleClientStageMetrics != null) {
       shuffleClientStageMetrics.close()
     }
@@ -384,17 +334,10 @@ class RssShuffleManager(conf: SparkConf) extends ShuffleManager with Logging {
   }
 
   override def shuffleBlockResolver: ShuffleBlockResolver = {
-    if (sortShuffleManager != null) {
-      return sortShuffleManager.shuffleBlockResolver
-    }
-    
     new RssShuffleBlockResolver()
   }
 
   override def stop(): Unit = {
-    if (sortShuffleManager != null) {
-      sortShuffleManager.stop()
-    }
     PooledWriteClientFactory.getInstance().shutdown();
     serviceRegistry.close()
     M3Stats.closeDefaultScope()
@@ -485,15 +428,5 @@ class RssShuffleManager(conf: SparkConf) extends ShuffleManager with Logging {
       shuffleClientStageMetrics = new ShuffleClientStageMetrics(shuffleClientStageMetricsKey)
     }
   }
-  
-  private def checkShuffleHandleAndFallbackToOriginalSparkShuffle(handle: ShuffleHandle) =  {
-    // Fallback to original Spark sort shuffle if handle is not RssShuffleHandle
-    val needFallback = !handle.isInstanceOf[RssShuffleHandle[_, _, _]]
-    if (needFallback) {
-      if (sortShuffleManager == null) {
-        sortShuffleManager = new SortShuffleManager(conf)
-      }
-    }
-    needFallback
-  }
+
 }

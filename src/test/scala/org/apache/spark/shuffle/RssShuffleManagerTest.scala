@@ -16,9 +16,9 @@ package org.apache.spark.shuffle
 
 import java.util.UUID
 
+import com.uber.rss.exceptions.RssException
 import com.uber.rss.testutil.RssZookeeperCluster
 import com.uber.rss.util.NetworkUtils
-import org.apache.spark.shuffle.sort.BypassMergeSortShuffleHandle
 import org.apache.spark.{HashPartitioner, MapOutputTrackerMaster, ShuffleDependency, SparkConf, SparkContext, SparkEnv}
 import org.scalatest.Assertions._
 import org.testng.annotations._
@@ -53,60 +53,60 @@ class RssShuffleManagerTest {
   @Test
   def runWithSyncClient(): Unit = {
     val conf = TestUtil.newSparkConfWithZooKeeperRegistryServer(appId, rssTestCluster.getZooKeeperServers)
-    runWithSparkConf(conf, disableRss = false)
+    runWithSparkConf(conf)
   }
 
   @Test
   def runWithSyncClient_recordWithNullKeyValue(): Unit = {
     val conf = TestUtil.newSparkConfWithZooKeeperRegistryServer(appId, rssTestCluster.getZooKeeperServers)
-    runWithSparkConf_recordWithNullKeyValue(conf, disableRss = false)
+    runWithSparkConf_recordWithNullKeyValue(conf)
   }
 
   @Test
   def runWithDefaultConfig(): Unit = {
     val conf = TestUtil.newSparkConfWithZooKeeperRegistryServer(appId, rssTestCluster.getZooKeeperServers)
-    runWithSparkConf(conf, disableRss = false)
+    runWithSparkConf(conf)
   }
 
   @Test
   def runWithWriterAsyncFinish(): Unit = {
     val conf = TestUtil.newSparkConfWithZooKeeperRegistryServer(appId, rssTestCluster.getZooKeeperServers)
     conf.set("spark.shuffle.rss.writer.asyncFinish", "true")
-    runWithSparkConf(conf, disableRss = false)
+    runWithSparkConf(conf)
   }
 
   @Test
   def runWithSyncWriter(): Unit = {
     val conf = TestUtil.newSparkConfWithZooKeeperRegistryServer(appId, rssTestCluster.getZooKeeperServers)
     conf.set("spark.shuffle.rss.writer.queueSize", "0")
-    runWithSparkConf(conf, disableRss = false)
+    runWithSparkConf(conf)
   }
   
   @Test
   def runWithAsyncWriter(): Unit = {
     val conf = TestUtil.newSparkConfWithZooKeeperRegistryServer(appId, rssTestCluster.getZooKeeperServers)
     conf.set("spark.shuffle.rss.writer.queueSize", "100")
-    runWithSparkConf(conf, disableRss = false)
+    runWithSparkConf(conf)
   }
 
   @Test
   def run_compressed(): Unit = {
     val conf = TestUtil.newSparkConfWithZooKeeperRegistryServer(appId, rssTestCluster.getZooKeeperServers)
-    runWithSparkConf(conf, disableRss = false)
+    runWithSparkConf(conf)
   }
 
   @Test
   def run_uncompressed(): Unit = {
     val conf = TestUtil.newSparkConfWithZooKeeperRegistryServer(appId, rssTestCluster.getZooKeeperServers)
     conf.set("spark.shuffle.rss.compressionBufferSize", "0")
-    runWithSparkConf(conf, disableRss = false)
+    runWithSparkConf(conf)
   }
 
   @Test
   def run_singleSplit(): Unit = {
     val conf = TestUtil.newSparkConfWithZooKeeperRegistryServer(appId, rssTestCluster.getZooKeeperServers)
     conf.set("spark.shuffle.rss.numSplits", "1")
-    runWithSparkConf(conf, disableRss = false)
+    runWithSparkConf(conf)
   }
 
   @Test
@@ -114,37 +114,37 @@ class RssShuffleManagerTest {
     val conf = TestUtil.newSparkConfWithZooKeeperRegistryServer(appId, rssTestCluster.getZooKeeperServers)
     conf.set("spark.shuffle.rss.useConnectionPool", "false")
     conf.set("spark.shuffle.rss.numSplits", "3")
-    runWithSparkConf(conf, disableRss = false)
+    runWithSparkConf(conf)
   }
 
   @Test
   def runWithConnectionPool_compressed(): Unit = {
     val conf = TestUtil.newSparkConfWithZooKeeperRegistryServer(appId, rssTestCluster.getZooKeeperServers)
     conf.set("spark.shuffle.rss.useConnectionPool", "true")
-    runWithSparkConf(conf, disableRss = false)
+    runWithSparkConf(conf)
   }
 
   @Test
   def runWithRssDisabled(): Unit = {
     val conf = TestUtil.newSparkConfWithZooKeeperRegistryServer(appId, rssTestCluster.getZooKeeperServers)
-    runWithSparkConf(conf, disableRss = true)
+    runWithSparkConf(conf)
   }
 
   @Test
   def runWithMaxServerCountEqualOne(): Unit = {
     val conf = TestUtil.newSparkConfWithZooKeeperRegistryServer(appId, rssTestCluster.getZooKeeperServers)
     conf.set("spark.shuffle.rss.maxServerCount", "1")
-    runWithSparkConf(conf, disableRss = false)
+    runWithSparkConf(conf)
   }
 
   @Test
   def runWithMaxServerCountEqualMaxInteger(): Unit = {
     val conf = TestUtil.newSparkConfWithZooKeeperRegistryServer(appId, rssTestCluster.getZooKeeperServers)
     conf.set("spark.shuffle.rss.maxServerCount", Integer.MAX_VALUE.toString())
-    runWithSparkConf(conf, disableRss = false)
+    runWithSparkConf(conf)
   }
 
-  @Test
+  @Test(expectedExceptions = Array(classOf[RssException]))
   def excludeHosts(): Unit = {
     val conf = TestUtil.newSparkConfWithZooKeeperRegistryServer(appId, rssTestCluster.getZooKeeperServers)
     conf.set("spark.shuffle.rss.excludeHosts", s"localhost,${NetworkUtils.getLocalHostName},${NetworkUtils.getLocalFQDN}")
@@ -163,20 +163,14 @@ class RssShuffleManagerTest {
       .partitionBy(new HashPartitioner(numPartitions))
     val shuffleDependency = new ShuffleDependency[Int, Int, Int](rdd, rdd.partitioner.get)
 
-    val shuffleHandle = driverShuffleManager.registerShuffle(shuffleId, numMaps, shuffleDependency)
-
-    // localhost RSS server is excluded, thus there is no RSS server, and it will fallback to original Spark shuffle
-    assert(shuffleHandle.getClass.getSimpleName === "BypassMergeSortShuffleHandle")
+    driverShuffleManager.registerShuffle(shuffleId, numMaps, shuffleDependency)
   }
 
-  def runWithSparkConf(conf: SparkConf, disableRss: Boolean): Unit = {
+  def runWithSparkConf(conf: SparkConf): Unit = {
     sc = new SparkContext(conf)
 
     val driverShuffleManager = new RssShuffleManager(conf)
     shuffleManagers :+= driverShuffleManager
-    if (disableRss) {
-      driverShuffleManager.fallbackToOriginalSparkShuffle(true)
-    }
 
     val shuffleId = 1
     val numMaps = 10
@@ -210,44 +204,37 @@ class RssShuffleManagerTest {
 
     assert(mapStatus.size === numMaps)
 
-    // Only read records when disableRss is false. When disableRss is true, RssShuffleManager will
-    // fall back to original Spark shuffle, and we could not read records correctly due to using mock task context.
-    if (!disableRss) {
-      {
-        val startPartition = 0
-        val endPartition = 0
-        val reduceTaskContext = new MockTaskContext( shuffleId, startPartition )
-        val shuffleReader = executorShuffleManager.getReader( shuffleHandle, startPartition, endPartition, reduceTaskContext )
-        val readRecords = shuffleReader.read().toList
-        assert( readRecords.size === numMaps * numValuesInMap / numPartitions )
-      }
-      {
-        val startPartition = 0
-        val endPartition = 1
-        val reduceTaskContext = new MockTaskContext( shuffleId, startPartition )
-        val shuffleReader = executorShuffleManager.getReader( shuffleHandle, startPartition, endPartition, reduceTaskContext )
-        val readRecords = shuffleReader.read().toList
-        assert( readRecords.size === numMaps * numValuesInMap / numPartitions )
-      }
-      {
-        val startPartition = 0
-        val endPartition = 2
-        val reduceTaskContext = new MockTaskContext( shuffleId, startPartition )
-        val shuffleReader = executorShuffleManager.getReader( shuffleHandle, startPartition, endPartition, reduceTaskContext )
-        val readRecords = shuffleReader.read().toList
-        assert( readRecords.size === 2 * numMaps * numValuesInMap / numPartitions )
-      }
+    {
+      val startPartition = 0
+      val endPartition = 0
+      val reduceTaskContext = new MockTaskContext( shuffleId, startPartition )
+      val shuffleReader = executorShuffleManager.getReader( shuffleHandle, startPartition, endPartition, reduceTaskContext )
+      val readRecords = shuffleReader.read().toList
+      assert( readRecords.size === numMaps * numValuesInMap / numPartitions )
+    }
+    {
+      val startPartition = 0
+      val endPartition = 1
+      val reduceTaskContext = new MockTaskContext( shuffleId, startPartition )
+      val shuffleReader = executorShuffleManager.getReader( shuffleHandle, startPartition, endPartition, reduceTaskContext )
+      val readRecords = shuffleReader.read().toList
+      assert( readRecords.size === numMaps * numValuesInMap / numPartitions )
+    }
+    {
+      val startPartition = 0
+      val endPartition = 2
+      val reduceTaskContext = new MockTaskContext( shuffleId, startPartition )
+      val shuffleReader = executorShuffleManager.getReader( shuffleHandle, startPartition, endPartition, reduceTaskContext )
+      val readRecords = shuffleReader.read().toList
+      assert( readRecords.size === 2 * numMaps * numValuesInMap / numPartitions )
     }
   }
 
-  def runWithSparkConf_recordWithNullKeyValue(conf: SparkConf, disableRss: Boolean): Unit = {
+  def runWithSparkConf_recordWithNullKeyValue(conf: SparkConf): Unit = {
     sc = new SparkContext(conf)
 
     val driverShuffleManager = new RssShuffleManager(conf)
     shuffleManagers :+= driverShuffleManager
-    if (disableRss) {
-      driverShuffleManager.fallbackToOriginalSparkShuffle(true)
-    }
 
     val shuffleId = 1
     val mapId = 0
