@@ -112,7 +112,6 @@ public class StreamServer {
                 serverConfig.getStorage(),
                 serverConfig.isFsyncEnabled(),
                 serverConfig.isDaemonExecutorThread(),
-                serverConfig.getNumSplits(),
                 serverConfig.getAppMemoryRetentionMillis(),
                 serverConfig.getFileCompressionCodec(),
                 serverConfig.getAppMaxWriteBytes(),

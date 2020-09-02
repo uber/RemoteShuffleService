@@ -759,7 +759,6 @@ public class StreamServerStressTool {
             serverConfig.setNettyWorkerThreads(numServerThreads);
             serverConfig.setStorage(storage);
             serverConfig.setFsyncEnabled(fsyncEnabled);
-            serverConfig.setNumSplits(numSplits);
             serverConfig.setShufflePort(0);
             serverConfig.setHttpPort(0);
             serverConfig.setJFxDebugProfilerEnable(false);

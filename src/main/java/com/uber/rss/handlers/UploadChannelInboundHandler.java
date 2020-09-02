@@ -23,7 +23,6 @@ import com.uber.rss.exceptions.RssInvalidDataException;
 import com.uber.rss.exceptions.RssMaxConnectionsException;
 import com.uber.rss.exceptions.RssTooMuchDataException;
 import com.uber.rss.execution.ShuffleExecutor;
-import com.uber.rss.messages.FinishUpload2Message;
 import com.uber.rss.messages.FinishUploadMessage;
 import com.uber.rss.messages.MessageConstants;
 import com.uber.rss.messages.ShuffleDataWrapper;
@@ -175,14 +174,9 @@ public class UploadChannelInboundHandler extends ChannelInboundHandlerAdapter {
                 logger.info("FinishUploadMessage, {}, {}", msg, connectionInfo);
                 FinishUploadMessage finishUploadMessage = (FinishUploadMessage)msg;
                 finishUploadRequestLag.update(System.currentTimeMillis() - finishUploadMessage.getTimestamp());
-                uploadServerHandler.finishUpload(finishUploadMessage.getTaskAttemptId());
-            } else if (msg instanceof FinishUpload2Message) {
-                logger.info("FinishUploadMessage, {}, {}", msg, connectionInfo);
-                FinishUpload2Message finishUploadMessage = (FinishUpload2Message)msg;
-                finishUploadRequestLag.update(System.currentTimeMillis() - finishUploadMessage.getTimestamp());
                 byte ackFlag = finishUploadMessage.getAckFlag();
                 uploadServerHandler.finishUpload(finishUploadMessage.getTaskAttemptId());
-                if (ackFlag != FinishUpload2Message.ACK_FLAG_NO_ACK) {
+                if (ackFlag != FinishUploadMessage.ACK_FLAG_NO_ACK) {
                     ByteBuf buf = ctx.alloc().buffer(1);
                     buf.writeByte(MessageConstants.RESPONSE_STATUS_OK);
                     ctx.writeAndFlush(buf);

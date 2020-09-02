@@ -28,7 +28,6 @@ public class MessageConstants {
     public final static byte RESPONSE_STATUS_OK = 20;
     public final static byte RESPONSE_STATUS_SHUFFLE_STAGE_NOT_STARTED = 44;
     public final static byte RESPONSE_STATUS_FILE_CORRUPTED = 45;
-    public final static byte RESPONSE_STATUS_MISSING_SHUFFLE_WRITE_CONFIG = 46;
     public final static byte RESPONSE_STATUS_SERVER_BUSY = 53;
     public final static byte RESPONSE_STATUS_APP_TOO_MUCH_DATA = 54;
     public final static byte RESPONSE_STATUS_STALE_TASK_ATTEMPT = 55;
@@ -48,7 +47,6 @@ public class MessageConstants {
     public final static int MESSAGE_ConnectUploadRequest = -301;
     public final static int MESSAGE_ConnectUploadResponse = -302;
     public final static int MESSAGE_StartUploadMessage = -303;
-    public final static int MESSAGE_FinishUploadMessage = -315;
     public final static int MESSAGE_FinishUpload2Message = -317;
     public final static int MESSAGE_ConnectDownloadRequest = -316;
     public final static int MESSAGE_ConnectDownloadResponse = -307;
@@ -61,7 +59,6 @@ public class MessageConstants {
 
     // State store data item
     public final static int MESSAGE_StageInfoStateItem = -401;
-    public final static int MESSAGE_PartitionFileStateItem = -403;
     public final static int MESSAGE_AppDeletionStateItem = -404;
     public final static int MESSAGE_StageCorruptionStateItem = -405;
     public final static int MESSAGE_TaskAttemptCommitStateItem = -407;

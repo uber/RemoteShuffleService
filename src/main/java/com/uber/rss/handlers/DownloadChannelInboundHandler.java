@@ -22,6 +22,7 @@ import com.uber.rss.common.AppShufflePartitionId;
 import com.uber.rss.common.FilePathAndLength;
 import com.uber.rss.common.MapTaskCommitStatus;
 import com.uber.rss.exceptions.RssInvalidDataException;
+import com.uber.rss.exceptions.RssShuffleStageNotStartedException;
 import com.uber.rss.execution.ShuffleExecutor;
 import com.uber.rss.messages.BaseMessage;
 import com.uber.rss.messages.ConnectDownloadRequest;
@@ -116,15 +117,17 @@ public class DownloadChannelInboundHandler extends ChannelInboundHandlerAdapter 
                 );
                 knownLatestTaskAttemptIds = connectRequest.getTaskAttemptIds();
 
-                ShuffleWriteConfig config = downloadServerHandler.getShuffleWriteConfig(appShufflePartitionId.getAppShuffleId());
-                if (config == null) {
-                    logger.warn(String.format("Failed to get config for %s, %s", appShufflePartitionId.getAppShuffleId(), connectionInfo));
-                    HandlerUtil.writeResponseStatus(ctx, MessageConstants.RESPONSE_STATUS_MISSING_SHUFFLE_WRITE_CONFIG);
+                ShuffleStageStatus shuffleStageStatus = downloadServerHandler.getShuffleStageStatus(appShufflePartitionId.getAppShuffleId());
+                if (shuffleStageStatus.getFileStatus() == ShuffleStageStatus.FILE_STATUS_SHUFFLE_STAGE_NOT_STARTED) {
+                    logger.warn(String.format("Shuffle stage not started for %s, %s", appShufflePartitionId.getAppShuffleId(), connectionInfo));
+                    HandlerUtil.writeResponseStatus(ctx, MessageConstants.RESPONSE_STATUS_SHUFFLE_STAGE_NOT_STARTED);
                     return;
                 }
 
-                ShuffleStageStatus shuffleStageStatus = downloadServerHandler.getShuffleStageStatus(appShufflePartitionId.getAppShuffleId());
-                if (shuffleStageStatus.getFileStatus() == ShuffleStageStatus.FILE_STATUS_SHUFFLE_STAGE_NOT_STARTED) {
+                ShuffleWriteConfig config;
+                try {
+                    config = downloadServerHandler.getShuffleWriteConfig(appShufflePartitionId.getAppShuffleId());
+                } catch (RssShuffleStageNotStartedException ex) {
                     logger.warn(String.format("Shuffle stage not started for %s, %s", appShufflePartitionId.getAppShuffleId(), connectionInfo));
                     HandlerUtil.writeResponseStatus(ctx, MessageConstants.RESPONSE_STATUS_SHUFFLE_STAGE_NOT_STARTED);
                     return;

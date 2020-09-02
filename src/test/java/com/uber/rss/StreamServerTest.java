@@ -20,6 +20,7 @@ import com.uber.rss.common.AppShuffleId;
 import com.uber.rss.common.AppTaskAttemptId;
 import com.uber.rss.exceptions.RssMissingShuffleWriteConfigException;
 import com.uber.rss.exceptions.RssShuffleCorruptedException;
+import com.uber.rss.exceptions.RssShuffleStageNotStartedException;
 import com.uber.rss.testutil.ClientTestUtils;
 import com.uber.rss.testutil.StreamServerTestUtils;
 import com.uber.rss.testutil.TestStreamServer;
@@ -68,7 +69,7 @@ public class StreamServerTest {
                 StreamServerTestUtils.readAllRecords(testServer.getShufflePort(), invalidAppShuffleId, 1, Arrays.asList(appTaskAttemptId.getTaskAttemptId()), dataCompressed, dataAvailableWaitTime);
                 Assert.fail("The previous code shall throw exception and shall not run into here");
             } catch (Throwable ex) {
-                Assert.assertTrue(ex instanceof RssMissingShuffleWriteConfigException);
+                Assert.assertEquals(ex.getClass(), RssShuffleStageNotStartedException.class);
             }
 
             invalidAppShuffleId = new AppShuffleId(appTaskAttemptId.getAppId(), "not_existing_exec", appTaskAttemptId.getShuffleId());
@@ -76,7 +77,7 @@ public class StreamServerTest {
                 StreamServerTestUtils.readAllRecords(testServer.getShufflePort(), invalidAppShuffleId, 1, Arrays.asList(appTaskAttemptId.getTaskAttemptId()), dataCompressed, dataAvailableWaitTime);
                 Assert.fail("The previous code shall throw exception and shall not run into here");
             } catch (Throwable ex) {
-                Assert.assertTrue(ex instanceof RssMissingShuffleWriteConfigException);
+                Assert.assertEquals(ex.getClass(), RssShuffleStageNotStartedException.class);
             }
 
             invalidAppShuffleId = new AppShuffleId(appTaskAttemptId.getAppId(), appTaskAttemptId.getAppAttempt(), 912345);
@@ -84,7 +85,7 @@ public class StreamServerTest {
                 StreamServerTestUtils.readAllRecords(testServer.getShufflePort(), invalidAppShuffleId, 1, Arrays.asList(appTaskAttemptId.getTaskAttemptId()), dataCompressed, dataAvailableWaitTime);
                 Assert.fail("The previous code shall throw exception and shall not run into here");
             } catch (Throwable ex) {
-                Assert.assertTrue(ex instanceof RssMissingShuffleWriteConfigException);
+                Assert.assertEquals(ex.getClass(), RssShuffleStageNotStartedException.class);
             }
         } finally {
             testServer.shutdown();

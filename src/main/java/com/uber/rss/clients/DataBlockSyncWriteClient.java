@@ -19,7 +19,6 @@ import com.uber.rss.common.ShuffleMapTaskAttemptId;
 import com.uber.rss.exceptions.RssFinishUploadException;
 import com.uber.rss.exceptions.RssInvalidStateException;
 import com.uber.rss.exceptions.RssNetworkException;
-import com.uber.rss.messages.FinishUpload2Message;
 import com.uber.rss.messages.FinishUploadMessage;
 import com.uber.rss.messages.MessageConstants;
 import com.uber.rss.messages.CloseConnectionMessage;
@@ -152,9 +151,9 @@ public class DataBlockSyncWriteClient extends com.uber.rss.clients.ClientBase {
   public void finishUpload(long taskAttemptId) {
     Stopwatch stopwatch = metrics.getFinishUploadLatency().start();
     try {
-      byte ackFlag = finishUploadAck ? FinishUpload2Message.ACK_FLAG_HAS_ACK : FinishUpload2Message.ACK_FLAG_NO_ACK;
-      FinishUpload2Message message = new FinishUpload2Message(taskAttemptId, System.currentTimeMillis(), ackFlag);
-      if (ackFlag == FinishUpload2Message.ACK_FLAG_NO_ACK) {
+      byte ackFlag = finishUploadAck ? FinishUploadMessage.ACK_FLAG_HAS_ACK : FinishUploadMessage.ACK_FLAG_NO_ACK;
+      FinishUploadMessage message = new FinishUploadMessage(taskAttemptId, System.currentTimeMillis(), ackFlag);
+      if (ackFlag == FinishUploadMessage.ACK_FLAG_NO_ACK) {
         writeControlMessageNotWaitResponseStatus(message);
       } else {
         writeControlMessageAndWaitResponseStatus(message);

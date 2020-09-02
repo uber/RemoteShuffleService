@@ -341,7 +341,6 @@ public class RecordSocketReadClientTest {
 
     Consumer<StreamServerConfig> configModifier = config -> {
       config.setRootDirectory(rootDir);
-      config.setNumSplits(numSplits);
     };
 
     TestStreamServer testServer1 = TestStreamServer.createRunningServer(configModifier);

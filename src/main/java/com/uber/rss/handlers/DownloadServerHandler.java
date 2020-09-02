@@ -72,7 +72,6 @@ public class DownloadServerHandler {
         this.partitionId = connectDownloadRequest.getPartitionId();
     }
 
-    // may return null
     public ShuffleWriteConfig getShuffleWriteConfig(AppShuffleId appShuffleId) {
         return executor.getShuffleWriteConfig(appShuffleId);
     }

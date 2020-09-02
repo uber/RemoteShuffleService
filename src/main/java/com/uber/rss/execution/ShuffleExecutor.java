@@ -19,6 +19,8 @@ import com.uber.m3.tally.Gauge;
 import com.uber.rss.clients.ShuffleWriteConfig;
 import com.uber.rss.common.*;
 import com.uber.rss.exceptions.RssInvalidStateException;
+import com.uber.rss.exceptions.RssShuffleCorruptedException;
+import com.uber.rss.exceptions.RssShuffleStageNotStartedException;
 import com.uber.rss.exceptions.RssTooMuchDataException;
 import com.uber.rss.messages.AppDeletionStateItem;
 import com.uber.rss.messages.BaseMessage;
@@ -89,10 +91,6 @@ public class ShuffleExecutor {
 
     private final String rootDir;
 
-    // This field stores config for shuffle write
-    private final ConcurrentHashMap<AppShuffleId, ShuffleWriteConfig> shuffleWriteConfigs
-        = new ConcurrentHashMap<>();
-
     // This field stores states for different application
     private final ConcurrentHashMap<String, ExecutorAppState> appStates
             = new ConcurrentHashMap<>();
@@ -108,8 +106,6 @@ public class ShuffleExecutor {
     private volatile long stateStoreLastCommitTime = 0;
 
     private final ShuffleStorage storage;
-    
-    private final int numSplits;
 
     private final long appRetentionMillis;
 
@@ -125,7 +121,7 @@ public class ShuffleExecutor {
      * @param rootDir root directory.
      */
     public ShuffleExecutor(String rootDir) {
-        this(rootDir, new ShuffleFileStorage(), true, false, 1, DEFAULT_APP_MEMORY_RETENTION_MILLIS, null, DEFAULT_APP_MAX_WRITE_BYTES, DEFAULT_STATE_COMMIT_INTERVAL_MILLIS);
+        this(rootDir, new ShuffleFileStorage(), true, false, DEFAULT_APP_MEMORY_RETENTION_MILLIS, null, DEFAULT_APP_MAX_WRITE_BYTES, DEFAULT_STATE_COMMIT_INTERVAL_MILLIS);
     }
 
     /***
@@ -135,24 +131,21 @@ public class ShuffleExecutor {
      *              written into storage disk when a map task finishes. But 
      *              it will slow down execution.
      * @param useDaemonThread whether to use daemon thread
-     * @param numSplits number of split files for each shuffle partition
      */
     public ShuffleExecutor(String rootDir,
                            ShuffleStorage storage,
                            boolean fsyncEnabled,
                            boolean useDaemonThread,
-                           int numSplits,
                            long appRetentionMillis,
                            String fileCompressionCodec,
                            long appMaxWriteBytes,
                            long stateCommitIntervalMillis) {
-        logger.info("Started with rootDir={}, storage={}, fsyncEnabled={}, useDaemonThread={}, numSplits={}, appRetentionMillis={}",
-                rootDir, storage, fsyncEnabled, useDaemonThread, numSplits, appRetentionMillis);
+        logger.info("Started with rootDir={}, storage={}, fsyncEnabled={}, useDaemonThread={}, appRetentionMillis={}",
+                rootDir, storage, fsyncEnabled, useDaemonThread, appRetentionMillis);
         this.rootDir = rootDir;
         this.stateStore = new LocalFileStateStore(rootDir);
         this.storage = storage;
         this.fsyncEnabled = fsyncEnabled;
-        this.numSplits = numSplits;
         this.appRetentionMillis = appRetentionMillis;
         this.fileCompressionCodec = fileCompressionCodec;
         this.appMaxWriteBytes = appMaxWriteBytes;
@@ -216,7 +209,28 @@ public class ShuffleExecutor {
     }
 
     public void registerShuffle(AppShuffleId appShuffleId, int numMaps, int numPartitions, ShuffleWriteConfig config) {
-        this.shuffleWriteConfigs.putIfAbsent(appShuffleId, config);
+        ExecutorShuffleStageState stageState = stageStates.get(appShuffleId);
+        if (stageState != null) {
+          if (stageState.getNumMaps() != numMaps) {
+            stageState.setFileCorrupted();
+            throw new RssShuffleCorruptedException(String.format(
+                "Hit mismatched numMaps (%s vs %s) for %s",
+                numMaps, stageState.getNumMaps(), appShuffleId));
+          }
+          if (stageState.getNumPartitions() != numPartitions) {
+            stageState.setFileCorrupted();
+            throw new RssShuffleCorruptedException(String.format(
+                "Hit mismatched numPartitions (%s vs %s) for %s",
+                numPartitions, stageState.getNumPartitions(), appShuffleId));
+          }
+          if (stageState.getWriteConfig() == null) {
+            stageState.setFileCorrupted();
+            throw new RssShuffleCorruptedException(String.format(
+                "Hit null shuffle write config for %s",
+                appShuffleId));
+          }
+          return;
+        }
 
         ExecutorShuffleStageState newState = new ExecutorShuffleStageState(appShuffleId, config);
         newState.setNumMapsPartitions(numMaps, numPartitions);
@@ -422,12 +436,11 @@ public class ShuffleExecutor {
 
     /***
      * Get config for the given shuffle stage.
-     * Return null if config not exist.
      * @param appShuffleId
      * @return
      */
     public ShuffleWriteConfig getShuffleWriteConfig(AppShuffleId appShuffleId) {
-        return shuffleWriteConfigs.get(appShuffleId);
+        return getStageState(appShuffleId).getWriteConfig();
     }
 
     /***
@@ -587,17 +600,8 @@ public class ShuffleExecutor {
         ExecutorShuffleStageState state = stageStates.get(appShuffleId);
         if (state != null) {
             return state;
-        }
-        ShuffleWriteConfig config = this.shuffleWriteConfigs.get(appShuffleId);
-        if (config == null) {
-            config = new ShuffleWriteConfig(fileCompressionCodec, (short)numSplits);
-        }
-        ExecutorShuffleStageState newState = new ExecutorShuffleStageState(appShuffleId, config);
-        state = stageStates.putIfAbsent(appShuffleId, newState);
-        if (state == null) {
-            return newState;
         } else {
-            return state;
+          throw new RssShuffleStageNotStartedException("No shuffle stage found: " + appShuffleId);
         }
     }
 
@@ -789,7 +793,6 @@ public class ShuffleExecutor {
             int numMaps = stageInfoStateItem.getNumMaps();
             int numPartitions = stageInfoStateItem.getNumPartitions();
             ShuffleWriteConfig writeConfig = stageInfoStateItem.getWriteConfig();
-            shuffleWriteConfigs.put(appShuffleId, writeConfig);
             int newStartIndex = stageInfoStateItem.getFileStartIndex() + writeConfig.getNumSplits();
             byte fileStatus = stageInfoStateItem.getFileStatus();
             // check whether stage state is already set, if not, set stage state

@@ -295,8 +295,6 @@ public abstract class ClientBase implements AutoCloseable {
                 throw new RssTooMuchDataException(String.format("App writing too much data: %s", connectionInfo));
             case MessageConstants.RESPONSE_STATUS_FILE_CORRUPTED:
                 throw new RssFileCorruptedException(String.format("Shuffle file corrupted or application writing too much data: %s", connectionInfo));
-            case MessageConstants.RESPONSE_STATUS_MISSING_SHUFFLE_WRITE_CONFIG:
-                throw new RssMissingShuffleWriteConfigException(String.format("Shuffle write config missing (status %s): %s", responseStatus, connectionInfo));
             case MessageConstants.RESPONSE_STATUS_STALE_TASK_ATTEMPT:
                 throw new RssStaleTaskAttemptException(String.format("Task attempt is stale (there is a new task retry, thus the old task is not valid any more)", responseStatus, connectionInfo));
             default:

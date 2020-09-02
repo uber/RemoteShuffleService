@@ -65,8 +65,6 @@ public class StreamServerConfig {
 
   private boolean isDaemonExecutorThread = false;
 
-  private int numSplits = 1;
-
   // How long milliseconds before clean up each application after its last liveness update
   private long appMemoryRetentionMillis = ShuffleExecutor.DEFAULT_APP_MEMORY_RETENTION_MILLIS;
 
@@ -160,8 +158,6 @@ public class StreamServerConfig {
         serverConfig.throttleMemoryPercentage = Integer.parseInt(args[i++]);
       } else if (argName.equalsIgnoreCase("-daemonThread")) {
         serverConfig.isDaemonExecutorThread = Boolean.parseBoolean(args[i++]);
-      } else if (argName.equalsIgnoreCase("-splits")) {
-        serverConfig.numSplits = Integer.parseInt(args[i++]);
       } else if (argName.equalsIgnoreCase("-serviceRegistry")) {
         serverConfig.serviceRegistryType = args[i++].toLowerCase();
       } else if (argName.equalsIgnoreCase("-dataCenter")) {
@@ -318,14 +314,6 @@ public class StreamServerConfig {
     this.isDaemonExecutorThread = isDaemonExecutorThread;
   }
 
-  public int getNumSplits() {
-    return numSplits;
-  }
-
-  public void setNumSplits(int numSplits) {
-    this.numSplits = numSplits;
-  }
-
   public long getAppMemoryRetentionMillis() {
     return appMemoryRetentionMillis;
   }
@@ -470,7 +458,6 @@ public class StreamServerConfig {
         ", throttleMemoryPercentage=" + throttleMemoryPercentage +
         ", maxUploadPauseMillis=" + maxUploadPauseMillis +
         ", isDaemonExecutorThread=" + isDaemonExecutorThread +
-        ", numSplits=" + numSplits +
         ", appMemoryRetentionMillis=" + appMemoryRetentionMillis +
         ", appFileRetentionMillis=" + appFileRetentionMillis +
         ", appMaxWriteBytes=" + appMaxWriteBytes +

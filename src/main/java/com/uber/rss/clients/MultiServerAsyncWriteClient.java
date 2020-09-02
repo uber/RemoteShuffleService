@@ -148,11 +148,11 @@ public class MultiServerAsyncWriteClient implements MultiServerWriteClient {
                 BlockingQueue<Record> recordQueue = recordQueues[threadIndex];
                 try {
                     // TODO optimize the max wait time for poll
-                    long pollMaxWait = networkTimeoutMillis;
+                    long pollMaxWait = networkTimeoutMillis * 4;
                     while (exceptions.isEmpty()) {
                         long startTime = System.nanoTime();
                         // TODO optimize here to restart thread if there is new record?
-                        Record record = recordQueue.poll(pollMaxWait + networkTimeoutMillis, TimeUnit.MILLISECONDS);
+                        Record record = recordQueue.poll(pollMaxWait, TimeUnit.MILLISECONDS);
                         queuePollTime.addAndGet(System.nanoTime() - startTime);
                         if (record != null) {
                             if (record.isStopMarker) {

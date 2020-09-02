@@ -18,32 +18,39 @@ import io.netty.buffer.ByteBuf;
 
 /***
  * Message sent by upload client to indicate the uploading is finished.
- * TODO remove FinishUploadRequest/Response later
  */
 public class FinishUploadMessage extends BaseMessage {
+
+    public static final byte ACK_FLAG_NO_ACK = 0;
+    public static final byte ACK_FLAG_HAS_ACK = 1;
+
     private long taskAttemptId;
     private long timestamp;
+    private byte ackFlag;
 
-    public FinishUploadMessage(long taskAttemptId, long timestamp) {
+    public FinishUploadMessage(long taskAttemptId, long timestamp, byte ackFlag) {
         this.taskAttemptId = taskAttemptId;
         this.timestamp = timestamp;
+        this.ackFlag = ackFlag;
     }
 
     @Override
     public int getMessageType() {
-        return MessageConstants.MESSAGE_FinishUploadMessage;
+        return MessageConstants.MESSAGE_FinishUpload2Message;
     }
 
     @Override
     public void serialize(ByteBuf buf) {
         buf.writeLong(taskAttemptId);
         buf.writeLong(timestamp);
+        buf.writeByte(ackFlag);
     }
 
     public static FinishUploadMessage deserialize(ByteBuf buf) {
         long taskAttemptId = buf.readLong();
         long timestamp = buf.readLong();
-        return new FinishUploadMessage(taskAttemptId, timestamp);
+        byte ackFlag = buf.readByte();
+        return new FinishUploadMessage(taskAttemptId, timestamp, ackFlag);
     }
 
     public long getTaskAttemptId() {
@@ -54,11 +61,16 @@ public class FinishUploadMessage extends BaseMessage {
         return timestamp;
     }
 
+    public byte getAckFlag() {
+        return ackFlag;
+    }
+
     @Override
     public String toString() {
         return "FinishUploadMessage{" +
                 "taskAttemptId=" + taskAttemptId +
-                "timestamp=" + timestamp +
+                ",timestamp=" + timestamp +
+                ",ackFlag=" + ackFlag +
                 '}';
     }
 }

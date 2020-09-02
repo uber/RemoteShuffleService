@@ -20,7 +20,6 @@ import com.uber.rss.exceptions.RssException;
 import com.uber.rss.messages.ConnectDownloadRequest;
 import com.uber.rss.messages.FinishApplicationAttemptRequestMessage;
 import com.uber.rss.messages.FinishApplicationJobRequestMessage;
-import com.uber.rss.messages.FinishUpload2Message;
 import com.uber.rss.messages.FinishUploadMessage;
 import com.uber.rss.messages.GetServersRequestMessage;
 import com.uber.rss.messages.MessageConstants;
@@ -317,10 +316,8 @@ public class StreamServerMessageDecoder extends ByteToMessageDecoder {
         return ConnectUploadResponse.deserialize(in);
       case MessageConstants.MESSAGE_StartUploadMessage:
         return StartUploadMessage.deserialize(in);
-      case MessageConstants.MESSAGE_FinishUploadMessage:
-        return FinishUploadMessage.deserialize(in);
       case MessageConstants.MESSAGE_FinishUpload2Message:
-        return FinishUpload2Message.deserialize(in);
+        return FinishUploadMessage.deserialize(in);
       case MessageConstants.MESSAGE_CloseConnectionMessage:
         CloseConnectionMessage closeConnectionMessage = CloseConnectionMessage.deserialize(in);
         return closeConnectionMessage;

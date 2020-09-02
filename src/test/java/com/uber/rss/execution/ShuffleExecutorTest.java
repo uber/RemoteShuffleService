@@ -85,10 +85,10 @@ public class ShuffleExecutorTest {
     @Test
     public void multiMapWriting() throws Exception {
         short numSplits = 10;
-        
+
         String rootDir = Files.createTempDirectory("ShuffleExecutorTest_").toString();
         ShuffleExecutor executor = new ShuffleExecutor(
-                rootDir, new ShuffleFileStorage(), true, false, numSplits, 60*1000L, null, ShuffleExecutor.DEFAULT_APP_MAX_WRITE_BYTES, ShuffleExecutor.DEFAULT_STATE_COMMIT_INTERVAL_MILLIS);
+                rootDir, new ShuffleFileStorage(), true, false, 60*1000L, null, ShuffleExecutor.DEFAULT_APP_MAX_WRITE_BYTES, ShuffleExecutor.DEFAULT_STATE_COMMIT_INTERVAL_MILLIS);
         
         AppShuffleId appShuffleId = new AppShuffleId(String.valueOf(System.nanoTime()), "exec1", 10);
         int numMaps = 3;
@@ -219,10 +219,6 @@ public class ShuffleExecutorTest {
 
         // create new executor which should load state from state files
         executor = new ShuffleExecutor(rootDir);
-
-        ShuffleWriteConfig shuffleWriteConfig = executor.getShuffleWriteConfig(appShuffleId);
-        Assert.assertEquals(shuffleWriteConfig.getFileCompressionCodec(), "");
-        Assert.assertEquals(shuffleWriteConfig.getNumSplits(), 1);
 
         ShuffleStageStatus status = executor.getShuffleStageStatus(appShuffleId);
         Assert.assertEquals(status.getFileStatus(), ShuffleStageStatus.FILE_STATUS_OK);
