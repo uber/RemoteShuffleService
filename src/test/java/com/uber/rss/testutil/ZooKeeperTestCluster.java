@@ -29,20 +29,14 @@ public class ZooKeeperTestCluster {
     private TestingServer testingServer;
 
     public ZooKeeperTestCluster() {
-        int retryPollMillis = 1;
-        int retryMaxWaitMillis = 1000;
-        RetryUtils.retryUntilTrue(retryPollMillis, retryMaxWaitMillis, () -> {
-            port = NetworkUtils.getAvailablePort();
-            try {
-                testingServer = new TestingServer(port);
-                testingServer.start();
-                logger.info(String.format("Started ZooKeeper testing server on port %s", port));
-            } catch (Exception e) {
-                logger.warn(String.format("Failed to start ZooKeeper testing server on port %s", port), e);
-                return false;
-            }
-            return true;
-        });
+        try {
+            testingServer = new TestingServer();
+            testingServer.start();
+            port = testingServer.getPort();
+            logger.info(String.format("Started ZooKeeper testing server on port %s", port));
+        } catch (Exception e) {
+            throw new RuntimeException(String.format("Failed to start ZooKeeper testing server on port %s", port), e);
+        }
     }
 
     public String getZooKeeperServers() {

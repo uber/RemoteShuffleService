@@ -30,14 +30,6 @@ public class NetworkUtils {
 
     private static final Logger logger = LoggerFactory.getLogger(NetworkUtils.class);
 
-    public static int getAvailablePort() {
-        try (ServerSocket socket = new ServerSocket(0)) {
-            return socket.getLocalPort();
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to find available port to use", e);
-        }
-    }
-
     public static String getLocalHostName() {
         try {
             Map<String, String> env = System.getenv();

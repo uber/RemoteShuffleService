@@ -43,6 +43,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.BindException;
+import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -156,28 +157,11 @@ public class StreamServer {
     }
 
     private Pair<Channel, Integer> bindPort(ServerBootstrap bootstrap, int port) throws InterruptedException, BindException {
-        if (port == 0) {
-            final int maxTries = 100;
-            for (int i=0; i < maxTries; i++) {
-                int attemptedPort = NetworkUtils.getAvailablePort();
-                logger.info(String.format("Binding to next available port. Trying %d", attemptedPort));
-                try {
-                    return Pair.of(bootstrap.bind(attemptedPort).sync().channel(), attemptedPort);
-                } catch (Exception e) {
-                    String message = String.format("Failed to bind to port %s, trying another port", attemptedPort);
-                    // TODO: Should always be a BindException - don't know how to tell the compiler this!
-                    if (e instanceof BindException) {
-                        logger.info(message, e);
-                    } else {
-                        logger.error(message, e);
-                    }
-                }
-            }
-            throw new BindException(String.format("Failed to bind port after trying %s times", maxTries));
-        } else {
-            logger.info(String.format("Binding to specified port: %s", port));
-            return Pair.of(bootstrap.bind(port).sync().channel(), port);
-        }
+        logger.info(String.format("Binding to specified port: %s", port));
+        Channel channel = bootstrap.bind(port).sync().channel();
+        InetSocketAddress localAddress = (InetSocketAddress)channel.localAddress();
+        logger.info(String.format("Bound to local address: %s", localAddress));
+        return Pair.of(channel, localAddress.getPort());
     }
 
     private ServerBootstrap bootstrapChannel(EventLoopGroup bossGroup, EventLoopGroup workerGroup, int backlogSize, int timeoutMillis, Supplier<ChannelHandler[]> handlerSupplier) {
