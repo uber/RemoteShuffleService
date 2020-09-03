@@ -64,4 +64,7 @@ public class MessageConstants {
     public final static int MESSAGE_TaskAttemptCommitStateItem = -407;
     public final static int MESSAGE_CommitMarkerStateItem = -420;
 
+    // Other constants
+
+    public final static int DEFAULT_SHUFFLE_DATA_MESSAGE_SIZE = 32 * 1024;
 }

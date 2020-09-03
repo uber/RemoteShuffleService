@@ -13,6 +13,7 @@
  */
 package org.apache.spark.shuffle
 
+import com.uber.rss.messages.MessageConstants
 import com.uber.rss.storage.ShuffleFileStorage
 import org.apache.spark.internal.config.{ConfigBuilder, ConfigEntry}
 
@@ -111,7 +112,7 @@ object RssOpts {
     ConfigBuilder("spark.shuffle.rss.compressionBufferSize")
       .doc("compression buffer size if using compressed clients.")
       .intConf
-      .createWithDefault(32 * 1024)
+      .createWithDefault(MessageConstants.DEFAULT_SHUFFLE_DATA_MESSAGE_SIZE)
   val fileCompressionCodec: ConfigEntry[String] =
     ConfigBuilder("spark.shuffle.rss.fileCompressionCodec")
       .doc("shuffle file compression codec.")

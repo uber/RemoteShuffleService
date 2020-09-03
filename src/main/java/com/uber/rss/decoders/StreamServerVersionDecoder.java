@@ -68,22 +68,23 @@ public class StreamServerVersionDecoder extends ByteToMessageDecoder {
         String handlerName = "handler";
 
         if (type == MessageConstants.UPLOAD_UPLINK_MAGIC_BYTE && version == MessageConstants.UPLOAD_UPLINK_VERSION_3) {
-            newDecoder = new StreamServerMessageDecoder();
+            ByteBuf shuffleDataBuffer = ctx.alloc().buffer(MessageConstants.DEFAULT_SHUFFLE_DATA_MESSAGE_SIZE);
+            newDecoder = new StreamServerMessageDecoder(shuffleDataBuffer);
             UploadChannelInboundHandler channelInboundHandler = new UploadChannelInboundHandler(serverId, runningVersion, idleTimeoutMillis, executor, channelManager);
             channelInboundHandler.processChannelActive(ctx);
             newHandler = channelInboundHandler;
         } else if (type == MessageConstants.DOWNLOAD_UPLINK_MAGIC_BYTE && version == MessageConstants.DOWNLOAD_UPLINK_VERSION_3) {
-            newDecoder = new StreamServerMessageDecoder();
+            newDecoder = new StreamServerMessageDecoder(null);
             DownloadChannelInboundHandler channelInboundHandler = new DownloadChannelInboundHandler(serverId, runningVersion, executor);
             channelInboundHandler.processChannelActive(ctx);
             newHandler = channelInboundHandler;
         } else if (type == MessageConstants.NOTIFY_UPLINK_MAGIC_BYTE && version == MessageConstants.NOTIFY_UPLINK_VERSION_3) {
-            newDecoder = new StreamServerMessageDecoder();
+            newDecoder = new StreamServerMessageDecoder(null);
             NotifyChannelInboundHandler channelInboundHandler = new NotifyChannelInboundHandler(serverId);
             channelInboundHandler.processChannelActive(ctx);
             newHandler = channelInboundHandler;
         } else if (type == MessageConstants.REGISTRY_UPLINK_MAGIC_BYTE && version == MessageConstants.REGISTRY_UPLINK_VERSION_3) {
-            newDecoder = new StreamServerMessageDecoder();
+            newDecoder = new StreamServerMessageDecoder(null);
             RegistryChannelInboundHandler channelInboundHandler = new RegistryChannelInboundHandler(serverDetailCollection, serverId);
             channelInboundHandler.processChannelActive(ctx);
             newHandler = channelInboundHandler;

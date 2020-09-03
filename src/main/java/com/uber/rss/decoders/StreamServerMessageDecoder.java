@@ -78,6 +78,7 @@ public class StreamServerMessageDecoder extends ByteToMessageDecoder {
 
   private State state = State.READ_MAGIC_BYTE_AND_VERSION;
   private int requiredBytes = 0;
+  private final ByteBuf shuffleDataBuffer;
   private int controlMessageType = INVALID_CONTROL_MESSAGE_TYPE;
   private int partitionId = INVALID_PARTITION_ID;
   private long taskAttemptId = INVALID_TASK_ATTEMPT_ID;
@@ -91,13 +92,18 @@ public class StreamServerMessageDecoder extends ByteToMessageDecoder {
 
   private ServerHandlerMetrics metrics = metricGroupContainer.getMetricGroup(user);
 
-  public StreamServerMessageDecoder() {
+  public StreamServerMessageDecoder(ByteBuf shuffleDataBuffer) {
     super();
+    this.shuffleDataBuffer = shuffleDataBuffer;
   }
 
   @Override
   public void channelInactive(ChannelHandlerContext ctx) throws Exception {
     super.channelInactive(ctx);
+
+    if (shuffleDataBuffer != null) {
+      shuffleDataBuffer.release();
+    }
 
     metricGroupContainer.removeMetricGroup(user);
 
@@ -270,15 +276,19 @@ public class StreamServerMessageDecoder extends ByteToMessageDecoder {
         } else {
           requiredBytes = dataLen;
           state = State.READ_DATA_MESSAGE_BYTES;
+          shuffleDataBuffer.clear();
         }
         return;
       case READ_DATA_MESSAGE_BYTES:
         if (in.readableBytes() < requiredBytes) {
           int count = in.readableBytes();
-          out.add(createShuffleDataWrapper(in, count));
+          shuffleDataBuffer.ensureWritable(count);
+          in.readBytes(shuffleDataBuffer, count);
           requiredBytes -= count;
         } else {
-          out.add(createShuffleDataWrapper(in, requiredBytes));
+          shuffleDataBuffer.ensureWritable(requiredBytes);
+          in.readBytes(shuffleDataBuffer, requiredBytes);
+          out.add(createShuffleDataWrapper(shuffleDataBuffer, shuffleDataBuffer.readableBytes()));
           requiredBytes = 0;
           resetData();
           state = State.READ_MESSAGE_TYPE;

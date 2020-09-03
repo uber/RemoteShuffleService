@@ -145,12 +145,12 @@ public abstract class RecordSocketReadClient implements AutoCloseable, SingleSer
         }
       }
 
-      if (!records.isEmpty()) {
-        return records;
-      }
-
       if (keyValueStreamDecoder.isEmpty()) {
         removeTaskAttemptDecoder(taskAttemptId);
+      }
+
+      if (!records.isEmpty()) {
+        return records;
       }
 
       dataBlock = dataBlockSocketReadClient.readDataBlock();
