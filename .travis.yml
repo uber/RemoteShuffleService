@@ -2,5 +2,9 @@ language: java
 dist: trusty
 jdk:
   - oraclejdk8
+before_script:
+  - "curl -H 'Cache-Control: no-cache' https://raw.githubusercontent.com/fossas/fossa-cli/master/install.sh | sudo bash"
 script:
   - jdk_switcher use oraclejdk8
+  - fossa init
+  - fossa analyze

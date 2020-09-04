@@ -2,6 +2,8 @@
 !.gitmodules
 !.jenkins/
 
+.fossa.yml
+
 # Java
 *.class
 
