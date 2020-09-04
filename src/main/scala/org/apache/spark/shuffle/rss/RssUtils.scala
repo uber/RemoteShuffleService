@@ -100,10 +100,11 @@ object RssUtils extends Logging {
         new Supplier[Seq[MapAttemptRssInfo]] {
           override def get(): Seq[MapAttemptRssInfo] = {
             val mapStatusInfo = SparkEnv.get.mapOutputTracker.getMapSizesByExecutorId(shuffleId, partition, partition + 1)
-            mapStatusInfo.flatMap(mapStatusInfoEntry=>RssUtils.getRssServersFromBlockManagerId(mapStatusInfoEntry._1)).toList
+            logInfo(s"Got result from mapOutputTracker.getMapSizesByExecutorId")
+            mapStatusInfo.toParArray.flatMap(mapStatusInfoEntry=>RssUtils.getRssServersFromBlockManagerId(mapStatusInfoEntry._1)).toList
           }
         })
-
+    logInfo(s"Got ${mapAttemptRssInfoList.size} items after parsing mapOutputTracker.getMapSizesByExecutorId result")
     if (mapAttemptRssInfoList.isEmpty) {
       throw new RssException(s"Failed to get information from map output tracker, shuffleId: $shuffleId, partition: $partition")
     }
