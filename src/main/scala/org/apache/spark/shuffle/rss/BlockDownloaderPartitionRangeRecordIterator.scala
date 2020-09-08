@@ -98,7 +98,7 @@ class BlockDownloaderPartitionRangeRecordIterator[K, C](
   private def createBlockDownloaderPartitionRecordIteratorWithoutRetry(partition: Int): Iterator[Product2[K, C]] = {
     var downloader: RecordReader = null
     try {
-      val mapOutputRssInfo = checkRssServers(partition)
+      val mapOutputRssInfo = getPartitionRssInfo(partition)
 
       if (shuffleReplicas >= 1) {
         val serverReplicationGroups = RssUtils.getRssServerReplicationGroups(rssServers, shuffleReplicas, partition, partitionFanout)
@@ -200,7 +200,7 @@ class BlockDownloaderPartitionRangeRecordIterator[K, C](
     }
   }
 
-  private def checkRssServers(partition: Int): MapOutputRssInfo = {
+  private def getPartitionRssInfo(partition: Int): MapOutputRssInfo = {
     logInfo(s"Fetching RSS servers from map output tracker to check with shuffle handle, shuffleId $shuffleId, partition $partition")
 
     val mapOutputRssInfo = RssUtils.getRssInfoFromMapOutputTracker(shuffleId, partition, dataAvailablePollInterval, maxRetryMillis)
@@ -208,17 +208,9 @@ class BlockDownloaderPartitionRangeRecordIterator[K, C](
       throw new RssInvalidMapStatusException(s"Invalid number of maps from map output tracker, expected: $numMaps, got: ${mapOutputRssInfo.numMaps}, more info: $mapOutputRssInfo")
     }
 
-    val arrayOfRssServerLists = mapOutputRssInfo.serverLists
-    if (arrayOfRssServerLists.length != 1) {
-      throw new RssInvalidMapStatusException(s"Invalid number (${arrayOfRssServerLists.length}) of rss server lists from map output tracker (shuffleId $shuffleId, partition $partition): ${arrayOfRssServerLists}")
+    if (mapOutputRssInfo.numRssServers != rssServers.getSeverCount) {
+      throw new RssException(s"RSS servers from map output are different from shuffle handle (shuffleId $shuffleId, partition $partition): ${mapOutputRssInfo.numRssServers} <=> ${rssServers.getSeverCount}")
     }
-
-    val rssServerListFromMapOutputTracker = arrayOfRssServerLists(0)
-    val rssServerIdListFromMapOutputTracker = rssServerListFromMapOutputTracker.getSeverIds
-    if (!rssServerIdListFromMapOutputTracker.equals(rssServers.getSeverIds)) {
-      throw new RssException(s"RSS servers from map output are different from shuffle handle (shuffleId $shuffleId, partition $partition): $rssServerListFromMapOutputTracker <=> $rssServers")
-    }
-
     mapOutputRssInfo
   }
 }

@@ -24,7 +24,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
-import java.util.stream.Collectors;
 
 public class ServerList {
   final private List<ServerDetail> serverList;
@@ -45,8 +44,8 @@ public class ServerList {
   }
 
   @JsonIgnore
-  public List<String> getSeverIds() {
-    return serverList.stream().map(ServerDetail::getServerId).collect(Collectors.toList());
+  public int getSeverCount() {
+    return serverList.size();
   }
 
   @JsonIgnore

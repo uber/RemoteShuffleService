@@ -15,6 +15,7 @@
 package com.uber.rss.common;
 
 import io.netty.buffer.ByteBuf;
+import org.apache.commons.lang3.StringUtils;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -88,9 +89,10 @@ public class MapTaskCommitStatus {
 
     @Override
     public String toString() {
+        String str = StringUtils.join(taskAttemptIds.values(), ',');
         return "MapTaskCommitStatus{" +
                 "mapperCount=" + mapperCount +
-                ", taskAttemptIds=" + taskAttemptIds +
+                ", taskAttemptIds=" + str +
                 '}';
     }
 }

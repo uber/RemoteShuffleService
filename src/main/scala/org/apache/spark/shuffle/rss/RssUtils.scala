@@ -15,21 +15,15 @@
 package org.apache.spark.shuffle.rss
 
 import java.util
-import java.util.Collection
 import java.util.function.Supplier
 
-import com.fasterxml.jackson.databind.ObjectMapper
 import com.uber.rss.clients._
-import com.uber.rss.clients.PlainRecordSocketReadClient
-import com.uber.rss.common.{AppShufflePartitionId, ServerDetail, ServerList, ServerReplicationGroup}
-import com.uber.rss.exceptions.RssException
+import com.uber.rss.common.{MapTaskRssInfo, ServerDetail, ServerList, ServerReplicationGroup}
+import com.uber.rss.exceptions.{RssException, RssInvalidMapStatusException}
 import com.uber.rss.util.RetryUtils
 import org.apache.spark.SparkEnv
 import org.apache.spark.internal.Logging
-import org.apache.spark.shuffle.RssShuffleServerHandle
 import org.apache.spark.storage.BlockManagerId
-
-import scala.collection.{JavaConverters, immutable}
 
 object RssUtils extends Logging {
 
@@ -53,31 +47,29 @@ object RssUtils extends Logging {
     val dummyHost = "dummy_host"
     val dummyPort = 99999
     // hack: use execId field in BlockManagerId to store map id and task attempt id
-    val topologyInfo = if (rssServers.getSevers.isEmpty) {
+    val serverList = rssServers.getSevers
+    val topologyInfo = if (serverList.isEmpty) {
       ""
     } else {
-      val mapper = new ObjectMapper()
-      mapper.registerModule(com.fasterxml.jackson.module.scala.DefaultScalaModule)
-      mapper.writeValueAsString(new MapAttemptRssInfo(mapId, taskAttemptId, stageAttemptNumber, rssServers))
+      val rssInfo = new MapTaskRssInfo(mapId, taskAttemptId, serverList.size(), stageAttemptNumber)
+      rssInfo.serializeToString()
     }
     BlockManagerId(s"map_$mapId" + s"_$taskAttemptId", dummyHost, dummyPort, Some(topologyInfo))
   }
 
   /***
-   * Get rss servers from dummy BlockManagerId
+   * Get rss information from dummy BlockManagerId
    * @param blockManagerId BlockManagerId instance
    * @return
    */
-  def getRssServersFromBlockManagerId(blockManagerId: BlockManagerId): Option[MapAttemptRssInfo] = {
+  def getRssInfoFromBlockManagerId(blockManagerId: BlockManagerId): Option[MapTaskRssInfo] = {
     val topologyInfo = blockManagerId.topologyInfo.getOrElse("")
     if (topologyInfo.isEmpty) {
       return None
     }
 
-    val mapper = new ObjectMapper()
-    mapper.registerModule(com.fasterxml.jackson.module.scala.DefaultScalaModule)
-    val blockManagerTopologyInfo = mapper.readValue(topologyInfo, classOf[MapAttemptRssInfo])
-    Some(blockManagerTopologyInfo)
+    val rssInfo = MapTaskRssInfo.deserializeFromString(topologyInfo)
+    Some(rssInfo)
   }
 
   /***
@@ -91,46 +83,50 @@ object RssUtils extends Logging {
    */
   def getRssInfoFromMapOutputTracker(shuffleId: Int, partition: Int, retryIntervalMillis: Long, maxRetryMillis: Long): MapOutputRssInfo = {
     // this hash map stores rss servers for each map task's latest attempt
-    val mapLatestAttemptRssServers = scala.collection.mutable.HashMap[Int, MapAttemptRssInfo]()
+    val mapLatestAttemptRssServers = scala.collection.mutable.HashMap[Int, MapTaskRssInfo]()
     val mapAttemptRssInfoList =
       RetryUtils.retry(retryIntervalMillis,
         retryIntervalMillis * 10,
         maxRetryMillis,
         s"get information from map output tracker, shuffleId: $shuffleId, partition: $partition",
-        new Supplier[Seq[MapAttemptRssInfo]] {
-          override def get(): Seq[MapAttemptRssInfo] = {
+        new Supplier[Seq[MapTaskRssInfo]] {
+          override def get(): Seq[MapTaskRssInfo] = {
             val mapStatusInfo = SparkEnv.get.mapOutputTracker.getMapSizesByExecutorId(shuffleId, partition, partition + 1)
             logInfo(s"Got result from mapOutputTracker.getMapSizesByExecutorId")
-            mapStatusInfo.toParArray.flatMap(mapStatusInfoEntry=>RssUtils.getRssServersFromBlockManagerId(mapStatusInfoEntry._1)).toList
+            mapStatusInfo.toParArray.flatMap(mapStatusInfoEntry=>RssUtils.getRssInfoFromBlockManagerId(mapStatusInfoEntry._1)).toList
           }
         })
     logInfo(s"Got ${mapAttemptRssInfoList.size} items after parsing mapOutputTracker.getMapSizesByExecutorId result")
     if (mapAttemptRssInfoList.isEmpty) {
-      throw new RssException(s"Failed to get information from map output tracker, shuffleId: $shuffleId, partition: $partition")
+      throw new RssInvalidMapStatusException(s"Failed to get information from map output tracker, shuffleId: $shuffleId, partition: $partition")
     }
-    val stageAttemptNumbers = mapAttemptRssInfoList.map(_.stageAttemptNumber).distinct.toList
+    val stageAttemptNumbers = mapAttemptRssInfoList.map(_.getStageAttemptNumber).distinct.toList
     val stageAttemptNumbersStr = stageAttemptNumbers.mkString(",")
     val stageAttemptNumber = stageAttemptNumbers.max
     logInfo(s"Found ${stageAttemptNumbers.size} stage attempts for shuffle $shuffleId: $stageAttemptNumbersStr, use $stageAttemptNumber as latest stage attempt number")
     for (mapAttemptRssInfo <- mapAttemptRssInfoList) {
-      if (mapAttemptRssInfo.stageAttemptNumber == stageAttemptNumber) {
-        val mapId = mapAttemptRssInfo.mapId
+      if (mapAttemptRssInfo.getStageAttemptNumber == stageAttemptNumber) {
+        val mapId = mapAttemptRssInfo.getMapId
         val oldValue = mapLatestAttemptRssServers.get(mapId)
-        if (oldValue.isEmpty || oldValue.get.taskAttemptId < mapAttemptRssInfo.taskAttemptId) {
+        if (oldValue.isEmpty || oldValue.get.getTaskAttemptId < mapAttemptRssInfo.getTaskAttemptId) {
           mapLatestAttemptRssServers.put(mapId, mapAttemptRssInfo)
         }
       }
     }
     val numMaps = mapLatestAttemptRssServers.size
-    val serverLists = mapLatestAttemptRssServers.values
-      .map(_.rssServers)
-      .toArray
+    val numRssServersValues = mapLatestAttemptRssServers.values
+      .map(_.getNumRssServers)
+      .toList
       .distinct
+    if (numRssServersValues.size != 1) {
+      throw new RssInvalidMapStatusException(s"Got invalid number of RSS servers: $numRssServersValues")
+    }
+    val numRssServers = numRssServersValues.head
     val latestTaskAttemptIds = mapLatestAttemptRssServers.values
-      .map(_.taskAttemptId)
+      .map(_.getTaskAttemptId)
       .toArray
       .distinct
-    new MapOutputRssInfo(numMaps, serverLists, stageAttemptNumber, latestTaskAttemptIds)
+    new MapOutputRssInfo(numMaps, numRssServers, stageAttemptNumber, latestTaskAttemptIds)
   }
 
   /**
