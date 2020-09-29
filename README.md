@@ -30,7 +30,7 @@ This command creates **remote-shuffle-service-xxx-client.jar** file for RSS clie
 
 ## How to Run
 
-### Run RSS Server
+### Step 1: Run RSS Server
 
 - Pick up a server in your environment, e.g. `server1`. Run RSS server jar file (**remote-shuffle-service-xxx-server.jar**) as a Java application, for example,
 
@@ -38,7 +38,7 @@ This command creates **remote-shuffle-service-xxx-client.jar** file for RSS clie
 java -Dlog4j.configuration=log4j-rss-prod.properties -cp target/remote-shuffle-service-0.0.9-server.jar com.uber.rss.StreamServer -port 12222 -serviceRegistry standalone -dataCenter dc1
 ```
 
-### Run Spark application with RSS Client
+### Step 2: Run Spark application with RSS Client
 
 - Upload client jar file (**remote-shuffle-service-xxx-client.jar**) to your HDFS, e.g. `hdfs:///file/path/remote-shuffle-service-0.0.9-client.jar`
 
@@ -59,10 +59,11 @@ spark.shuffle.rss.dataCenter=dc1
 
 Remote Shuffle Service could use a [Apache ZooKeeper](https://zookeeper.apache.org/) cluster and register live service 
 instances in ZooKeeper. Spark applications will look up ZooKeeper to find and use active Remote Shuffle Service instances. 
-In this configuration, ZooKeeper serves as a Service Registry for Remote Shuffle Service, and we need to add those 
+
+In this configuration, ZooKeeper serves as a **Service Registry** for Remote Shuffle Service, and we need to add those 
 parameters when starting RSS server and Spark application.
 
-### Run RSS Server with ZooKeeper as service registry
+### Step 1: Run RSS Server with ZooKeeper as service registry
 
 - Assume there is a ZooKeeper server `zkServer1`. Pick up a server in your environment, e.g. `server1`. Run RSS server jar file (**remote-shuffle-service-xxx-server.jar**) as a Java application on `server1`, for example,
 
@@ -70,7 +71,7 @@ parameters when starting RSS server and Spark application.
 java -Dlog4j.configuration=log4j-rss-prod.properties -cp target/remote-shuffle-service-0.0.9-server.jar com.uber.rss.StreamServer -port 12222 -serviceRegistry zookeeper -zooKeeperServers zkServer1:2181 -dataCenter dc1
 ```
 
-### Run Spark application with RSS Client ans ZooKeeper service registry
+### Step 2: Run Spark application with RSS Client and ZooKeeper service registry
 
 - Upload client jar file (**remote-shuffle-service-xxx-client.jar**) to your HDFS, e.g. `hdfs:///file/path/remote-shuffle-service-0.0.9-client.jar`
 
