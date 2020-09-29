@@ -32,7 +32,6 @@
         <guava.version>15.0</guava.version>
         <test.runner.version>2.22.1</test.runner.version>
         <shade.version>3.1.1</shade.version>
-        <jfx.debug.version>0.1.1-1621-03ead03d68a6-java-monorepo</jfx.debug.version>
         <skipIT>true</skipIT>
         <dependency.scope>compile</dependency.scope>
         <useProjectArtifact>false</useProjectArtifact>
@@ -106,12 +105,6 @@
                     <artifactId>httpcore</artifactId>
                 </exclusion>
             </exclusions>
-        </dependency>
-        <dependency>
-            <groupId>net.logstash.log4j</groupId>
-            <artifactId>jsonevent-layout</artifactId>
-            <version>1.7</version>
-            <scope>${dependency.scope}</scope>
         </dependency>
         <!-- start of test dependencies -->
         <dependency>
@@ -380,7 +373,7 @@
                             <goal>run</goal>
                         </goals>
                         <configuration>
-                            <!-- Execute the shell script to generate the spark build information. -->
+                            <!-- Execute the shell script to generate build information. -->
                             <target>
                                 <exec executable="bash">
                                     <arg value="${project.basedir}/build/rss-build-info"/>
