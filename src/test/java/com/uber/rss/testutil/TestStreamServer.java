@@ -114,7 +114,6 @@ public class TestStreamServer extends StreamServer {
         StreamServerConfig config = new StreamServerConfig();
         config.setShufflePort(0);
         config.setHttpPort(0);
-        config.setJFxDebugProfilerEnable(false);
         config.setServiceRegistryType(ServiceRegistry.TYPE_INMEMORY);
         config.setDataCenter(ServiceRegistry.DEFAULT_DATA_CENTER);
         config.setCluster(ServiceRegistry.DEFAULT_TEST_CLUSTER);
@@ -168,7 +167,6 @@ public class TestStreamServer extends StreamServer {
         StreamServerConfig config = new StreamServerConfig();
         config.setShufflePort(0);
         config.setHttpPort(0);
-        config.setJFxDebugProfilerEnable(false);
         config.setServiceRegistryType(ServiceRegistry.TYPE_STANDALONE);
         config.setDataCenter(ServiceRegistry.DEFAULT_DATA_CENTER);
         config.setCluster(cluster);

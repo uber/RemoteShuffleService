@@ -82,7 +82,6 @@ public class RssMiniCluster {
             streamServerConfig.setCluster(cluster);
             streamServerConfig.setShufflePort(0);
             streamServerConfig.setHttpPort(0);
-            streamServerConfig.setJFxDebugProfilerEnable(false);
             streamServerConfig.setRootDirectory(streamServerRootDirs.get(0));
             StreamServer streamServer = new StreamServer(streamServerConfig);
             streamServer.run();
@@ -105,7 +104,6 @@ public class RssMiniCluster {
                 streamServerConfig.setCluster(cluster);
                 streamServerConfig.setShufflePort(0);
                 streamServerConfig.setHttpPort(0);
-                streamServerConfig.setJFxDebugProfilerEnable(false);
                 streamServerConfig.setRootDirectory(rootDir);
                 StreamServer streamServer = new StreamServer(streamServerConfig);
                 streamServer.run();

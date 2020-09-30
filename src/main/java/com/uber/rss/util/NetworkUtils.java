@@ -15,6 +15,7 @@
 package com.uber.rss.util;
 
 import com.google.common.net.InetAddresses;
+import com.uber.rss.exceptions.RssNetworkException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -43,16 +44,19 @@ public class NetworkUtils {
         }
     }
 
-    // We use FQDN to register shuffle server because some data center (e.g. ATG) needs FQDN to resolve the server to ip address.
+    // We use FQDN to register shuffle server because some data center needs FQDN to resolve the server to ip address.
     public static String getLocalFQDN() {
         InetAddress address;
         try {
             address = InetAddress.getLocalHost();
         } catch (UnknownHostException e) {
-            // Never going to happen...
-            throw new RuntimeException("Unable to fetch address details for localhost", e);
+            throw new RssNetworkException("Unable to fetch address details for localhost", e);
         }
-        return address.getCanonicalHostName();
+        String result = address.getCanonicalHostName();
+        if (result.toLowerCase().equals("localhost")) {
+            result = address.getHostName();
+        }
+        return result;
     }
 
     public static boolean isReachable(String host, int timeout) {

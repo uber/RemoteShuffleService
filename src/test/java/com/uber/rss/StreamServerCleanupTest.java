@@ -44,7 +44,6 @@ public class StreamServerCleanupTest {
         StreamServerConfig config = new StreamServerConfig();
         config.setShufflePort(0);
         config.setHttpPort(0);
-        config.setJFxDebugProfilerEnable(false);
         config.setAppMemoryRetentionMillis(appRetentionMillis);
         config.setDataCenter(ServiceRegistry.DEFAULT_DATA_CENTER);
         config.setCluster(ServiceRegistry.DEFAULT_TEST_CLUSTER);
