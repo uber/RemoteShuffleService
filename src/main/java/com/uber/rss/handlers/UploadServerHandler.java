@@ -93,6 +93,10 @@ public class UploadServerHandler {
         channelManager.checkMaxConnections();
     }
 
+    public void updateLiveness(String appId) {
+        executor.updateLiveness(appId);
+    }
+
     public void checkAppMaxWriteBytes(String appId) {
         executor.checkAppMaxWriteBytes(appId);
     }

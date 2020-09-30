@@ -14,7 +14,6 @@
 
 package com.uber.rss.tools;
 
-import com.google.common.net.HostAndPort;
 import com.uber.rss.clients.ClientRetryOptions;
 import com.uber.rss.clients.MultiServerReadClient;
 import com.uber.rss.clients.MultiServerSocketReadClient;
@@ -25,6 +24,7 @@ import com.uber.rss.common.AppShuffleId;
 import com.uber.rss.common.AppShufflePartitionId;
 import com.uber.rss.common.ServerDetail;
 import com.uber.rss.common.ServerReplicationGroup;
+import com.uber.rss.util.ServerHostAndPort;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -111,7 +111,6 @@ public class StreamReadClientVerify {
 
             int socketTimeoutMillis = 120 * 1000;
             int dataAvailableWaitTime = socketTimeoutMillis * 3;
-            boolean compressed = true;
             int dataAvailablePollInterval = 10;
             int readQueueSize = 0;
             boolean checkDataConsistency = true;
@@ -121,7 +120,6 @@ public class StreamReadClientVerify {
             readClient = new MultiServerSocketReadClient(serverReplicationGroups,
                 socketTimeoutMillis,
                 new ClientRetryOptions(dataAvailablePollInterval, dataAvailableWaitTime, serverDetail->serverDetail),
-                compressed,
                 readQueueSize,
                 "user1",
                 appShufflePartitionId,
@@ -193,8 +191,8 @@ public class StreamReadClientVerify {
                 String str = args[i++];
                 String[] strArray = str.split(":");
                 List<ServerDetail> serverDetails = Arrays.asList(strArray).stream().map(t->{
-                    HostAndPort hostAndPort = HostAndPort.fromString(t);
-                    return TestUtils.getServerDetail(hostAndPort.getHostText(), hostAndPort.getPort());
+                    ServerHostAndPort hostAndPort = ServerHostAndPort.fromString(t);
+                    return TestUtils.getServerDetail(hostAndPort.getHost(), hostAndPort.getPort());
                 }).collect(Collectors.toList());
                 tool.rssServers.addAll(serverDetails);
             } else if (argName.equalsIgnoreCase("-appId")) {

@@ -16,6 +16,8 @@ package com.uber.rss.util;
 
 import org.apache.commons.lang3.math.NumberUtils;
 
+import java.util.List;
+
 public class StringUtils {
     private static final int KB_SIZE = 1024;
     private static final int MB_SIZE = 1024 * 1024;
@@ -62,5 +64,67 @@ public class StringUtils {
             double doubleValue = Double.parseDouble(strLower);
             return (long)(doubleValue * scale);
         }
+    }
+
+  /**
+   * Make a string for a sorted integer list. e.g. for 1,2,3,5,6,7, this method will
+   * return string like "1-3,5-7".
+   * @param list
+   * @return
+   */
+    public static <T extends Number> String toString4SortedIntList(List<T> list) {
+      if (list == null || list.isEmpty()) {
+        return "";
+      }
+
+      StringBuilder sb = new StringBuilder();
+      boolean first = true;
+      T rangeStart = null;
+      T rangeEnd = null;
+      for (T v: list) {
+        if (rangeStart == null) {
+          rangeStart = v;
+        } else if (rangeEnd == null) {
+          if (v.longValue() == rangeStart.longValue() + 1) {
+            rangeEnd = v;
+          } else {
+            if (!first) {
+              sb.append(",");
+            }
+            sb.append(rangeStart);
+            first = false;
+            rangeStart = v;
+          }
+        } else if (rangeEnd.longValue() == v.longValue() - 1){
+          rangeEnd = v;
+        } else {
+          // got one range, put input StringBuilder
+          if (!first) {
+            sb.append(",");
+          }
+          sb.append(String.format("%s-%s", rangeStart, rangeEnd));
+          first = false;
+          // start new range
+          rangeStart = v;
+          rangeEnd = null;
+        }
+      }
+
+      if (rangeStart == null) {
+        return sb.toString();
+      } else if (rangeEnd == null) {
+        if (!first) {
+          sb.append(",");
+        }
+        sb.append(rangeStart);
+        return sb.toString();
+      } else {
+        if (!first) {
+          sb.append(",");
+        }
+        sb.append(String.format("%s-%s", rangeStart, rangeEnd));
+      }
+
+      return sb.toString();
     }
 }

@@ -35,11 +35,11 @@ public class ServerIdAwareSyncWriteClientTest {
 
     @DataProvider(name = "data-provider")
     public Object[][] dataProviderMethod() {
-        return new Object[][] { { true, true, 0 }, { false, false, TestConstants.COMPRESSION_BUFFER_SIZE } };
+        return new Object[][] { { true, true }, { false, false } };
     }
     
     @Test(dataProvider = "data-provider")
-    public void closeClientMultiTimes(boolean finishUploadAck, boolean usePooledConnection, int compressionBufferSize) {
+    public void closeClientMultiTimes(boolean finishUploadAck, boolean usePooledConnection) {
         TestStreamServer testServer1 = TestStreamServer.createRunningServer();
 
         int numMaps = 1;
@@ -50,7 +50,6 @@ public class ServerIdAwareSyncWriteClientTest {
             networkTimeoutMillis,
             finishUploadAck,
             usePooledConnection,
-            compressionBufferSize,
             "user1",
             appTaskAttemptId.getAppId(),
             appTaskAttemptId.getAppAttempt(),
@@ -69,10 +68,10 @@ public class ServerIdAwareSyncWriteClientTest {
 
             writeClient.finishUpload();
 
-            List<RecordKeyValuePair> records = StreamServerTestUtils.readAllRecords(testServer1.getShufflePort(), appTaskAttemptId.getAppShuffleId(), 0, Arrays.asList(appTaskAttemptId.getTaskAttemptId()), compressionBufferSize > 0);
+            List<RecordKeyValuePair> records = StreamServerTestUtils.readAllRecords2(testServer1.getShufflePort(), appTaskAttemptId.getAppShuffleId(), 0, Arrays.asList(appTaskAttemptId.getTaskAttemptId()));
             Assert.assertEquals(records.size(), 1);
 
-            records = StreamServerTestUtils.readAllRecords(testServer1.getShufflePort(), appTaskAttemptId.getAppShuffleId(), 1, Arrays.asList(appTaskAttemptId.getTaskAttemptId()), compressionBufferSize > 0);
+            records = StreamServerTestUtils.readAllRecords2(testServer1.getShufflePort(), appTaskAttemptId.getAppShuffleId(), 1, Arrays.asList(appTaskAttemptId.getTaskAttemptId()));
             Assert.assertEquals(records.size(), 0);
 
             writeClient.close();
@@ -83,7 +82,7 @@ public class ServerIdAwareSyncWriteClientTest {
     }
 
     @Test(dataProvider = "data-provider")
-    public void closeClientAfterServerShutdown(boolean finishUploadAck, boolean usePooledConnection, int compressionBufferSize) {
+    public void closeClientAfterServerShutdown(boolean finishUploadAck, boolean usePooledConnection) {
         TestStreamServer testServer1 = TestStreamServer.createRunningServer();
 
         int numMaps = 1;
@@ -94,7 +93,6 @@ public class ServerIdAwareSyncWriteClientTest {
             networkTimeoutMillis,
             finishUploadAck,
             usePooledConnection,
-            compressionBufferSize,
             "user1",
             appTaskAttemptId.getAppId(),
             appTaskAttemptId.getAppAttempt(),
@@ -113,7 +111,7 @@ public class ServerIdAwareSyncWriteClientTest {
 
             writeClient.finishUpload();
 
-            StreamServerTestUtils.readAllRecords(testServer1.getShufflePort(), appTaskAttemptId.getAppShuffleId(), 0, Arrays.asList(appTaskAttemptId.getTaskAttemptId()), compressionBufferSize > 0);
+            StreamServerTestUtils.readAllRecords2(testServer1.getShufflePort(), appTaskAttemptId.getAppShuffleId(), 0, Arrays.asList(appTaskAttemptId.getTaskAttemptId()));
 
             testServer1.shutdown();
 
@@ -123,7 +121,7 @@ public class ServerIdAwareSyncWriteClientTest {
     }
 
     @Test(dataProvider = "data-provider")
-    public void writeAndReadRecords_retryOnInvalidHostPort(boolean finishUploadAck, boolean usePooledConnection, int compressionBufferSize) {
+    public void writeAndReadRecords_retryOnInvalidHostPort(boolean finishUploadAck, boolean usePooledConnection) {
         TestStreamServer testServer1 = TestStreamServer.createRunningServer();
 
         int numMaps = 1;
@@ -134,7 +132,6 @@ public class ServerIdAwareSyncWriteClientTest {
                 networkTimeoutMillis,
                 finishUploadAck,
                 usePooledConnection,
-                compressionBufferSize,
             "user1",
                 appTaskAttemptId.getAppId(),
                 appTaskAttemptId.getAppAttempt(),
@@ -160,13 +157,13 @@ public class ServerIdAwareSyncWriteClientTest {
 
             writeClient.finishUpload();
 
-            List<RecordKeyValuePair> records = StreamServerTestUtils.readAllRecords(testServer1.getShufflePort(), appTaskAttemptId.getAppShuffleId(), 0, Arrays.asList(appTaskAttemptId.getTaskAttemptId()), compressionBufferSize > 0);
+            List<RecordKeyValuePair> records = StreamServerTestUtils.readAllRecords2(testServer1.getShufflePort(), appTaskAttemptId.getAppShuffleId(), 0, Arrays.asList(appTaskAttemptId.getTaskAttemptId()));
             Assert.assertEquals(records.size(), 1);
 
-            records = StreamServerTestUtils.readAllRecords(testServer1.getShufflePort(), appTaskAttemptId.getAppShuffleId(), 1, Arrays.asList(appTaskAttemptId.getTaskAttemptId()), compressionBufferSize > 0);
+            records = StreamServerTestUtils.readAllRecords2(testServer1.getShufflePort(), appTaskAttemptId.getAppShuffleId(), 1, Arrays.asList(appTaskAttemptId.getTaskAttemptId()));
             Assert.assertEquals(records.size(), 2);
 
-            records = StreamServerTestUtils.readAllRecords(testServer1.getShufflePort(), appTaskAttemptId.getAppShuffleId(), 2, Arrays.asList(appTaskAttemptId.getTaskAttemptId()), compressionBufferSize > 0);
+            records = StreamServerTestUtils.readAllRecords2(testServer1.getShufflePort(), appTaskAttemptId.getAppShuffleId(), 2, Arrays.asList(appTaskAttemptId.getTaskAttemptId()));
             Assert.assertEquals(records.size(), 0);
         } finally {
             testServer1.shutdown();
@@ -174,7 +171,7 @@ public class ServerIdAwareSyncWriteClientTest {
     }
 
     @Test(dataProvider = "data-provider", expectedExceptions = {RssInvalidServerVersionException.class})
-    public void writeAndReadRecords_retryOnInvalidRunningVersion(boolean finishUploadAck, boolean usePooledConnection, int compressionBufferSize) {
+    public void writeAndReadRecords_retryOnInvalidRunningVersion(boolean finishUploadAck, boolean usePooledConnection) {
         TestStreamServer testServer1 = TestStreamServer.createRunningServer();
 
         int numMaps = 1;
@@ -185,7 +182,6 @@ public class ServerIdAwareSyncWriteClientTest {
                 networkTimeoutMillis,
                 finishUploadAck,
                 usePooledConnection,
-                compressionBufferSize,
             "user1",
                 appTaskAttemptId.getAppId(),
                 appTaskAttemptId.getAppAttempt(),
@@ -211,13 +207,13 @@ public class ServerIdAwareSyncWriteClientTest {
 
             writeClient.finishUpload();
 
-            List<RecordKeyValuePair> records = StreamServerTestUtils.readAllRecords(testServer1.getShufflePort(), appTaskAttemptId.getAppShuffleId(), 0, Arrays.asList(appTaskAttemptId.getTaskAttemptId()), compressionBufferSize > 0);
+            List<RecordKeyValuePair> records = StreamServerTestUtils.readAllRecords2(testServer1.getShufflePort(), appTaskAttemptId.getAppShuffleId(), 0, Arrays.asList(appTaskAttemptId.getTaskAttemptId()));
             Assert.assertEquals(records.size(), 1);
 
-            records = StreamServerTestUtils.readAllRecords(testServer1.getShufflePort(), appTaskAttemptId.getAppShuffleId(), 1, Arrays.asList(appTaskAttemptId.getTaskAttemptId()), compressionBufferSize > 0);
+            records = StreamServerTestUtils.readAllRecords2(testServer1.getShufflePort(), appTaskAttemptId.getAppShuffleId(), 1, Arrays.asList(appTaskAttemptId.getTaskAttemptId()));
             Assert.assertEquals(records.size(), 2);
 
-            records = StreamServerTestUtils.readAllRecords(testServer1.getShufflePort(), appTaskAttemptId.getAppShuffleId(), 2, Arrays.asList(appTaskAttemptId.getTaskAttemptId()), compressionBufferSize > 0);
+            records = StreamServerTestUtils.readAllRecords2(testServer1.getShufflePort(), appTaskAttemptId.getAppShuffleId(), 2, Arrays.asList(appTaskAttemptId.getTaskAttemptId()));
             Assert.assertEquals(records.size(), 0);
         } finally {
             testServer1.shutdown();
@@ -225,7 +221,7 @@ public class ServerIdAwareSyncWriteClientTest {
     }
 
     @Test(dataProvider = "data-provider", expectedExceptions = {RssInvalidServerIdException.class})
-    public void writeAndReadRecords_invalidServerId(boolean finishUploadAck, boolean usePooledConnection, int compressionBufferSize) {
+    public void writeAndReadRecords_invalidServerId(boolean finishUploadAck, boolean usePooledConnection) {
         TestStreamServer testServer1 = TestStreamServer.createRunningServer();
 
         int numMaps = 1;
@@ -236,7 +232,6 @@ public class ServerIdAwareSyncWriteClientTest {
                 networkTimeoutMillis,
                 finishUploadAck,
                 usePooledConnection,
-                compressionBufferSize,
             "user1",
                 appTaskAttemptId.getAppId(),
                 appTaskAttemptId.getAppAttempt(),

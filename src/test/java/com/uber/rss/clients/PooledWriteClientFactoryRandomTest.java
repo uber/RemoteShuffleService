@@ -46,7 +46,7 @@ public class PooledWriteClientFactoryRandomTest {
         Thread thread = new Thread(() -> {
           int numIterationsInsideThread = 1000;
           for (int iterationsInsideThread = 0; iterationsInsideThread < numIterationsInsideThread; iterationsInsideThread++) {
-            try (RecordSyncWriteClient writeClient = writeClientFactory.getOrCreateClient("localhost", testServer1.getShufflePort(), TestConstants.NETWORK_TIMEOUT, true, "user1", appId, appAttempt, TestConstants.COMPRESSION_BUFFER_SIZE, TestConstants.SHUFFLE_WRITE_CONFIG)) {
+            try (RecordSyncWriteClient writeClient = writeClientFactory.getOrCreateClient("localhost", testServer1.getShufflePort(), TestConstants.NETWORK_TIMEOUT, true, "user1", appId, appAttempt, TestConstants.SHUFFLE_WRITE_CONFIG)) {
               PooledRecordSyncWriteClient pooledRecordSyncWriteClient = (PooledRecordSyncWriteClient) writeClient;
               Assert.assertTrue(pooledRecordSyncWriteClient.isReusable());
               writeClient.close();

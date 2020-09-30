@@ -18,18 +18,21 @@ import com.uber.m3.tally.Counter;
 import com.uber.m3.tally.Gauge;
 import com.uber.rss.clients.ShuffleWriteConfig;
 import com.uber.rss.common.AppShuffleId;
+import com.uber.rss.common.AppShufflePartitionId;
 import com.uber.rss.common.FilePathAndLength;
 import com.uber.rss.exceptions.RssInvalidStateException;
 import com.uber.rss.exceptions.RssShuffleCorruptedException;
 import com.uber.rss.execution.ShuffleExecutor;
-import com.uber.rss.messages.ConnectDownloadRequest;
+import com.uber.rss.messages.ConnectDownload2Request;
 import com.uber.rss.messages.ShuffleStageStatus;
 import com.uber.rss.metrics.M3Stats;
 import com.uber.rss.storage.ShuffleFileStorage;
 import com.uber.rss.storage.ShuffleStorage;
 import com.uber.rss.util.LogUtils;
 import com.uber.rss.util.NettyUtils;
+import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelProgressiveFuture;
 import io.netty.channel.ChannelProgressiveFutureListener;
@@ -66,7 +69,7 @@ public class DownloadServerHandler {
         this.executor = executor;
     }
 
-    public void initialize(ConnectDownloadRequest connectDownloadRequest) {
+    public void initialize(ConnectDownload2Request connectDownloadRequest) {
         this.appShuffleId = new AppShuffleId(
             connectDownloadRequest.getAppId(), connectDownloadRequest.getAppAttempt(), connectDownloadRequest.getShuffleId());
         this.partitionId = connectDownloadRequest.getPartitionId();
@@ -130,9 +133,14 @@ public class DownloadServerHandler {
         return persistedBytes;
     }
 
-    public void sendFiles(ChannelHandlerContext ctx, List<FilePathAndLength> nonEmptyFiles) {
+    public void closePartitionFiles(AppShufflePartitionId appShufflePartitionId) {
+        executor.closePartitionFiles(appShufflePartitionId);
+    }
+
+    public ChannelFuture sendFiles(ChannelHandlerContext ctx, List<FilePathAndLength> nonEmptyFiles) {
         String connectionInfo = NettyUtils.getServerConnectionInfo(ctx);
 
+        ChannelFuture lastSendFileFuture = null;
         for (int i = 0; i < nonEmptyFiles.size(); i++) {
             final int fileIndex = i;
             String splitFile = nonEmptyFiles.get(fileIndex).getPath();
@@ -170,13 +178,6 @@ public class DownloadServerHandler {
                     logger.info(
                         "Finished sending file: {} ({} of {}), success: {} ({} mbs, total {} bytes), connection: {} {}",
                         splitFile, fileIndex + 1, nonEmptyFiles.size(), future.isSuccess(), dataSpeed, fileLength, connectionInfo, exceptionInfo);
-
-                    if (fileIndex == nonEmptyFiles.size() - 1) {
-                        logger.debug(
-                            "Closing server side channel after sending last file: {}, {}",
-                            splitFile, connectionInfo);
-                        future.channel().close();
-                    }
                 }
 
                 @Override
@@ -188,6 +189,9 @@ public class DownloadServerHandler {
                     executor.updateLiveness(appShuffleId.getAppId());
                 }
             });
+            lastSendFileFuture = sendFileFuture;
         }
+
+        return lastSendFileFuture;
     }
 }

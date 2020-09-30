@@ -35,7 +35,6 @@ public class RetriableSocketReadClient implements SingleServerReadClient {
   public RetriableSocketReadClient(ServerDetail serverDetail,
                                    int timeoutMillis,
                                    ClientRetryOptions retryOptions,
-                                   boolean compressed,
                                    int queueSize,
                                    String user,
                                    AppShufflePartitionId appShufflePartitionId,
@@ -44,7 +43,6 @@ public class RetriableSocketReadClient implements SingleServerReadClient {
 
     delegate = new ServerIdAwareSocketReadClient(serverDetail,
         timeoutMillis,
-        compressed,
         queueSize,
         user,
         appShufflePartitionId,
@@ -56,7 +54,6 @@ public class RetriableSocketReadClient implements SingleServerReadClient {
       ServerDetail retryServerDetail = retryOptions.getRetryConnectionResolver().refreshConnection(serverDetail);
       return new ServerIdAwareSocketReadClient(retryServerDetail,
             timeoutMillis,
-            compressed,
             queueSize,
             user,
             appShufflePartitionId,

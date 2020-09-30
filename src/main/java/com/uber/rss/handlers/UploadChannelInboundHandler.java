@@ -24,6 +24,7 @@ import com.uber.rss.exceptions.RssMaxConnectionsException;
 import com.uber.rss.exceptions.RssTooMuchDataException;
 import com.uber.rss.execution.ShuffleExecutor;
 import com.uber.rss.messages.FinishUploadMessage;
+import com.uber.rss.messages.HeartbeatMessage;
 import com.uber.rss.messages.MessageConstants;
 import com.uber.rss.messages.ShuffleDataWrapper;
 import com.uber.rss.messages.CloseConnectionMessage;
@@ -90,7 +91,7 @@ public class UploadChannelInboundHandler extends ChannelInboundHandlerAdapter {
     }
 
     public void processChannelActive(final ChannelHandlerContext ctx) {
-        logger.info("Channel active: {}", connectionInfo);
+        logger.debug("Channel active: {}", connectionInfo);
         numChannelActive.inc(1);
         numConcurrentChannels.update(concurrentChannelsAtomicInteger.incrementAndGet());
         connectionInfo = NettyUtils.getServerConnectionInfo(ctx);
@@ -103,7 +104,7 @@ public class UploadChannelInboundHandler extends ChannelInboundHandlerAdapter {
     public void channelInactive(ChannelHandlerContext ctx) throws Exception {
         super.channelInactive(ctx);
 
-        logger.info("Channel inactive: {}", connectionInfo);
+        logger.debug("Channel inactive: {}", connectionInfo);
         numChannelInactive.inc(1);
         numConcurrentChannels.update(concurrentChannelsAtomicInteger.decrementAndGet());
         uploadServerHandler.onChannelInactive();
@@ -157,6 +158,8 @@ public class UploadChannelInboundHandler extends ChannelInboundHandlerAdapter {
                     ctx.writeAndFlush(buf).addListener(ChannelFutureListener.CLOSE);
                 }
 
+                uploadServerHandler.updateLiveness(appId);
+
                 ConnectUploadResponse connectUploadResponse = new ConnectUploadResponse(serverId, RssBuildInfo.Version, runningVersion);
                 HandlerUtil.writeResponseMsg(ctx, MessageConstants.RESPONSE_STATUS_OK, connectUploadResponse, true);
             } else if (msg instanceof StartUploadMessage) {
@@ -186,6 +189,14 @@ public class UploadChannelInboundHandler extends ChannelInboundHandlerAdapter {
                 uploadServerHandler.writeRecord(shuffleDataWrapper);
             } else if (msg instanceof CloseConnectionMessage) {
                 ctx.close();
+            } else if (msg instanceof HeartbeatMessage) {
+                HeartbeatMessage heartbeatMessage = (HeartbeatMessage)msg;
+                String heartbeatAppId = heartbeatMessage.getAppId();
+                boolean heartbeatKeepLive = heartbeatMessage.isKeepLive();
+                uploadServerHandler.updateLiveness(heartbeatAppId);
+                if (!heartbeatKeepLive) {
+                    ctx.close();
+                }
             } else {
                 throw new RssInvalidDataException(String.format("Unsupported message: %s, %s", msg, connectionInfo));
             }

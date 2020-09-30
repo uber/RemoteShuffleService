@@ -23,16 +23,14 @@ public class MapTaskRssInfoTest {
     int mapId = 1;
     long taskAttemptId = 2;
     int numRssServers = 3;
-    int stageAttemptNumber = 4;
 
     MapTaskRssInfo mapTaskRssInfo = new MapTaskRssInfo(
-        mapId, taskAttemptId, 3, stageAttemptNumber);
+        mapId, taskAttemptId, 3);
     String str = mapTaskRssInfo.serializeToString();
 
     MapTaskRssInfo deserializedMapTaskRssInfo = MapTaskRssInfo.deserializeFromString(str);
     Assert.assertEquals(deserializedMapTaskRssInfo.getMapId(), mapTaskRssInfo.getMapId());
     Assert.assertEquals(deserializedMapTaskRssInfo.getTaskAttemptId(), mapTaskRssInfo.getTaskAttemptId());
     Assert.assertEquals(deserializedMapTaskRssInfo.getNumRssServers(), mapTaskRssInfo.getNumRssServers());
-    Assert.assertEquals(deserializedMapTaskRssInfo.getStageAttemptNumber(), mapTaskRssInfo.getStageAttemptNumber());
   }
 }

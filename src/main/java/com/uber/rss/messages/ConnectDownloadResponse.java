@@ -107,13 +107,14 @@ public class ConnectDownloadResponse extends ServerResponseMessage {
 
     @Override
     public String toString() {
+        String mapTaskCommitStatusStr = dataAvailable ? mapTaskCommitStatus.toShortString() : mapTaskCommitStatus.toString();
         return "ConnectDownloadResponse{" +
             "serverId='" + serverId + '\'' +
             ", serverVersion='" + serverVersion + '\'' +
             ", runningVersion='" + runningVersion + '\'' +
             ", compressionCodec='" + compressionCodec + '\'' +
-            ", mapTaskCommitStatus=" + mapTaskCommitStatus +
             ", dataAvailable=" + dataAvailable +
+            ", mapTaskCommitStatus=" + mapTaskCommitStatusStr +
             '}';
     }
 }

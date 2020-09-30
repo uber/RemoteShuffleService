@@ -25,7 +25,7 @@ import java.util.List;
 /***
  * This request is for shuffle read to connect to shuffle server to download data.
  */
-public class ConnectDownloadRequest extends BaseMessage {
+public class ConnectDownload2Request extends BaseMessage {
     private final String user;
     private final String appId;
     private final String appAttempt;
@@ -33,11 +33,11 @@ public class ConnectDownloadRequest extends BaseMessage {
     private final int partitionId;
     private final List<Long> taskAttemptIds;
 
-    public ConnectDownloadRequest(String user, AppShufflePartitionId appShufflePartitionId, Collection<Long> taskAttemptIds) {
+    public ConnectDownload2Request(String user, AppShufflePartitionId appShufflePartitionId, Collection<Long> taskAttemptIds) {
         this(user, appShufflePartitionId.getAppId(), appShufflePartitionId.getAppAttempt(), appShufflePartitionId.getShuffleId(), appShufflePartitionId.getPartitionId(), taskAttemptIds);
     }
 
-    public ConnectDownloadRequest(String user, String appId, String appAttempt, int shuffleId, int partitionId, Collection<Long> taskAttemptIds) {
+    public ConnectDownload2Request(String user, String appId, String appAttempt, int shuffleId, int partitionId, Collection<Long> taskAttemptIds) {
         this.user = user;
         this.appId = appId;
         this.appAttempt = appAttempt;
@@ -48,7 +48,7 @@ public class ConnectDownloadRequest extends BaseMessage {
 
     @Override
     public int getMessageType() {
-        return MessageConstants.MESSAGE_ConnectDownloadRequest;
+        return MessageConstants.MESSAGE_ConnectDownload2Request;
     }
 
     @Override
@@ -64,7 +64,7 @@ public class ConnectDownloadRequest extends BaseMessage {
         }
     }
 
-    public static ConnectDownloadRequest deserialize(ByteBuf buf) {
+    public static ConnectDownload2Request deserialize(ByteBuf buf) {
         String user = ByteBufUtils.readLengthAndString(buf);
         String appId = ByteBufUtils.readLengthAndString(buf);
         String appAttempt = ByteBufUtils.readLengthAndString(buf);
@@ -76,7 +76,7 @@ public class ConnectDownloadRequest extends BaseMessage {
             long taskAttemptId = buf.readLong();
             taskAttemptIds.add(taskAttemptId);
         }
-        return new ConnectDownloadRequest(user, appId, appAttempt, shuffleId, partitionId, taskAttemptIds);
+        return new ConnectDownload2Request(user, appId, appAttempt, shuffleId, partitionId, taskAttemptIds);
     }
 
     public String getUser() {

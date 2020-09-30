@@ -616,12 +616,12 @@ public class StreamServerStressTool {
         boolean finishUploadAck = true; // TODO make this configurable
         if (writeClientQueueSize == 0) {
             // Use sync write client (MultiServerSyncWriteClient)
-            writeClient = new MultiServerSyncWriteClient(serverReplicationGroups, partitionFanout, networkTimeoutMillis, maxTryingMillis, null, finishUploadAck, useConnectionPool, compressionBufferSize, "user1", appId, appAttempt, shuffleWriteConfig);
+            writeClient = new MultiServerSyncWriteClient(serverReplicationGroups, partitionFanout, networkTimeoutMillis, maxTryingMillis, null, finishUploadAck, useConnectionPool, "user1", appId, appAttempt, shuffleWriteConfig);
             writeClient.connect();
             writeClient.startUpload(new AppTaskAttemptId(appMapId, taskAttemptId), numMaps, numPartitions);
         } else {
             // Use async write client (MultiServerAsyncWriteClient)
-            writeClient = new MultiServerAsyncWriteClient(serverReplicationGroups, partitionFanout, networkTimeoutMillis, maxTryingMillis, null, finishUploadAck, useConnectionPool, compressionBufferSize, writeClientQueueSize, writeClientThreads, "user1", appId, appAttempt, shuffleWriteConfig);
+            writeClient = new MultiServerAsyncWriteClient(serverReplicationGroups, partitionFanout, networkTimeoutMillis, maxTryingMillis, null, finishUploadAck, useConnectionPool, writeClientQueueSize, writeClientThreads, "user1", appId, appAttempt, shuffleWriteConfig);
             writeClient.connect();
             writeClient.startUpload(new AppTaskAttemptId(appMapId, taskAttemptId), numMaps, numPartitions);
         }

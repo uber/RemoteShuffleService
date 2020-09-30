@@ -14,7 +14,6 @@
 
 package com.uber.rss.util;
 
-import com.google.common.net.HostAndPort;
 import com.google.common.net.InetAddresses;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

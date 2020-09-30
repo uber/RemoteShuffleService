@@ -14,13 +14,13 @@
 
 package com.uber.rss.clients;
 
-import com.google.common.net.HostAndPort;
 import com.uber.rss.common.AppTaskAttemptId;
 import com.uber.rss.common.ServerDetail;
 import com.uber.rss.exceptions.RssInvalidServerIdException;
 import com.uber.rss.exceptions.RssInvalidServerVersionException;
 import com.uber.rss.exceptions.RssNetworkException;
 import com.uber.rss.messages.ConnectUploadResponse;
+import com.uber.rss.util.ServerHostAndPort;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -37,7 +37,6 @@ public class ServerIdAwareSyncWriteClient implements SingleServerWriteClient {
     private final int timeoutMillis;
     private final boolean finishUploadAck;
     private final boolean usePooledConnection;
-    private final int compressionBufferSize;
     private final String user;
     private final String appId;
     private final String appAttempt;
@@ -46,7 +45,7 @@ public class ServerIdAwareSyncWriteClient implements SingleServerWriteClient {
 
     private SingleServerWriteClient writeClient;
 
-    public ServerIdAwareSyncWriteClient(ServerDetail serverDetail, int timeoutMillis, boolean finishUploadAck, boolean usePooledConnection, int compressionBufferSize, String user, String appId, String appAttempt, ShuffleWriteConfig shuffleWriteConfig, ServerConnectionRefresher serverConnectionRefresher) {
+    public ServerIdAwareSyncWriteClient(ServerDetail serverDetail, int timeoutMillis, boolean finishUploadAck, boolean usePooledConnection, String user, String appId, String appAttempt, ShuffleWriteConfig shuffleWriteConfig, ServerConnectionRefresher serverConnectionRefresher) {
         this.serverDetail = serverDetail;
         this.timeoutMillis = timeoutMillis;
         this.finishUploadAck = finishUploadAck;
@@ -56,7 +55,6 @@ public class ServerIdAwareSyncWriteClient implements SingleServerWriteClient {
         this.shuffleWriteConfig = shuffleWriteConfig;
         this.serverConnectionRefresher = serverConnectionRefresher;
         this.usePooledConnection = usePooledConnection;
-        this.compressionBufferSize = compressionBufferSize;
     }
 
     @Override
@@ -98,32 +96,30 @@ public class ServerIdAwareSyncWriteClient implements SingleServerWriteClient {
     }
 
     private ConnectUploadResponse connectImpl(ServerDetail serverDetail, ServerConnectionRefresher refresher, boolean finishUploadAck) {
-        HostAndPort hostAndPort = HostAndPort.fromString(serverDetail.getConnectionString());
+        ServerHostAndPort hostAndPort = ServerHostAndPort.fromString(serverDetail.getConnectionString());
 
         ConnectUploadResponse uploadServerVerboseInfo;
 
         try {
             if (!usePooledConnection) {
                 writeClient = UnpooledWriteClientFactory.getInstance().getOrCreateClient(
-                    hostAndPort.getHostText(),
+                    hostAndPort.getHost(),
                     hostAndPort.getPort(),
                     timeoutMillis,
                     finishUploadAck,
                     user,
                     appId,
                     appAttempt,
-                    compressionBufferSize,
                     shuffleWriteConfig);
             } else {
                 writeClient = PooledWriteClientFactory.getInstance().getOrCreateClient(
-                    hostAndPort.getHostText(),
+                    hostAndPort.getHost(),
                     hostAndPort.getPort(),
                     timeoutMillis,
                     finishUploadAck,
                     user,
                     appId,
                     appAttempt,
-                    compressionBufferSize,
                     shuffleWriteConfig);
             }
 

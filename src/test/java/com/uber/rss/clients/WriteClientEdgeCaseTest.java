@@ -91,7 +91,7 @@ public class WriteClientEdgeCaseTest {
         client.sendRecord(1, null, null);
         client.finishUpload();
 
-        List<RecordKeyValuePair> records = StreamServerTestUtils.readAllRecords(testServer.getShufflePort(), appTaskAttemptId.getAppShuffleId(), 1, Arrays.asList(appTaskAttemptId.getTaskAttemptId()));
+        List<RecordKeyValuePair> records = StreamServerTestUtils.readAllRecords2(testServer.getShufflePort(), appTaskAttemptId.getAppShuffleId(), 1, Arrays.asList(appTaskAttemptId.getTaskAttemptId()));
         Assert.assertEquals(records.size(), 1);
 
         // Shutdown server first
@@ -139,7 +139,7 @@ public class WriteClientEdgeCaseTest {
         client.finishUpload();
       }
 
-      List<RecordKeyValuePair> readRecords = StreamServerTestUtils.readAllRecords(testServer.getShufflePort(), appTaskAttemptId.getAppShuffleId(), 1, Arrays.asList(appTaskAttemptId.getTaskAttemptId()));
+      List<RecordKeyValuePair> readRecords = StreamServerTestUtils.readAllRecords2(testServer.getShufflePort(), appTaskAttemptId.getAppShuffleId(), 1, Arrays.asList(appTaskAttemptId.getTaskAttemptId()));
       Assert.assertEquals(readRecords.size(), 1);
       Assert.assertNull(readRecords.get(0).getKey());
       Assert.assertNull(readRecords.get(0).getValue());
@@ -165,7 +165,7 @@ public class WriteClientEdgeCaseTest {
       try (SingleServerWriteClient client1 = ClientTestUtils.getOrCreateWriteClient(testServer.getShufflePort(), appTaskAttemptId1.getAppId(), appTaskAttemptId1.getAppAttempt())) {
         client1.startUpload(appTaskAttemptId1, 1, 20);
         client1.sendRecord(1,
-            ByteBuffer.wrap("key1".getBytes(StandardCharsets.UTF_8)),
+            null,
             ByteBuffer.wrap("value1".getBytes(StandardCharsets.UTF_8)));
 
         // task 2 sends data and finish upload
@@ -173,7 +173,7 @@ public class WriteClientEdgeCaseTest {
         try (SingleServerWriteClient client2 = ClientTestUtils.getOrCreateWriteClient(testServer.getShufflePort(), appTaskAttemptId1.getAppId(), appTaskAttemptId1.getAppAttempt())) {
           client2.startUpload(appTaskAttemptId2, 1, 20);
           client2.sendRecord(1,
-              ByteBuffer.wrap("key2".getBytes(StandardCharsets.UTF_8)),
+              null,
               ByteBuffer.wrap("value2".getBytes(StandardCharsets.UTF_8)));
           client2.finishUpload();
         }
@@ -181,9 +181,9 @@ public class WriteClientEdgeCaseTest {
         // task 1 finishes upload
         client1.finishUpload();
 
-        List<RecordKeyValuePair> readRecords = StreamServerTestUtils.readAllRecords(testServer.getShufflePort(), appTaskAttemptId1.getAppShuffleId(), 1, Arrays.asList(appTaskAttemptId2.getTaskAttemptId()));
+        List<RecordKeyValuePair> readRecords = StreamServerTestUtils.readAllRecords2(testServer.getShufflePort(), appTaskAttemptId1.getAppShuffleId(), 1, Arrays.asList(appTaskAttemptId2.getTaskAttemptId()));
         Assert.assertEquals(readRecords.size(), 1);
-        Assert.assertEquals(new String(readRecords.get(0).getKey(), StandardCharsets.UTF_8), "key2");
+        Assert.assertEquals(readRecords.get(0).getKey(), null);
         Assert.assertEquals(new String(readRecords.get(0).getValue(), StandardCharsets.UTF_8), "value2");
       }
     }
@@ -203,7 +203,7 @@ public class WriteClientEdgeCaseTest {
         client.finishUpload();
       }
 
-      List<RecordKeyValuePair> records = StreamServerTestUtils.readAllRecords(testServer.getShufflePort(), appTaskAttemptId.getAppShuffleId(), 0, Arrays.asList(appTaskAttemptId.getTaskAttemptId()));
+      List<RecordKeyValuePair> records = StreamServerTestUtils.readAllRecords2(testServer.getShufflePort(), appTaskAttemptId.getAppShuffleId(), 0, Arrays.asList(appTaskAttemptId.getTaskAttemptId()));
       Assert.assertEquals(records.size(), 0);
     }
     finally {
@@ -221,9 +221,8 @@ public class WriteClientEdgeCaseTest {
         client.startUpload(appTaskAttemptId, 1, 20);
       }
 
-      boolean dataCompressed = false;
       int dataAvailableWaitTime = 500;
-      StreamServerTestUtils.readAllRecords(testServer.getShufflePort(), appTaskAttemptId.getAppShuffleId(), 0, Arrays.asList(appTaskAttemptId.getTaskAttemptId()), dataCompressed, dataAvailableWaitTime);
+      StreamServerTestUtils.readAllRecords2(testServer.getShufflePort(), appTaskAttemptId.getAppShuffleId(), 0, Arrays.asList(appTaskAttemptId.getTaskAttemptId()), dataAvailableWaitTime);
     }
     finally {
       testServer.shutdown();

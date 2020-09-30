@@ -14,6 +14,7 @@
 
 package com.uber.rss.util;
 
+import com.uber.rss.exceptions.RssStreamReadException;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 
@@ -38,14 +39,14 @@ public class SocketUtils {
                 int count = stream.read(result, readBytes, numBytesToRead);
 
                 if (count == -1) {
-                    throw new RuntimeException(
+                    throw new RssStreamReadException(
                             "Failed to read data bytes due to end of stream: "
                                     + numBytesToRead);
                 }
 
                 readBytes += count;
             } catch (IOException e) {
-                throw new RuntimeException("Failed to read data", e);
+                throw new RssStreamReadException("Failed to read data", e);
             }
         }
 

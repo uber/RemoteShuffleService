@@ -30,7 +30,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class UploadChannelManager {
-    public static final int DEFAULT_MAX_CONNECTIONS = 40000;
+    public static final int DEFAULT_MAX_CONNECTIONS = 60000;
 
     private static final Logger logger = LoggerFactory.getLogger(UploadChannelManager.class);
     
@@ -41,29 +41,7 @@ public class UploadChannelManager {
 
     private int maxConnections = DEFAULT_MAX_CONNECTIONS;
     
-    public UploadChannelManager(ScheduledExecutorService scheduledExecutorService, int throttleMemoryPercentage, long maxUploadPauseMillis) {
-        MemoryMonitor memoryMonitor = new MemoryMonitor();
-        memoryMonitor.addLowMemoryListener(throttleMemoryPercentage, ()->{
-            // TODO use a better way to choose channel to pause upload
-            List<UploadChannel> channels = new ArrayList<>(uploadChannels.values());
-            for (UploadChannel entry: channels) {
-                entry.setAutoRead(false);
-                logger.info(String.format("Disabled AutoRead for %s", entry.getAppTaskAttemptId()));
-            }
-        });
-        
-        scheduledExecutorService.scheduleAtFixedRate(new Runnable() {
-            @Override
-            public void run() {
-                List<UploadChannel> channels = new ArrayList<>(uploadChannels.values());
-                for (UploadChannel entry: channels) {
-                    if (entry.needToRenableAutoRead(maxUploadPauseMillis)) {
-                        entry.setAutoRead(true);
-                        logger.info(String.format("Re-enabled AutoRead for %s", entry.getAppTaskAttemptId()));
-                    }
-                }
-            }
-        }, 1, 1, TimeUnit.SECONDS);
+    public UploadChannelManager() {
     }
 
     public void setMaxConnections(int maxConnections) {

@@ -14,16 +14,21 @@
 
 package org.apache.spark.shuffle.rss
 
+
+import scala.collection.JavaConverters._
+
+import com.uber.rss.util.StringUtils
+
 /**
  * This class stores RSS information which is retrieved from map output tracker
+ *
  * @param numMaps
  * @param numRssServers
- * @param latestStageAttemptNumber
  * @param latestTaskAttemptIds
  */
-case class MapOutputRssInfo(numMaps: Int, numRssServers: Int, latestStageAttemptNumber: Int, latestTaskAttemptIds: Array[Long]) {
+case class MapOutputRssInfo(numMaps: Int, numRssServers: Int, latestTaskAttemptIds: Array[Long]) {
   override def toString: String = {
-    val latestTaskAttemptIdsStr = latestTaskAttemptIds.mkString(",")
-    s"MapOutputRssInfo(numMaps: $numMaps, numRssServers: $numRssServers, latestStageAttemptNumber: $latestStageAttemptNumber, latestTaskAttemptIds: $latestTaskAttemptIdsStr)"
+    val latestTaskAttemptIdsStr = StringUtils.toString4SortedIntList[java.lang.Long](latestTaskAttemptIds.sorted.map(long2Long).toList.asJava)
+    s"MapOutputRssInfo(numMaps: $numMaps, numRssServers: $numRssServers, latestTaskAttemptIds: $latestTaskAttemptIdsStr)"
   }
 }

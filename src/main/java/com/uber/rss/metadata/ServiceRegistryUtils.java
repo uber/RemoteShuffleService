@@ -14,21 +14,18 @@
 
 package com.uber.rss.metadata;
 
-import com.google.common.net.HostAndPort;
-import com.google.common.net.InetAddresses;
 import com.uber.m3.tally.Scope;
-import com.uber.m3.tally.ScopeCloseException;
 import com.uber.rss.exceptions.RssException;
 import com.uber.rss.common.ServerDetail;
 import com.uber.rss.exceptions.RssServerDownException;
 import com.uber.rss.metrics.M3Stats;
 import com.uber.rss.util.NetworkUtils;
 import com.uber.rss.util.RetryUtils;
+import com.uber.rss.util.ServerHostAndPort;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -71,8 +68,8 @@ public class ServiceRegistryUtils {
         logger.info(String.format("Got %s RSS servers from service registry, checking their connectivity", serverInfos.size()));
         ConcurrentLinkedQueue<String> unreachableHosts = new ConcurrentLinkedQueue<>();
         serverInfos = serverInfos.parallelStream().filter(t -> {
-          HostAndPort hostAndPort = HostAndPort.fromString(t.getConnectionString());
-          String host = hostAndPort.getHostText();
+          ServerHostAndPort hostAndPort = ServerHostAndPort.fromString(t.getConnectionString());
+          String host = hostAndPort.getHost();
           boolean reachable =  NetworkUtils.isReachable(host, NetworkUtils.DEFAULT_REACHABLE_TIMEOUT);
           if (!reachable) {
             logger.warn(String.format("Detected unreachable host %s", host));

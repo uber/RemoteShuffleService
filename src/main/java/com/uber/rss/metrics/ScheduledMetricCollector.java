@@ -14,12 +14,12 @@
 
 package com.uber.rss.metrics;
 
-import com.google.common.net.HostAndPort;
 import com.uber.m3.tally.Gauge;
 import com.uber.rss.common.ServerDetail;
 import com.uber.rss.metadata.ServiceRegistry;
 import com.uber.rss.util.FileUtils;
 import com.uber.rss.util.NetworkUtils;
+import com.uber.rss.util.ServerHostAndPort;
 import com.uber.rss.util.SystemUtils;
 import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.buffer.PooledByteBufAllocatorMetric;
@@ -37,7 +37,6 @@ import java.util.List;
 import java.util.Random;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 public class ScheduledMetricCollector {
     private static final Logger logger = LoggerFactory.getLogger(ScheduledMetricCollector.class);
@@ -106,10 +105,10 @@ public class ScheduledMetricCollector {
                         if (node.getConnectionString().equals(firstServerConnectionString)) {
                             continue;
                         }
-                        HostAndPort hostAndPort = HostAndPort.fromString(node.getConnectionString());
-                        boolean isReachable = NetworkUtils.isReachable(hostAndPort.getHostText(), NetworkUtils.DEFAULT_REACHABLE_TIMEOUT);
+                        ServerHostAndPort hostAndPort = ServerHostAndPort.fromString(node.getConnectionString());
+                        boolean isReachable = NetworkUtils.isReachable(hostAndPort.getHost(), NetworkUtils.DEFAULT_REACHABLE_TIMEOUT);
                         if (!isReachable) {
-                            unreachableHostList.add(hostAndPort.getHostText());
+                            unreachableHostList.add(hostAndPort.getHost());
                         }
                     }
                     unreachableHosts.update(unreachableHostList.size());

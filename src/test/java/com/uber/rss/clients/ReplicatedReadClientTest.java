@@ -40,16 +40,16 @@ public class ReplicatedReadClientTest {
 
   @DataProvider(name = "data-provider")
   public Object[][] dataProviderMethod() {
-    return new Object[][] { { false, 0, 0 }, { true, TestConstants.COMPRESSION_BUFFER_SIZE, 0 }, { true, TestConstants.COMPRESSION_BUFFER_SIZE, 10 } };
+    return new Object[][] { { false, 0 }, { true, 0 }, { true, 10 } };
   }
 
   @DataProvider(name = "data-provider-3")
   public Object[][] dataProviderMethod3() {
-    return new Object[][] { { false, 0, 0, 1, true }, { true, TestConstants.COMPRESSION_BUFFER_SIZE, 0, 1000, false }, { true, TestConstants.COMPRESSION_BUFFER_SIZE, 10, 100000, true }, { false, TestConstants.COMPRESSION_BUFFER_SIZE, 10, 500000, true }, { true, TestConstants.COMPRESSION_BUFFER_SIZE, 10, 500000, false } };
+    return new Object[][] { { false, 0, 1, true }, { true, 0, 1000, false }, { true, 10, 100000, true }, { false, 10, 500000, true }, { true, 10, 500000, false } };
   }
 
   @Test(dataProvider = "data-provider")
-  public void oneServer(boolean finishUploadAck, int compressionBufferSize, int readQueueSize) {
+  public void oneServer(boolean finishUploadAck, int readQueueSize) {
     TestStreamServer testServer1 = TestStreamServer.createRunningServer();
 
     ServerDetail serverDetail = new ServerDetail(testServer1.getServerId(), testServer1.getRunningVersion(), testServer1.getShuffleConnectionString());
@@ -70,7 +70,6 @@ public class ReplicatedReadClientTest {
           TestConstants.NETWORK_TIMEOUT,
           finishUploadAck,
           false,
-          compressionBufferSize,
           "user1",
           appTaskAttemptId.getAppId(),
           appTaskAttemptId.getAppAttempt(),
@@ -81,56 +80,56 @@ public class ReplicatedReadClientTest {
 
         writeClient.sendRecord(1, null, null);
         writeClient.sendRecord(1,
-            ByteBuffer.wrap(new byte[0]),
+            null,
             ByteBuffer.wrap(new byte[0]));
         writeClient.sendRecord(1,
-            ByteBuffer.wrap("key1".getBytes(StandardCharsets.UTF_8)),
+            null,
             ByteBuffer.wrap("".getBytes(StandardCharsets.UTF_8)));
         writeClient.sendRecord(1,
-            ByteBuffer.wrap("".getBytes(StandardCharsets.UTF_8)),
+            null,
             ByteBuffer.wrap("value1".getBytes(StandardCharsets.UTF_8)));
         writeClient.sendRecord(1,
-            ByteBuffer.wrap("key1".getBytes(StandardCharsets.UTF_8)),
+            null,
             ByteBuffer.wrap("value1".getBytes(StandardCharsets.UTF_8)));
 
         writeClient.sendRecord(2,
-            ByteBuffer.wrap(new byte[0]),
+            null,
             ByteBuffer.wrap(new byte[0]));
 
         writeClient.sendRecord(3,
-            ByteBuffer.wrap("key1".getBytes(StandardCharsets.UTF_8)),
+            null,
             ByteBuffer.wrap("value1".getBytes(StandardCharsets.UTF_8)));
 
         writeClient.finishUpload();
       }
 
       AppShufflePartitionId appShufflePartitionId = new AppShufflePartitionId(appId, appAttempt, shuffleId, 1);
-      try (ReplicatedReadClient readClient = new ReplicatedReadClient(serverReplicationGroup, TestConstants.NETWORK_TIMEOUT, compressionBufferSize > 0, readQueueSize,"user1", appShufflePartitionId,
+      try (ReplicatedReadClient readClient = new ReplicatedReadClient(serverReplicationGroup, TestConstants.NETWORK_TIMEOUT, readQueueSize,"user1", appShufflePartitionId,
           new ReadClientDataOptions(Arrays.asList(appTaskAttemptId.getTaskAttemptId()), TestConstants.DATA_AVAILABLE_POLL_INTERVAL, TestConstants.DATA_AVAILABLE_TIMEOUT))) {
         readClient.connect();
         RecordKeyValuePair record = readClient.readRecord();
         Assert.assertNotNull(record);
         Assert.assertNull(record.getKey());
-        Assert.assertNull(record.getValue());
-
-        record = readClient.readRecord();
-        Assert.assertNotNull(record);
-        Assert.assertEquals(record.getKey(), new byte[0]);
         Assert.assertEquals(record.getValue(), new byte[0]);
 
         record = readClient.readRecord();
         Assert.assertNotNull(record);
-        Assert.assertEquals(new String(record.getKey(), StandardCharsets.UTF_8), "key1");
+        Assert.assertEquals(record.getKey(), null);
+        Assert.assertEquals(record.getValue(), new byte[0]);
+
+        record = readClient.readRecord();
+        Assert.assertNotNull(record);
+        Assert.assertEquals(record.getKey(), null);
         Assert.assertEquals(new String(record.getValue(), StandardCharsets.UTF_8), "");
 
         record = readClient.readRecord();
         Assert.assertNotNull(record);
-        Assert.assertEquals(new String(record.getKey(), StandardCharsets.UTF_8), "");
+        Assert.assertEquals(record.getKey(), null);
         Assert.assertEquals(new String(record.getValue(), StandardCharsets.UTF_8), "value1");
 
         record = readClient.readRecord();
         Assert.assertNotNull(record);
-        Assert.assertEquals(new String(record.getKey(), StandardCharsets.UTF_8), "key1");
+        Assert.assertEquals(record.getKey(), null);
         Assert.assertEquals(new String(record.getValue(), StandardCharsets.UTF_8), "value1");
 
         record = readClient.readRecord();
@@ -150,7 +149,7 @@ public class ReplicatedReadClientTest {
   }
 
   @Test(dataProvider = "data-provider")
-  public void twoServers(boolean finishUploadAck, int compressionBufferSize, int readQueueSize) {
+  public void twoServers(boolean finishUploadAck, int readQueueSize) {
     TestStreamServer testServer1 = TestStreamServer.createRunningServer();
     TestStreamServer testServer2 = TestStreamServer.createRunningServer();
 
@@ -173,7 +172,6 @@ public class ReplicatedReadClientTest {
           TestConstants.NETWORK_TIMEOUT,
           finishUploadAck,
           false,
-          compressionBufferSize,
           "user1",
           appTaskAttemptId.getAppId(),
           appTaskAttemptId.getAppAttempt(),
@@ -184,56 +182,56 @@ public class ReplicatedReadClientTest {
 
         writeClient.sendRecord(1, null, null);
         writeClient.sendRecord(1,
-            ByteBuffer.wrap(new byte[0]),
+            null,
             ByteBuffer.wrap(new byte[0]));
         writeClient.sendRecord(1,
-            ByteBuffer.wrap("key1".getBytes(StandardCharsets.UTF_8)),
+            null,
             ByteBuffer.wrap("".getBytes(StandardCharsets.UTF_8)));
         writeClient.sendRecord(1,
-            ByteBuffer.wrap("".getBytes(StandardCharsets.UTF_8)),
+            null,
             ByteBuffer.wrap("value1".getBytes(StandardCharsets.UTF_8)));
         writeClient.sendRecord(1,
-            ByteBuffer.wrap("key1".getBytes(StandardCharsets.UTF_8)),
+            null,
             ByteBuffer.wrap("value1".getBytes(StandardCharsets.UTF_8)));
 
         writeClient.sendRecord(2,
-            ByteBuffer.wrap(new byte[0]),
+            null,
             ByteBuffer.wrap(new byte[0]));
 
         writeClient.sendRecord(3,
-            ByteBuffer.wrap("key1".getBytes(StandardCharsets.UTF_8)),
+            null,
             ByteBuffer.wrap("value1".getBytes(StandardCharsets.UTF_8)));
 
         writeClient.finishUpload();
       }
 
       AppShufflePartitionId appShufflePartitionId = new AppShufflePartitionId(appId, appAttempt, shuffleId, 1);
-      try (ReplicatedReadClient readClient = new ReplicatedReadClient(serverReplicationGroup, TestConstants.NETWORK_TIMEOUT, compressionBufferSize > 0, readQueueSize,"user1", appShufflePartitionId,
+      try (ReplicatedReadClient readClient = new ReplicatedReadClient(serverReplicationGroup, TestConstants.NETWORK_TIMEOUT, readQueueSize,"user1", appShufflePartitionId,
           new ReadClientDataOptions(Arrays.asList(appTaskAttemptId.getTaskAttemptId()), TestConstants.DATA_AVAILABLE_POLL_INTERVAL, TestConstants.DATA_AVAILABLE_TIMEOUT))) {
         readClient.connect();
         RecordKeyValuePair record = readClient.readRecord();
         Assert.assertNotNull(record);
         Assert.assertNull(record.getKey());
-        Assert.assertNull(record.getValue());
-
-        record = readClient.readRecord();
-        Assert.assertNotNull(record);
-        Assert.assertEquals(record.getKey(), new byte[0]);
         Assert.assertEquals(record.getValue(), new byte[0]);
 
         record = readClient.readRecord();
         Assert.assertNotNull(record);
-        Assert.assertEquals(new String(record.getKey(), StandardCharsets.UTF_8), "key1");
+        Assert.assertEquals(record.getKey(), null);
+        Assert.assertEquals(record.getValue(), new byte[0]);
+
+        record = readClient.readRecord();
+        Assert.assertNotNull(record);
+        Assert.assertEquals(record.getKey(), null);
         Assert.assertEquals(new String(record.getValue(), StandardCharsets.UTF_8), "");
 
         record = readClient.readRecord();
         Assert.assertNotNull(record);
-        Assert.assertEquals(new String(record.getKey(), StandardCharsets.UTF_8), "");
+        Assert.assertEquals(record.getKey(), null);
         Assert.assertEquals(new String(record.getValue(), StandardCharsets.UTF_8), "value1");
 
         record = readClient.readRecord();
         Assert.assertNotNull(record);
-        Assert.assertEquals(new String(record.getKey(), StandardCharsets.UTF_8), "key1");
+        Assert.assertEquals(record.getKey(), null);
         Assert.assertEquals(new String(record.getValue(), StandardCharsets.UTF_8), "value1");
 
         record = readClient.readRecord();
@@ -254,7 +252,7 @@ public class ReplicatedReadClientTest {
   }
 
   @Test(dataProvider = "data-provider")
-  public void firstServerDownBeforeReadClientInitialize(boolean finishUploadAck, int compressionBufferSize, int readQueueSize) {
+  public void firstServerDownBeforeReadClientInitialize(boolean finishUploadAck, int readQueueSize) {
     TestStreamServer testServer1 = TestStreamServer.createRunningServer();
     TestStreamServer testServer2 = TestStreamServer.createRunningServer();
 
@@ -277,7 +275,6 @@ public class ReplicatedReadClientTest {
           TestConstants.NETWORK_TIMEOUT,
           finishUploadAck,
           false,
-          compressionBufferSize,
           "user1",
           appTaskAttemptId.getAppId(),
           appTaskAttemptId.getAppAttempt(),
@@ -288,24 +285,24 @@ public class ReplicatedReadClientTest {
 
         writeClient.sendRecord(1, null, null);
         writeClient.sendRecord(1,
-            ByteBuffer.wrap(new byte[0]),
+            null,
             ByteBuffer.wrap(new byte[0]));
         writeClient.sendRecord(1,
-            ByteBuffer.wrap("key1".getBytes(StandardCharsets.UTF_8)),
+            null,
             ByteBuffer.wrap("".getBytes(StandardCharsets.UTF_8)));
         writeClient.sendRecord(1,
-            ByteBuffer.wrap("".getBytes(StandardCharsets.UTF_8)),
+            null,
             ByteBuffer.wrap("value1".getBytes(StandardCharsets.UTF_8)));
         writeClient.sendRecord(1,
-            ByteBuffer.wrap("key1".getBytes(StandardCharsets.UTF_8)),
+            null,
             ByteBuffer.wrap("value1".getBytes(StandardCharsets.UTF_8)));
 
         writeClient.sendRecord(2,
-            ByteBuffer.wrap(new byte[0]),
+            null,
             ByteBuffer.wrap(new byte[0]));
 
         writeClient.sendRecord(3,
-            ByteBuffer.wrap("key1".getBytes(StandardCharsets.UTF_8)),
+            null,
             ByteBuffer.wrap("value1".getBytes(StandardCharsets.UTF_8)));
 
         writeClient.finishUpload();
@@ -314,32 +311,32 @@ public class ReplicatedReadClientTest {
       testServer1.shutdown();
 
       AppShufflePartitionId appShufflePartitionId = new AppShufflePartitionId(appId, appAttempt, shuffleId, 1);
-      try (ReplicatedReadClient readClient = new ReplicatedReadClient(serverReplicationGroup, TestConstants.NETWORK_TIMEOUT, compressionBufferSize > 0, readQueueSize,"user1", appShufflePartitionId,
+      try (ReplicatedReadClient readClient = new ReplicatedReadClient(serverReplicationGroup, TestConstants.NETWORK_TIMEOUT, readQueueSize,"user1", appShufflePartitionId,
           new ReadClientDataOptions(Arrays.asList(appTaskAttemptId.getTaskAttemptId()), TestConstants.DATA_AVAILABLE_POLL_INTERVAL, TestConstants.DATA_AVAILABLE_TIMEOUT))) {
         readClient.connect();
         RecordKeyValuePair record = readClient.readRecord();
         Assert.assertNotNull(record);
         Assert.assertNull(record.getKey());
-        Assert.assertNull(record.getValue());
-
-        record = readClient.readRecord();
-        Assert.assertNotNull(record);
-        Assert.assertEquals(record.getKey(), new byte[0]);
         Assert.assertEquals(record.getValue(), new byte[0]);
 
         record = readClient.readRecord();
         Assert.assertNotNull(record);
-        Assert.assertEquals(new String(record.getKey(), StandardCharsets.UTF_8), "key1");
+        Assert.assertEquals(record.getKey(), null);
+        Assert.assertEquals(record.getValue(), new byte[0]);
+
+        record = readClient.readRecord();
+        Assert.assertNotNull(record);
+        Assert.assertEquals(record.getKey(), null);
         Assert.assertEquals(new String(record.getValue(), StandardCharsets.UTF_8), "");
 
         record = readClient.readRecord();
         Assert.assertNotNull(record);
-        Assert.assertEquals(new String(record.getKey(), StandardCharsets.UTF_8), "");
+        Assert.assertEquals(record.getKey(), null);
         Assert.assertEquals(new String(record.getValue(), StandardCharsets.UTF_8), "value1");
 
         record = readClient.readRecord();
         Assert.assertNotNull(record);
-        Assert.assertEquals(new String(record.getKey(), StandardCharsets.UTF_8), "key1");
+        Assert.assertEquals(record.getKey(), null);
         Assert.assertEquals(new String(record.getValue(), StandardCharsets.UTF_8), "value1");
 
         record = readClient.readRecord();
@@ -359,8 +356,8 @@ public class ReplicatedReadClientTest {
   }
 
   @Test(dataProvider = "data-provider-3")
-  public void firstServerDownAfterReadClientInitialize(boolean finishUploadAck, int compressionBufferSize, int readQueueSize, int numRecords, boolean checkDataConsistency) {
-    logger.info(String.format("Running test firstServerDownAfterReadClientInitialize, %s, %s", compressionBufferSize, readQueueSize));
+  public void firstServerDownAfterReadClientInitialize(boolean finishUploadAck, int readQueueSize, int numRecords, boolean checkDataConsistency) {
+    logger.info(String.format("Running test firstServerDownAfterReadClientInitialize, %s", readQueueSize));
 
     TestStreamServer testServer1 = TestStreamServer.createRunningServer();
     TestStreamServer testServer2 = TestStreamServer.createRunningServer();
@@ -386,7 +383,6 @@ public class ReplicatedReadClientTest {
           TestConstants.NETWORK_TIMEOUT,
           finishUploadAck,
           false,
-          compressionBufferSize,
           "user1",
           appTaskAttemptId.getAppId(),
           appTaskAttemptId.getAppAttempt(),
@@ -400,23 +396,23 @@ public class ReplicatedReadClientTest {
         // switching to read second server.
         for (int i = 0; i < numRecords; i++) {
           writeClient.sendRecord(1,
-              ByteBuffer.wrap(("key" + i).getBytes(StandardCharsets.UTF_8)),
+              null,
               ByteBuffer.wrap(("value" + i).getBytes(StandardCharsets.UTF_8)));
         }
 
         writeClient.sendRecord(2,
-            ByteBuffer.wrap(new byte[0]),
+            null,
             ByteBuffer.wrap(new byte[0]));
 
         writeClient.sendRecord(3,
-            ByteBuffer.wrap("p3_key1".getBytes(StandardCharsets.UTF_8)),
+            null,
             ByteBuffer.wrap("p3_value1".getBytes(StandardCharsets.UTF_8)));
 
         writeClient.finishUpload();
       }
 
       AppShufflePartitionId appShufflePartitionId = new AppShufflePartitionId(appId, appAttempt, shuffleId, 1);
-      try (ReplicatedReadClient readClient = new ReplicatedReadClient(serverReplicationGroup, TestConstants.NETWORK_TIMEOUT, compressionBufferSize > 0, readQueueSize,"user1", appShufflePartitionId,
+      try (ReplicatedReadClient readClient = new ReplicatedReadClient(serverReplicationGroup, TestConstants.NETWORK_TIMEOUT, readQueueSize,"user1", appShufflePartitionId,
           new ReadClientDataOptions(Arrays.asList(appTaskAttemptId.getTaskAttemptId()), TestConstants.DATA_AVAILABLE_POLL_INTERVAL, TestConstants.DATA_AVAILABLE_TIMEOUT), checkDataConsistency)) {
         readClient.connect();
 
@@ -427,7 +423,7 @@ public class ReplicatedReadClientTest {
 
           RecordKeyValuePair record = readClient.readRecord();
           Assert.assertNotNull(record);
-          Assert.assertEquals(new String(record.getKey(), StandardCharsets.UTF_8), "key" + i);
+          Assert.assertEquals(record.getKey(), null);
           Assert.assertEquals(new String(record.getValue(), StandardCharsets.UTF_8), "value" + i);
         }
 
@@ -444,12 +440,12 @@ public class ReplicatedReadClientTest {
 
       // read partition 2
       appShufflePartitionId = new AppShufflePartitionId(appId, appAttempt, shuffleId, 2);
-      try (ReplicatedReadClient readClient = new ReplicatedReadClient(serverReplicationGroup, TestConstants.NETWORK_TIMEOUT, compressionBufferSize > 0, readQueueSize,"user1", appShufflePartitionId,
+      try (ReplicatedReadClient readClient = new ReplicatedReadClient(serverReplicationGroup, TestConstants.NETWORK_TIMEOUT, readQueueSize,"user1", appShufflePartitionId,
           new ReadClientDataOptions(Arrays.asList(appTaskAttemptId.getTaskAttemptId()), TestConstants.DATA_AVAILABLE_POLL_INTERVAL, TestConstants.DATA_AVAILABLE_TIMEOUT), checkDataConsistency)) {
         readClient.connect();
         RecordKeyValuePair record = readClient.readRecord();
         Assert.assertNotNull(record);
-        Assert.assertEquals(record.getKey(), new byte[0]);
+        Assert.assertEquals(record.getKey(), null);
         Assert.assertEquals(record.getValue(), new byte[0]);
 
         Assert.assertNull(readClient.readRecord());
@@ -465,12 +461,12 @@ public class ReplicatedReadClientTest {
 
       // read partition 3
       appShufflePartitionId = new AppShufflePartitionId(appId, appAttempt, shuffleId, 3);
-      try (ReplicatedReadClient readClient = new ReplicatedReadClient(serverReplicationGroup, TestConstants.NETWORK_TIMEOUT, compressionBufferSize > 0, readQueueSize,"user1", appShufflePartitionId,
+      try (ReplicatedReadClient readClient = new ReplicatedReadClient(serverReplicationGroup, TestConstants.NETWORK_TIMEOUT, readQueueSize,"user1", appShufflePartitionId,
           new ReadClientDataOptions(Arrays.asList(appTaskAttemptId.getTaskAttemptId()), TestConstants.DATA_AVAILABLE_POLL_INTERVAL, TestConstants.DATA_AVAILABLE_TIMEOUT), checkDataConsistency)) {
         readClient.connect();
         RecordKeyValuePair record = readClient.readRecord();
         Assert.assertNotNull(record);
-        Assert.assertEquals(new String(record.getKey(), StandardCharsets.UTF_8), "p3_key1");
+        Assert.assertEquals(record.getKey(), null);
         Assert.assertEquals(new String(record.getValue(), StandardCharsets.UTF_8), "p3_value1");
 
         Assert.assertNull(readClient.readRecord());
@@ -489,7 +485,7 @@ public class ReplicatedReadClientTest {
   }
 
   @Test(dataProvider = "data-provider", expectedExceptions = {RssAggregateException.class, RssEndOfStreamException.class})
-  public void twoServerDown(boolean finishUploadAck, int compressionBufferSize, int readQueueSize) {
+  public void twoServerDown(boolean finishUploadAck, int readQueueSize) {
     TestStreamServer testServer1 = TestStreamServer.createRunningServer();
     TestStreamServer testServer2 = TestStreamServer.createRunningServer();
 
@@ -511,7 +507,6 @@ public class ReplicatedReadClientTest {
         TestConstants.NETWORK_TIMEOUT,
         finishUploadAck,
         false,
-        compressionBufferSize,
         "user1",
         appTaskAttemptId.getAppId(),
         appTaskAttemptId.getAppAttempt(),
@@ -525,16 +520,16 @@ public class ReplicatedReadClientTest {
       // switching to read second server.
       for (int i = 0; i < numLargeAmountRecords; i++) {
         writeClient.sendRecord(1,
-            ByteBuffer.wrap(("key" + i).getBytes(StandardCharsets.UTF_8)),
+            null,
             ByteBuffer.wrap(("value" + i).getBytes(StandardCharsets.UTF_8)));
       }
 
       writeClient.sendRecord(2,
-          ByteBuffer.wrap(new byte[0]),
+          null,
           ByteBuffer.wrap(new byte[0]));
 
       writeClient.sendRecord(3,
-          ByteBuffer.wrap("key1".getBytes(StandardCharsets.UTF_8)),
+          null,
           ByteBuffer.wrap("value1".getBytes(StandardCharsets.UTF_8)));
 
       writeClient.finishUpload();
@@ -544,7 +539,7 @@ public class ReplicatedReadClientTest {
     int timeoutMillis = 200;
 
     AppShufflePartitionId appShufflePartitionId = new AppShufflePartitionId(appId, appAttempt, shuffleId, 1);
-    try (ReplicatedReadClient readClient = new ReplicatedReadClient(serverReplicationGroup, timeoutMillis, compressionBufferSize > 0, readQueueSize,"user1", appShufflePartitionId,
+    try (ReplicatedReadClient readClient = new ReplicatedReadClient(serverReplicationGroup, timeoutMillis, readQueueSize,"user1", appShufflePartitionId,
         new ReadClientDataOptions(Arrays.asList(appTaskAttemptId.getTaskAttemptId()), TestConstants.DATA_AVAILABLE_POLL_INTERVAL, TestConstants.DATA_AVAILABLE_TIMEOUT))) {
       readClient.connect();
 
@@ -561,7 +556,7 @@ public class ReplicatedReadClientTest {
   }
 
   @Test(dataProvider = "data-provider", expectedExceptions = RssInconsistentReplicaException.class)
-  public void inconsistentReplicaData(boolean finishUploadAck, int compressionBufferSize, int readQueueSize) {
+  public void inconsistentReplicaData(boolean finishUploadAck, int readQueueSize) {
     TestStreamServer testServer1 = TestStreamServer.createRunningServer();
     TestStreamServer testServer2 = TestStreamServer.createRunningServer();
 
@@ -585,7 +580,6 @@ public class ReplicatedReadClientTest {
           TestConstants.NETWORK_TIMEOUT,
           finishUploadAck,
           false,
-          compressionBufferSize,
           "user1",
           appTaskAttemptId.getAppId(),
           appTaskAttemptId.getAppAttempt(),
@@ -599,7 +593,7 @@ public class ReplicatedReadClientTest {
         // switching to read second server.
         for (int i = 0; i < numLargeAmountRecords; i++) {
           writeClient.sendRecord(1,
-              ByteBuffer.wrap(("key" + i).getBytes(StandardCharsets.UTF_8)),
+              null,
               ByteBuffer.wrap(("server1_value" + i).getBytes(StandardCharsets.UTF_8)));
         }
 
@@ -612,7 +606,6 @@ public class ReplicatedReadClientTest {
           TestConstants.NETWORK_TIMEOUT,
           finishUploadAck,
           false,
-          compressionBufferSize,
           "user1",
           appTaskAttemptId.getAppId(),
           appTaskAttemptId.getAppAttempt(),
@@ -626,7 +619,7 @@ public class ReplicatedReadClientTest {
         // switching to read second server.
         for (int i = 0; i < numLargeAmountRecords; i++) {
           writeClient.sendRecord(1,
-              ByteBuffer.wrap(("key" + i).getBytes(StandardCharsets.UTF_8)),
+              null,
               ByteBuffer.wrap(("server2_value" + i).getBytes(StandardCharsets.UTF_8)));
         }
 
@@ -635,7 +628,7 @@ public class ReplicatedReadClientTest {
 
       // connect to server group, shutdown server 1, read shuffle data, will hit RssInconsistentReplicaException
       AppShufflePartitionId appShufflePartitionId = new AppShufflePartitionId(appId, appAttempt, shuffleId, 1);
-      try (ReplicatedReadClient readClient = new ReplicatedReadClient(serverReplicationGroup, TestConstants.NETWORK_TIMEOUT, compressionBufferSize > 0, readQueueSize,"user1", appShufflePartitionId,
+      try (ReplicatedReadClient readClient = new ReplicatedReadClient(serverReplicationGroup, TestConstants.NETWORK_TIMEOUT, readQueueSize,"user1", appShufflePartitionId,
           new ReadClientDataOptions(Arrays.asList(appTaskAttemptId.getTaskAttemptId()), TestConstants.DATA_AVAILABLE_POLL_INTERVAL, TestConstants.DATA_AVAILABLE_TIMEOUT))) {
         readClient.connect();
 
@@ -647,7 +640,7 @@ public class ReplicatedReadClientTest {
           }
           RecordKeyValuePair record = readClient.readRecord();
           Assert.assertNotNull(record);
-          Assert.assertEquals(new String(record.getKey(), StandardCharsets.UTF_8), "key" + i);
+          Assert.assertEquals(record.getKey(), null);
         }
       }
     } finally {

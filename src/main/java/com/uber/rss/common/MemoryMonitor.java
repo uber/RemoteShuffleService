@@ -16,10 +16,7 @@ package com.uber.rss.common;
 
 import com.sun.management.GarbageCollectionNotificationInfo;
 import com.sun.management.GcInfo;
-import com.uber.m3.tally.DurationBuckets;
 import com.uber.m3.tally.Gauge;
-import com.uber.m3.tally.Histogram;
-import com.uber.m3.util.Duration;
 import com.uber.rss.exceptions.RssException;
 import com.uber.rss.metrics.M3Stats;
 import org.slf4j.Logger;
@@ -39,10 +36,8 @@ public class MemoryMonitor {
     private static final Logger logger = LoggerFactory.getLogger(MemoryMonitor.class);
 
     private static final Gauge heapMemoryPercentage = M3Stats.getDefaultScope().gauge("heapMemoryPercentage");
-    private static final Histogram gcDuration = M3Stats.getDefaultScope().histogram("gcDuration", 
-            DurationBuckets.linear(Duration.ofSeconds(0), Duration.ofSeconds(10), 50));
-    private static final Histogram majorGCDuration = M3Stats.getDefaultScope().histogram("majorGCDuration",
-            DurationBuckets.linear(Duration.ofSeconds(0), Duration.ofSeconds(10), 50));
+    private static final Gauge gcTime = M3Stats.getDefaultScope().gauge("gcTime");
+    private static final Gauge majorGCTime = M3Stats.getDefaultScope().gauge("majorGCTime");
     
     public void addLowMemoryListener(int lowMemoryPercentage, LowMemoryListener lowMemoryListener) {
         List<GarbageCollectorMXBean> gcBeans = ManagementFactory.getGarbageCollectorMXBeans();
@@ -66,10 +61,9 @@ public class MemoryMonitor {
                     GcInfo gcInfo = info.getGcInfo();
                     logger.info(String.format("GcAction: %s, start: %s, duration: %s", 
                             gcAction, gcInfo.getStartTime(), gcInfo.getDuration()));
-                    Duration gcDurationValue = Duration.ofMillis(gcInfo.getDuration());
-                    gcDuration.recordDuration(gcDurationValue);
+                    gcTime.update(gcInfo.getDuration());
                     if (gcAction.toLowerCase().contains("major")) {
-                        majorGCDuration.recordDuration(gcDurationValue);
+                        majorGCTime.update(gcInfo.getDuration());
                         // only check when major (full) GC
                         MemoryMXBean memoryMXBean;
                         try {

@@ -57,6 +57,12 @@
             <version>${spark.version}</version>
             <scope>${dependency.scope}</scope>
         </dependency>
+        <dependency>
+            <groupId>org.apache.spark</groupId>
+            <artifactId>spark-sql_${scala.compat.version}</artifactId>
+            <version>${spark.version}</version>
+            <scope>${dependency.scope}</scope>
+        </dependency>
         <!-- hdfs integration dependencies -->
         <dependency>
             <groupId>org.apache.hadoop</groupId>

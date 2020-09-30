@@ -14,12 +14,11 @@
 
 package com.uber.rss.clients;
 
-import com.google.common.net.HostAndPort;
 import com.uber.rss.common.AppShufflePartitionId;
 import com.uber.rss.common.DownloadServerVerboseInfo;
 import com.uber.rss.common.ServerDetail;
 import com.uber.rss.exceptions.RssInvalidServerIdException;
-import com.uber.rss.exceptions.RssInvalidServerVersionException;
+import com.uber.rss.util.ServerHostAndPort;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -35,19 +34,15 @@ public class ServerIdAwareSocketReadClient implements SingleServerReadClient {
     private final ServerDetail serverDetail;
     private SingleServerReadClient readClient;
 
-    public ServerIdAwareSocketReadClient(ServerDetail serverDetail, int timeoutMillis, boolean compressed, int queueSize, String user, AppShufflePartitionId appShufflePartitionId, Collection<Long> latestTaskAttemptIds, long dataAvailablePollInterval, long dataAvailableWaitTime) {
+    public ServerIdAwareSocketReadClient(ServerDetail serverDetail, int timeoutMillis, int queueSize, String user, AppShufflePartitionId appShufflePartitionId, Collection<Long> latestTaskAttemptIds, long dataAvailablePollInterval, long dataAvailableWaitTime) {
         this.serverDetail = serverDetail;
 
-        HostAndPort hostAndPort = HostAndPort.fromString(serverDetail.getConnectionString());
-        String host = hostAndPort.getHostText();
+        ServerHostAndPort hostAndPort = ServerHostAndPort.fromString(serverDetail.getConnectionString());
+        String host = hostAndPort.getHost();
         int port = hostAndPort.getPort();
 
         SingleServerReadClient client;
-        if (compressed) {
-            client = new CompressedRecordSocketReadClient(host, port, timeoutMillis, user, appShufflePartitionId, latestTaskAttemptIds, dataAvailablePollInterval, dataAvailableWaitTime);
-        } else {
-            client = new PlainRecordSocketReadClient(host, port, timeoutMillis, user, appShufflePartitionId, latestTaskAttemptIds, dataAvailablePollInterval, dataAvailableWaitTime);
-        }
+        client = new PlainRecordSocketReadClient(host, port, timeoutMillis, user, appShufflePartitionId, latestTaskAttemptIds, dataAvailablePollInterval, dataAvailableWaitTime);
         if (queueSize > 0) {
             client = new BlockingQueueReadClient(client, queueSize, dataAvailableWaitTime);
         }

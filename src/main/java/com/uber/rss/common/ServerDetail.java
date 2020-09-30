@@ -55,6 +55,17 @@ public class ServerDetail {
         return connectionString;
     }
 
+    public long getRunningVersionAsNumber() {
+        if (runningVersion == null || runningVersion.isEmpty()) {
+            return 0;
+        }
+        try {
+            return Long.parseLong(runningVersion);
+        } catch (Throwable ex) {
+            return 0;
+        }
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -72,10 +83,10 @@ public class ServerDetail {
 
     @Override
     public String toString() {
-        return "ServerDetail{" +
-                "serverId='" + serverId + '\'' +
-                ", runningVersion='" + runningVersion + '\'' +
-                ", connectionString='" + connectionString + '\'' +
+        return "Server{" +
+                connectionString +
+                ", " + runningVersion +
+                ", " + serverId +
                 '}';
     }
 }
