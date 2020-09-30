@@ -108,8 +108,6 @@ public class StreamServerConfig {
 
   private long stateCommitIntervalMillis = 60000;
 
-  private boolean isJFxDebugProfilerEnable = true;
-
   public static StreamServerConfig buildFromArgs(String[] args) throws IOException {
     StreamServerConfig serverConfig = new StreamServerConfig();
 
@@ -138,8 +136,6 @@ public class StreamServerConfig {
         serverConfig.networkRetries = Integer.parseInt(args[i++]);
       } else if (argName.equalsIgnoreCase("-fsync")) {
         serverConfig.isFsyncEnabled = Boolean.parseBoolean(args[i++]);
-      } else if (argName.equalsIgnoreCase("-jfxProfiler")) {
-        serverConfig.isJFxDebugProfilerEnable = Boolean.parseBoolean(args[i++]);
       } else if (argName.equalsIgnoreCase("-bufferSize")) {
         serverConfig.bufferSize = Integer.parseInt(args[i++]);
       } else if (argName.equalsIgnoreCase("-appMemoryRetentionMillis")) {
@@ -280,14 +276,6 @@ public class StreamServerConfig {
 
   public void setFsyncEnabled(boolean isFsyncEnabled) {
     this.isFsyncEnabled = isFsyncEnabled;
-  }
-
-  public boolean isJFxDebugProfilerEnable() {
-    return isJFxDebugProfilerEnable;
-  }
-
-  public void setJFxDebugProfilerEnable(boolean isJFxDebugProfilerEnable) {
-    this.isJFxDebugProfilerEnable = isJFxDebugProfilerEnable;
   }
 
   public int getThrottleMemoryPercentage() {
@@ -473,7 +461,6 @@ public class StreamServerConfig {
         ", principal='" + principal + '\'' +
         ", hadoopConfig='" + hadoopConfig + '\'' +
         ", stateCommitIntervalMillis='" + stateCommitIntervalMillis + '\'' +
-        ", isJFxDebugProfilerEnable='" + isJFxDebugProfilerEnable + '\'' +
         '}';
   }
 }

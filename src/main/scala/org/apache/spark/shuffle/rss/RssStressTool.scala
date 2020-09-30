@@ -277,7 +277,6 @@ class RssStressTool extends Logging {
     serverConfig.setFsyncEnabled(fsyncEnabled)
     serverConfig.setShufflePort(0)
     serverConfig.setHttpPort(0)
-    serverConfig.setJFxDebugProfilerEnable(false)
     serverConfig.setRootDirectory(serverDirFullPath)
     serverConfig.setDataCenter(ServiceRegistry.DEFAULT_DATA_CENTER)
     serverConfig.setCluster(ServiceRegistry.DEFAULT_TEST_CLUSTER)

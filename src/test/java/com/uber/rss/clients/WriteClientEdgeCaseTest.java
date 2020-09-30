@@ -232,7 +232,6 @@ public class WriteClientEdgeCaseTest {
   @Test(expectedExceptions = RssServerBusyException.class)
   public void writeClientsExceedStreamServerMaxConnectionsWithRetry() {
     StreamServerConfig serverConfig = new StreamServerConfig();
-    serverConfig.setJFxDebugProfilerEnable(false);
     serverConfig.setMaxConnections(1);
     serverConfig.setDataCenter(ServiceRegistry.DEFAULT_DATA_CENTER);
     serverConfig.setCluster(ServiceRegistry.DEFAULT_TEST_CLUSTER);
