@@ -6,13 +6,15 @@ on remote servers. See more details on Spark community document:
 
 ## Current Limitation
 
-To work with this Remote Shuffle Service, Spark applications need to keep following configures as false (or do not set them since their default values are false):
+- To work with this Remote Shuffle Service, Spark applications need to keep following configures as false (or do not set them since their default values are false):
 
 ```
 spark.shuffle.service.enabled=false
 spark.speculation=false
 ```
 We are still actively developing and may support those configures in the future.
+
+- The supported Spark version is Spark 2.4.x. For Spark 3.x, we are still testing and developing.
 
 ## How to Build
 
