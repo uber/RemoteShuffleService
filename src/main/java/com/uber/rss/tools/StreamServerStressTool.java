@@ -136,9 +136,6 @@ public class StreamServerStressTool {
     // Whether to use fsyncEnabled in stream server
     private boolean fsyncEnabled = true;
 
-    // Whether to use jfx debug profiler in stream server
-    private boolean isJFxDebugProfilerEnable = false;
-    
     // Buffer size to use
     private int bufferSize = ShuffleFileStorage.DEFAULT_BUFFER_SIZE;
 
@@ -283,10 +280,6 @@ public class StreamServerStressTool {
 
     public void setFsyncEnabled(boolean fsyncEnabled) {
         this.fsyncEnabled = fsyncEnabled;
-    }
-
-    public void setJFxDebugProfilerEnable(boolean isJFxDebugProfilerEnable) {
-        this.isJFxDebugProfilerEnable = isJFxDebugProfilerEnable;
     }
 
     public void setBufferSize(int bufferSize) {
@@ -575,7 +568,6 @@ public class StreamServerStressTool {
                 ", mapSlowness=" + mapSlowness +
                 ", maxWait=" + maxWait +
                 ", fsyncEnabled=" + fsyncEnabled +
-                ", isJFxDebugProfilerEnable=" + isJFxDebugProfilerEnable +
                 ", bufferSize=" + bufferSize +
                 ", writeClientQueueSize=" + writeClientQueueSize +
                 ", writeClientThreads=" + writeClientThreads +
@@ -826,8 +818,6 @@ public class StreamServerStressTool {
                 tool.numServerThreads = Integer.parseInt(args[i++]);
             } else if (argName.equalsIgnoreCase("-fsyncEnabled")) {
                 tool.fsyncEnabled = Boolean.parseBoolean(args[i++]);
-            } else if (argName.equalsIgnoreCase("-jfxProfiler")) {
-                tool.isJFxDebugProfilerEnable = Boolean.parseBoolean(args[i++]);
             } else if (argName.equalsIgnoreCase("-bufferSize")) {
                 tool.bufferSize = Integer.parseInt(args[i++]);
             } else if (argName.equalsIgnoreCase("-writeClientQueueSize")) {
