@@ -41,7 +41,6 @@ object RssUtils extends Logging {
    */
   def createMapTaskDummyBlockManagerId(mapId: Int,
                                        taskAttemptId: Long,
-                                       stageAttemptNumber: Int,
                                        rssServers: ServerList = new ServerList(new util.ArrayList[ServerDetail]())): BlockManagerId = {
     // Spark will check the host and port in BlockManagerId, thus use dummy values there
     val dummyHost = "dummy_host"
@@ -51,7 +50,7 @@ object RssUtils extends Logging {
     val topologyInfo = if (serverList.isEmpty) {
       ""
     } else {
-      val rssInfo = new MapTaskRssInfo(mapId, taskAttemptId, serverList.size(), stageAttemptNumber)
+      val rssInfo = new MapTaskRssInfo(mapId, taskAttemptId, serverList.size())
       rssInfo.serializeToString()
     }
     BlockManagerId(s"map_$mapId" + s"_$taskAttemptId", dummyHost, dummyPort, Some(topologyInfo))
@@ -100,17 +99,11 @@ object RssUtils extends Logging {
     if (mapAttemptRssInfoList.isEmpty) {
       throw new RssInvalidMapStatusException(s"Failed to get information from map output tracker, shuffleId: $shuffleId, partition: $partition")
     }
-    val stageAttemptNumbers = mapAttemptRssInfoList.map(_.getStageAttemptNumber).distinct.toList
-    val stageAttemptNumbersStr = stageAttemptNumbers.mkString(",")
-    val stageAttemptNumber = stageAttemptNumbers.max
-    logInfo(s"Found ${stageAttemptNumbers.size} stage attempts for shuffle $shuffleId: $stageAttemptNumbersStr, use $stageAttemptNumber as latest stage attempt number")
     for (mapAttemptRssInfo <- mapAttemptRssInfoList) {
-      if (mapAttemptRssInfo.getStageAttemptNumber == stageAttemptNumber) {
-        val mapId = mapAttemptRssInfo.getMapId
-        val oldValue = mapLatestAttemptRssServers.get(mapId)
-        if (oldValue.isEmpty || oldValue.get.getTaskAttemptId < mapAttemptRssInfo.getTaskAttemptId) {
-          mapLatestAttemptRssServers.put(mapId, mapAttemptRssInfo)
-        }
+      val mapId = mapAttemptRssInfo.getMapId
+      val oldValue = mapLatestAttemptRssServers.get(mapId)
+      if (oldValue.isEmpty || oldValue.get.getTaskAttemptId < mapAttemptRssInfo.getTaskAttemptId) {
+        mapLatestAttemptRssServers.put(mapId, mapAttemptRssInfo)
       }
     }
     val numMaps = mapLatestAttemptRssServers.size
@@ -126,7 +119,7 @@ object RssUtils extends Logging {
       .map(_.getTaskAttemptId)
       .toArray
       .distinct
-    new MapOutputRssInfo(numMaps, numRssServers, stageAttemptNumber, latestTaskAttemptIds)
+    new MapOutputRssInfo(numMaps, numRssServers, latestTaskAttemptIds)
   }
 
   /**

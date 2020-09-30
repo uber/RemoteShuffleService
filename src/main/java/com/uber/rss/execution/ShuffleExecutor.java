@@ -423,6 +423,11 @@ public class ShuffleExecutor {
         return getStageState(appShuffleId).getPersistedBytesSnapshot(partition);
     }
 
+    public void closePartitionFiles(AppShufflePartitionId appShufflePartitionId) {
+      ExecutorShuffleStageState stageState = getStageState(appShufflePartitionId.getAppShuffleId());
+      stageState.closeWriter(appShufflePartitionId.getPartitionId());
+    }
+
     /**
      * Update liveness indicator for the given application.
      * @param appId
@@ -553,12 +558,6 @@ public class ShuffleExecutor {
         }
     }
 
-    public void checkAppMaxWriteBytes(AppTaskAttemptId appTaskAttemptId) {
-        ExecutorAppState appState = getAppState(appTaskAttemptId.getAppId());
-        long appWriteBytes = appState.getNumWriteBytes();
-        checkAppMaxWriteBytes(appTaskAttemptId, appWriteBytes);
-    }
-
     public void checkAppMaxWriteBytes(String appId) {
         ExecutorAppState appState = getAppState(appId);
         long appWriteBytes = appState.getNumWriteBytes();
@@ -568,7 +567,13 @@ public class ShuffleExecutor {
     private void checkAppMaxWriteBytes(AppTaskAttemptId appTaskAttemptId, long currentAppWriteBytes) {
         if (currentAppWriteBytes > appMaxWriteBytes) {
             numTruncatedApplications.inc(1);
-            throw new RssTooMuchDataException(String.format(
+          AppShuffleId appShuffleId = appTaskAttemptId.getAppShuffleId();
+          ExecutorShuffleStageState stageState = stageStates.get(appShuffleId);
+          if (stageState != null) {
+            stageState.setFileCorrupted();
+            stateStore.storeStageCorruption(appShuffleId);
+          }
+          throw new RssTooMuchDataException(String.format(
                 "Application %s wrote too much data (%s bytes exceeding max allowed %s)",
                 appTaskAttemptId.getAppId(), currentAppWriteBytes, appMaxWriteBytes));
         }

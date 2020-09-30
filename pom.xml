@@ -9,7 +9,7 @@
     <artifactId>remote-shuffle-service</artifactId>
     <version>0.0.9</version>
     <name>remote-shuffle-service</name>
-    <description>A shuffle manager prototype.</description>
+    <description>Remote shuffle service and client.</description>
     <url></url>
 
     <licenses>
@@ -54,6 +54,12 @@
         <dependency>
             <groupId>org.apache.spark</groupId>
             <artifactId>spark-core_${scala.compat.version}</artifactId>
+            <version>${spark.version}</version>
+            <scope>${dependency.scope}</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.spark</groupId>
+            <artifactId>spark-sql_${scala.compat.version}</artifactId>
             <version>${spark.version}</version>
             <scope>${dependency.scope}</scope>
         </dependency>

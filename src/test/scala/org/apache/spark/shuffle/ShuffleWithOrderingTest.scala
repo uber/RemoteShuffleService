@@ -17,7 +17,7 @@ package org.apache.spark.shuffle
 import java.util.UUID
 
 import com.uber.rss.testutil.{RssMiniCluster, RssZookeeperCluster, StreamServerTestUtils}
-import org.apache.spark.{HashPartitioner, ShuffleDependency, SparkContext}
+import org.apache.spark.{HashPartitioner, ShuffleDependency, SparkConf, SparkContext}
 import org.scalatest.Assertions._
 import org.testng.annotations._
 
@@ -51,7 +51,24 @@ class ShuffleWithOrderingTest {
   @Test
   def sortByKey(): Unit = {
     val conf = TestUtil.newSparkConfWithStandAloneRegistryServer(appId, rssTestCluster.getRegistryServerConnection)
+    runWithConf(conf)
+  }
 
+  @Test
+  def sortByKey_fileBufferLargeValue(): Unit = {
+    val conf = TestUtil.newSparkConfWithStandAloneRegistryServer(appId, rssTestCluster.getRegistryServerConnection)
+    conf.set("spark.shuffle.file.buffer", "1m")
+    runWithConf(conf)
+  }
+
+  @Test
+  def sortByKey_initialMemoryThresholdLargeValue(): Unit = {
+    val conf = TestUtil.newSparkConfWithStandAloneRegistryServer(appId, rssTestCluster.getRegistryServerConnection)
+    conf.set("spark.shuffle.spill.initialMemoryThreshold", "128000000")
+    runWithConf(conf)
+  }
+
+  private def runWithConf(conf: SparkConf): Unit = {
     sc = new SparkContext(conf)
 
     val numValues = 1000
@@ -72,5 +89,4 @@ class ShuffleWithOrderingTest {
       assert(currentRow._1 > nextRow._1)
     }
   }
-
 }

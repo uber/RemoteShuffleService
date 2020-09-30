@@ -14,7 +14,6 @@
 
 package com.uber.rss.testutil;
 
-import com.uber.rss.clients.CompressedRecordSocketReadClient;
 import com.uber.rss.clients.PlainRecordSocketReadClient;
 import com.uber.rss.common.AppShuffleId;
 import com.uber.rss.common.AppShufflePartitionId;
@@ -42,28 +41,19 @@ public class StreamServerTestUtils {
         return dirs;
     }
 
-    public static List<RecordKeyValuePair> readAllRecords(int port, AppShuffleId appShuffleId, int partitionId, Collection<Long> latestTaskAttemptIds) {
-        return readAllRecords(port, appShuffleId, partitionId, latestTaskAttemptIds, false);
+    public static List<RecordKeyValuePair> readAllRecords2(int port, AppShuffleId appShuffleId, int partitionId, Collection<Long> latestTaskAttemptIds) {
+        return readAllRecords2(port, appShuffleId, partitionId, latestTaskAttemptIds, TestConstants.DATA_AVAILABLE_TIMEOUT);
     }
 
-    public static List<RecordKeyValuePair> readAllRecords(int port, AppShuffleId appShuffleId, int partitionId, Collection<Long> latestTaskAttemptIds, boolean dataCompressed) {
-        return readAllRecords(port, appShuffleId, partitionId, latestTaskAttemptIds, dataCompressed, TestConstants.DATA_AVAILABLE_TIMEOUT);
-    }
-
-    public static List<RecordKeyValuePair> readAllRecords(int port, AppShuffleId appShuffleId, int partitionId, Collection<Long> latestTaskAttemptIds, boolean dataCompressed, int dataAvailableWaitTime) {
-        SingleServerReadClient readClient = null;
-        if (dataCompressed) {
-            readClient = new CompressedRecordSocketReadClient("localhost", port, TestConstants.NETWORK_TIMEOUT, "user1", new AppShufflePartitionId(appShuffleId, partitionId), latestTaskAttemptIds, TestConstants.DATA_AVAILABLE_POLL_INTERVAL, dataAvailableWaitTime);
-        } else {
-            readClient = new PlainRecordSocketReadClient("localhost", port, TestConstants.NETWORK_TIMEOUT, "user1", new AppShufflePartitionId(appShuffleId, partitionId), latestTaskAttemptIds, TestConstants.DATA_AVAILABLE_POLL_INTERVAL, dataAvailableWaitTime);
-        }
+    public static List<RecordKeyValuePair> readAllRecords(int port, AppShuffleId appShuffleId, int partitionId, Collection<Long> latestTaskAttemptIds, int dataAvailableWaitTime) {
+        SingleServerReadClient readClient = new PlainRecordSocketReadClient("localhost", port, TestConstants.NETWORK_TIMEOUT, "user1", new AppShufflePartitionId(appShuffleId, partitionId), latestTaskAttemptIds, TestConstants.DATA_AVAILABLE_POLL_INTERVAL, dataAvailableWaitTime);
 
         try {
             AppShufflePartitionId appShufflePartitionId = new AppShufflePartitionId(
                     appShuffleId.getAppId(), appShuffleId.getAppAttempt(), appShuffleId.getShuffleId(), partitionId);
 
             readClient.connect();
-            
+
             List<RecordKeyValuePair> result = new ArrayList<>();
 
             RecordKeyValuePair record = readClient.readRecord();
@@ -77,21 +67,39 @@ public class StreamServerTestUtils {
         }
     }
 
-    public static void waitTillDataAvailable(int port, AppShuffleId appShuffleId, Collection<Integer> partitionIds, Collection<Long> latestTaskAttemptIds, boolean dataCompressed) {
-        for (Integer p: partitionIds) {
-            waitTillDataAvailable(port, appShuffleId, p, latestTaskAttemptIds, dataCompressed);
+    public static List<RecordKeyValuePair> readAllRecords2(int port, AppShuffleId appShuffleId, int partitionId, Collection<Long> latestTaskAttemptIds, int dataAvailableWaitTime) {
+        SingleServerReadClient readClient = null;
+        readClient = new PlainRecordSocketReadClient("localhost", port, TestConstants.NETWORK_TIMEOUT, "user1", new AppShufflePartitionId(appShuffleId, partitionId), latestTaskAttemptIds, TestConstants.DATA_AVAILABLE_POLL_INTERVAL, dataAvailableWaitTime);
+
+        try {
+            AppShufflePartitionId appShufflePartitionId = new AppShufflePartitionId(
+                appShuffleId.getAppId(), appShuffleId.getAppAttempt(), appShuffleId.getShuffleId(), partitionId);
+
+            readClient.connect();
+
+            List<RecordKeyValuePair> result = new ArrayList<>();
+
+            RecordKeyValuePair record = readClient.readRecord();
+            while (record != null) {
+                result.add(record);
+                record = readClient.readRecord();
+            }
+            return result;
+        } finally {
+            readClient.close();
         }
     }
 
-    public static void waitTillDataAvailable(int port, AppShuffleId appShuffleId, int partitionId, Collection<Long> latestTaskAttemptIds, boolean dataCompressed) {
+    public static void waitTillDataAvailable(int port, AppShuffleId appShuffleId, Collection<Integer> partitionIds, Collection<Long> latestTaskAttemptIds) {
+        for (Integer p: partitionIds) {
+            waitTillDataAvailable(port, appShuffleId, p, latestTaskAttemptIds);
+        }
+    }
+
+    public static void waitTillDataAvailable(int port, AppShuffleId appShuffleId, int partitionId, Collection<Long> latestTaskAttemptIds) {
         AppShufflePartitionId appShufflePartitionId = new AppShufflePartitionId(
             appShuffleId.getAppId(), appShuffleId.getAppAttempt(), appShuffleId.getShuffleId(), partitionId);
-        SingleServerReadClient readClient = null;
-        if (dataCompressed) {
-            readClient = new CompressedRecordSocketReadClient("localhost", port, TestConstants.NETWORK_TIMEOUT, "user1", new AppShufflePartitionId(appShuffleId, partitionId), latestTaskAttemptIds, TestConstants.DATA_AVAILABLE_POLL_INTERVAL, TestConstants.DATA_AVAILABLE_TIMEOUT);
-        } else {
-            readClient = new PlainRecordSocketReadClient("localhost", port, TestConstants.NETWORK_TIMEOUT, "user1", new AppShufflePartitionId(appShuffleId, partitionId), latestTaskAttemptIds, TestConstants.DATA_AVAILABLE_POLL_INTERVAL, TestConstants.DATA_AVAILABLE_TIMEOUT);
-        }
+        SingleServerReadClient readClient = readClient = new PlainRecordSocketReadClient("localhost", port, TestConstants.NETWORK_TIMEOUT, "user1", new AppShufflePartitionId(appShuffleId, partitionId), latestTaskAttemptIds, TestConstants.DATA_AVAILABLE_POLL_INTERVAL, TestConstants.DATA_AVAILABLE_TIMEOUT);
         try {
             readClient.connect();
             readClient.readRecord();

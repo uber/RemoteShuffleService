@@ -44,7 +44,7 @@ public class ServerIdleTimeoutTest {
 
       boolean finishUploadAck = true;
 
-      try (RecordSyncWriteClient writeClient = writeClientFactory.getOrCreateClient("localhost", testServer1.getShufflePort(), TestConstants.NETWORK_TIMEOUT, finishUploadAck, "user1", appId, appAttempt, TestConstants.COMPRESSION_BUFFER_SIZE, TestConstants.SHUFFLE_WRITE_CONFIG)) {
+      try (RecordSyncWriteClient writeClient = writeClientFactory.getOrCreateClient("localhost", testServer1.getShufflePort(), TestConstants.NETWORK_TIMEOUT, finishUploadAck, "user1", appId, appAttempt, TestConstants.SHUFFLE_WRITE_CONFIG)) {
         // sleep sometime so the server thinks the connection is idle and timeout
         try {
           Thread.sleep(serverIdleTimeoutMillis * 2);

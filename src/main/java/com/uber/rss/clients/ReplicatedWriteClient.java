@@ -17,20 +17,17 @@ package com.uber.rss.clients;
 import com.uber.rss.common.AppTaskAttemptId;
 import com.uber.rss.common.ServerDetail;
 import com.uber.rss.common.ServerReplicationGroup;
-import com.uber.rss.exceptions.RssInvalidStateException;
-import com.uber.rss.exceptions.RssAggregateException;
 import com.uber.rss.exceptions.RssException;
+import com.uber.rss.exceptions.RssInvalidStateException;
 import com.uber.rss.metrics.M3Stats;
 import com.uber.rss.util.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
 
 /**
  * This class write same shuffle data to multiple shuffle servers (replication group) to achieve fault tolerance.
@@ -43,11 +40,11 @@ public class ReplicatedWriteClient implements MultiServerWriteClient {
 
   private long shuffleWriteBytes = -1;
 
-  public ReplicatedWriteClient(ServerReplicationGroup serverReplicationGroup, int timeoutMillis, boolean finishUploadAck, boolean usePooledConnection, int compressBufferSize, String user, String appId, String appAttempt, ShuffleWriteConfig shuffleWriteConfig) {
-    this(serverReplicationGroup, timeoutMillis, null, finishUploadAck, usePooledConnection, compressBufferSize,user, appId, appAttempt, shuffleWriteConfig);
+  public ReplicatedWriteClient(ServerReplicationGroup serverReplicationGroup, int timeoutMillis, boolean finishUploadAck, boolean usePooledConnection, String user, String appId, String appAttempt, ShuffleWriteConfig shuffleWriteConfig) {
+    this(serverReplicationGroup, timeoutMillis, null, finishUploadAck, usePooledConnection, user, appId, appAttempt, shuffleWriteConfig);
   }
 
-  public ReplicatedWriteClient(ServerReplicationGroup serverReplicationGroup, int timeoutMillis, ServerConnectionRefresher serverConnectionRefresher, boolean finishUploadAck, boolean usePooledConnection, int compressBufferSize, String user, String appId, String appAttempt, ShuffleWriteConfig shuffleWriteConfig) {
+  public ReplicatedWriteClient(ServerReplicationGroup serverReplicationGroup, int timeoutMillis, ServerConnectionRefresher serverConnectionRefresher, boolean finishUploadAck, boolean usePooledConnection, String user, String appId, String appAttempt, ShuffleWriteConfig shuffleWriteConfig) {
     this.serverReplicationGroup = serverReplicationGroup;
 
     List<ServerDetail> servers = serverReplicationGroup.getServers();
@@ -58,7 +55,7 @@ public class ReplicatedWriteClient implements MultiServerWriteClient {
     clients = new ServerIdAwareSyncWriteClient[servers.size()];
     for (int i = 0; i < servers.size(); i++) {
       ServerDetail serverDetail = servers.get(i);
-      ServerIdAwareSyncWriteClient client = new ServerIdAwareSyncWriteClient(serverDetail, timeoutMillis, finishUploadAck, usePooledConnection, compressBufferSize, user, appId, appAttempt, shuffleWriteConfig, serverConnectionRefresher);
+      ServerIdAwareSyncWriteClient client = new ServerIdAwareSyncWriteClient(serverDetail, timeoutMillis, finishUploadAck, usePooledConnection, user, appId, appAttempt, shuffleWriteConfig, serverConnectionRefresher);
       clients[i] = client;
     }
   }

@@ -22,7 +22,7 @@ object RssOpts {
     ConfigBuilder("spark.shuffle.rss.maxServerCount")
       .doc("max remote shuffle servers used for this application.")
       .intConf
-      .createWithDefault(100)
+      .createWithDefault(60)
   val minServerCount: ConfigEntry[Int] =
     ConfigBuilder("spark.shuffle.rss.minServerCount")
       .doc("min remote shuffle servers used for this application.")
@@ -37,7 +37,7 @@ object RssOpts {
     ConfigBuilder("spark.shuffle.rss.writer.queueSize")
       .doc("writer queue size for shuffle writer to store shuffle records and send them to shuffle server in background threads.")
       .intConf
-      .createWithDefault(1000)
+      .createWithDefault(100)
   val writerMaxThreads: ConfigEntry[Int] =
     ConfigBuilder("spark.shuffle.rss.writer.maxThreads")
       .doc("max number of threads for shuffle writer to store shuffle records and send them to shuffle server in background threads.")
@@ -48,6 +48,23 @@ object RssOpts {
       .doc("whether use async mode for writer to finish uploading data.")
       .booleanConf
       .createWithDefault(false)
+  val writerBufferSize: ConfigEntry[Int] =
+    ConfigBuilder("spark.shuffle.rss.writer.bufferSize")
+      .doc("Internal buffer size for shuffle writer.")
+      .intConf
+      .createWithDefault(MessageConstants.DEFAULT_SHUFFLE_DATA_MESSAGE_SIZE)
+  val writerBufferMax: ConfigEntry[Int] =
+    ConfigBuilder("spark.shuffle.rss.writer.bufferMax")
+      .doc("Internal buffer max limit for shuffle writer. The buffer could temporarily grow to this size if there " +
+        "is a single large shuffle record to serialize into the buffer.")
+      .intConf
+      .createWithDefault(512 * 1024 * 1024)
+  val writerBufferSpill: ConfigEntry[Int] =
+    ConfigBuilder("spark.shuffle.rss.writer.bufferSpill")
+      .doc("The threshold for shuffle writer buffer to spill data. Here spill means removing the data out of the buffer " +
+        "and send to shuffle server.")
+      .intConf
+      .createWithDefault(32 * 1024 * 1024)
   val networkTimeout: ConfigEntry[Long] =
     ConfigBuilder("spark.shuffle.rss.networkTimeout")
       .doc("network timeout (milliseconds) for shuffle client.")
@@ -83,6 +100,16 @@ object RssOpts {
       .doc("reader queue size to use for shuffle reader to read from shuffle server when using background threads.")
       .intConf
       .createWithDefault(0)
+  val readerSorterBufferSize: ConfigEntry[String] =
+    ConfigBuilder("spark.shuffle.rss.reader.sorterBufferSize")
+      .doc("buffer size for the sorter used in shuffle reader")
+      .stringConf
+      .createWithDefault("32k")
+  val readerSorterMemoryThreshold: ConfigEntry[Long] =
+    ConfigBuilder("spark.shuffle.rss.reader.sorterMemoryThreshold")
+      .doc("memory threshold for the sorter used in shuffle reader")
+      .longConf
+      .createWithDefault(20 * 1024 * 1024)
   val dataCenter: ConfigEntry[String] =
     ConfigBuilder("spark.shuffle.rss.dataCenter")
       .doc("data center for RSS cluster. If not specified, will try to get value from the environment.")
@@ -127,14 +154,14 @@ object RssOpts {
     ConfigBuilder("spark.shuffle.rss.maxSplits")
       .doc("max number of splits for each shuffle partition on each shuffle server.")
       .intConf
-      .createWithDefault(200)
+      .createWithDefault(50)
   val mapsPerSplit: ConfigEntry[Int] =
     ConfigBuilder("spark.shuffle.rss.mapsPerSplit")
       .doc("how many map tasks write to same shuffle partition split. Large value here will " +
         "have more memory consumption because RSS client needs to maintain internal memory buffer" +
         "for each task.")
       .intConf
-      .createWithDefault(500)
+      .createWithDefault(800)
   val replicas: ConfigEntry[Int] =
     ConfigBuilder("spark.shuffle.rss.replicas")
       .doc("number of replicas for replicated shuffle client.")

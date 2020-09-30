@@ -58,24 +58,24 @@ public class RecordSocketReadClientTest {
 
         writeClient.sendRecord(1, null, null);
         writeClient.sendRecord(1,
-            ByteBuffer.wrap(new byte[0]),
+            null,
             ByteBuffer.wrap(new byte[0]));
         writeClient.sendRecord(1,
-            ByteBuffer.wrap("key1".getBytes(StandardCharsets.UTF_8)),
+            null,
             ByteBuffer.wrap("".getBytes(StandardCharsets.UTF_8)));
         writeClient.sendRecord(1,
-            ByteBuffer.wrap("".getBytes(StandardCharsets.UTF_8)),
+            null,
             ByteBuffer.wrap("value1".getBytes(StandardCharsets.UTF_8)));
         writeClient.sendRecord(1,
-            ByteBuffer.wrap("key1".getBytes(StandardCharsets.UTF_8)),
+            null,
             ByteBuffer.wrap("value1".getBytes(StandardCharsets.UTF_8)));
 
         writeClient.sendRecord(2,
-            ByteBuffer.wrap(new byte[0]),
+            null,
             ByteBuffer.wrap(new byte[0]));
 
         writeClient.sendRecord(3,
-            ByteBuffer.wrap("key1".getBytes(StandardCharsets.UTF_8)),
+            null,
             ByteBuffer.wrap("value1".getBytes(StandardCharsets.UTF_8)));
 
         writeClient.finishUpload();
@@ -87,26 +87,26 @@ public class RecordSocketReadClientTest {
         RecordKeyValuePair record = readClient.readRecord();
         Assert.assertNotNull(record);
         Assert.assertNull(record.getKey());
-        Assert.assertNull(record.getValue());
-
-        record = readClient.readRecord();
-        Assert.assertNotNull(record);
-        Assert.assertEquals(record.getKey(), new byte[0]);
         Assert.assertEquals(record.getValue(), new byte[0]);
 
         record = readClient.readRecord();
         Assert.assertNotNull(record);
-        Assert.assertEquals(new String(record.getKey(), StandardCharsets.UTF_8), "key1");
+        Assert.assertEquals(record.getKey(), null);
+        Assert.assertEquals(record.getValue(), new byte[0]);
+
+        record = readClient.readRecord();
+        Assert.assertNotNull(record);
+        Assert.assertEquals(record.getKey(), null);
         Assert.assertEquals(new String(record.getValue(), StandardCharsets.UTF_8), "");
 
         record = readClient.readRecord();
         Assert.assertNotNull(record);
-        Assert.assertEquals(new String(record.getKey(), StandardCharsets.UTF_8), "");
+        Assert.assertEquals(record.getKey(), null);
         Assert.assertEquals(new String(record.getValue(), StandardCharsets.UTF_8), "value1");
 
         record = readClient.readRecord();
         Assert.assertNotNull(record);
-        Assert.assertEquals(new String(record.getKey(), StandardCharsets.UTF_8), "key1");
+        Assert.assertEquals(record.getKey(), null);
         Assert.assertEquals(new String(record.getValue(), StandardCharsets.UTF_8), "value1");
 
         record = readClient.readRecord();
@@ -118,7 +118,7 @@ public class RecordSocketReadClientTest {
         readClient.connect();
         RecordKeyValuePair record = readClient.readRecord();
         Assert.assertNotNull(record);
-        Assert.assertEquals(record.getKey(), new byte[0]);
+        Assert.assertEquals(record.getKey(), null);
         Assert.assertEquals(record.getValue(), new byte[0]);
 
         record = readClient.readRecord();
@@ -130,7 +130,7 @@ public class RecordSocketReadClientTest {
         readClient.connect();
         RecordKeyValuePair record = readClient.readRecord();
         Assert.assertNotNull(record);
-        Assert.assertEquals(new String(record.getKey(), StandardCharsets.UTF_8), "key1");
+        Assert.assertEquals(record.getKey(), null);
         Assert.assertEquals(new String(record.getValue(), StandardCharsets.UTF_8), "value1");
 
         record = readClient.readRecord();
@@ -197,11 +197,11 @@ public class RecordSocketReadClientTest {
           Assert.assertTrue(readRecords.size() > 0);
           Assert.assertEquals(readRecords.size(), mapTaskData1.get(partition).size() + mapTaskData2.get(partition).size());
           for (int i = 0; i < mapTaskData1.get(partition).size(); i++) {
-            Assert.assertEquals(new String(readRecords.get(i).getKey(), StandardCharsets.UTF_8), mapTaskData1.get(partition).get(i).getKey());
+            Assert.assertEquals(readRecords.get(i).getKey(), null);
             Assert.assertEquals(new String(readRecords.get(i).getValue(), StandardCharsets.UTF_8), mapTaskData1.get(partition).get(i).getValue());
           }
           for (int i = 0; i < mapTaskData2.get(partition).size(); i++) {
-            Assert.assertEquals(new String(readRecords.get(mapTaskData1.get(partition).size() + i).getKey(), StandardCharsets.UTF_8), mapTaskData2.get(partition).get(i).getKey());
+            Assert.assertEquals(readRecords.get(mapTaskData1.get(partition).size() + i).getKey(), null);
             Assert.assertEquals(new String(readRecords.get(mapTaskData1.get(partition).size() + i).getValue(), StandardCharsets.UTF_8), mapTaskData2.get(partition).get(i).getValue());
           }
         }
@@ -232,24 +232,24 @@ public class RecordSocketReadClientTest {
 
       writeClient.sendRecord(1, null, null);
       writeClient.sendRecord(1,
-          ByteBuffer.wrap(new byte[0]),
+          null,
           ByteBuffer.wrap(new byte[0]));
       writeClient.sendRecord(1,
-          ByteBuffer.wrap("key1".getBytes(StandardCharsets.UTF_8)),
+          null,
           ByteBuffer.wrap("".getBytes(StandardCharsets.UTF_8)));
       writeClient.sendRecord(1,
-          ByteBuffer.wrap("".getBytes(StandardCharsets.UTF_8)),
+          null,
           ByteBuffer.wrap("value1".getBytes(StandardCharsets.UTF_8)));
       writeClient.sendRecord(1,
-          ByteBuffer.wrap("key1".getBytes(StandardCharsets.UTF_8)),
+          null,
           ByteBuffer.wrap("value1".getBytes(StandardCharsets.UTF_8)));
 
       writeClient.sendRecord(2,
-          ByteBuffer.wrap(new byte[0]),
+          null,
           ByteBuffer.wrap(new byte[0]));
 
       writeClient.sendRecord(3,
-          ByteBuffer.wrap("key1".getBytes(StandardCharsets.UTF_8)),
+          null,
           ByteBuffer.wrap("value1".getBytes(StandardCharsets.UTF_8)));
 
       writeClient.finishUpload();
@@ -271,26 +271,26 @@ public class RecordSocketReadClientTest {
       RecordKeyValuePair record = readClient.readRecord();
       Assert.assertNotNull(record);
       Assert.assertNull(record.getKey());
-      Assert.assertNull(record.getValue());
-
-      record = readClient.readRecord();
-      Assert.assertNotNull(record);
-      Assert.assertEquals(record.getKey(), new byte[0]);
       Assert.assertEquals(record.getValue(), new byte[0]);
 
       record = readClient.readRecord();
       Assert.assertNotNull(record);
-      Assert.assertEquals(new String(record.getKey(), StandardCharsets.UTF_8), "key1");
+      Assert.assertEquals(record.getKey(), null);
+      Assert.assertEquals(record.getValue(), new byte[0]);
+
+      record = readClient.readRecord();
+      Assert.assertNotNull(record);
+      Assert.assertEquals(record.getKey(), null);
       Assert.assertEquals(new String(record.getValue(), StandardCharsets.UTF_8), "");
 
       record = readClient.readRecord();
       Assert.assertNotNull(record);
-      Assert.assertEquals(new String(record.getKey(), StandardCharsets.UTF_8), "");
+      Assert.assertEquals(record.getKey(), null);
       Assert.assertEquals(new String(record.getValue(), StandardCharsets.UTF_8), "value1");
 
       record = readClient.readRecord();
       Assert.assertNotNull(record);
-      Assert.assertEquals(new String(record.getKey(), StandardCharsets.UTF_8), "key1");
+      Assert.assertEquals(record.getKey(), null);
       Assert.assertEquals(new String(record.getValue(), StandardCharsets.UTF_8), "value1");
 
       record = readClient.readRecord();
@@ -302,7 +302,7 @@ public class RecordSocketReadClientTest {
       readClient.connect();
       RecordKeyValuePair record = readClient.readRecord();
       Assert.assertNotNull(record);
-      Assert.assertEquals(record.getKey(), new byte[0]);
+      Assert.assertEquals(record.getKey(), null);
       Assert.assertEquals(record.getValue(), new byte[0]);
 
       record = readClient.readRecord();
@@ -314,7 +314,7 @@ public class RecordSocketReadClientTest {
       readClient.connect();
       RecordKeyValuePair record = readClient.readRecord();
       Assert.assertNotNull(record);
-      Assert.assertEquals(new String(record.getKey(), StandardCharsets.UTF_8), "key1");
+      Assert.assertEquals(record.getKey(), null);
       Assert.assertEquals(new String(record.getValue(), StandardCharsets.UTF_8), "value1");
 
       record = readClient.readRecord();
@@ -363,8 +363,8 @@ public class RecordSocketReadClientTest {
       writeClient.startUpload(map1TaskAttemptId, numMaps, numPartitions);
       for (int i = 0; i < numRecords; i++) {
         writeClient.sendRecord(1,
-            ByteBuffer.wrap("map1Key".getBytes(StandardCharsets.UTF_8)),
-            ByteBuffer.wrap("map1Value".getBytes(StandardCharsets.UTF_8)));
+            null,
+            ByteBuffer.wrap("map1Key_map1Value".getBytes(StandardCharsets.UTF_8)));
       }
       writeClient.finishUpload();
     }
@@ -400,7 +400,7 @@ public class RecordSocketReadClientTest {
       writeClient.startUpload(map2TaskAttemptId2, numMaps, numPartitions);
       for (int i = 0; i < numRecords; i++) {
         writeClient.sendRecord(1,
-            ByteBuffer.wrap("key2".getBytes(StandardCharsets.UTF_8)),
+            null,
             ByteBuffer.wrap("value2".getBytes(StandardCharsets.UTF_8)));
       }
       writeClient.finishUpload();
@@ -416,22 +416,22 @@ public class RecordSocketReadClientTest {
       for (int i = 0; i < numRecords * 2; i++) {
         RecordKeyValuePair record = readClient.readRecord();
         Assert.assertNotNull(record);
-        allRecords.add(Pair.of(new String(record.getKey(), StandardCharsets.UTF_8), new String(record.getValue(), StandardCharsets.UTF_8)));
+        allRecords.add(Pair.of(null, new String(record.getValue(), StandardCharsets.UTF_8)));
       }
       RecordKeyValuePair record = readClient.readRecord();
       Assert.assertNull(record);
 
-      List<Pair<String, String>> map1Records = allRecords.stream().filter(t->t.getKey().equals("map1Key")).collect(Collectors.toList());
+      List<Pair<String, String>> map1Records = allRecords.stream().filter(t->t.getValue().startsWith("map1Key")).collect(Collectors.toList());
       Assert.assertEquals(map1Records.size(), numRecords);
       map1Records.forEach(t -> {
-        Assert.assertEquals(t.getKey(), "map1Key");
-        Assert.assertEquals(t.getValue(), "map1Value");
+        Assert.assertEquals(t.getKey(), null);
+        Assert.assertEquals(t.getValue(), "map1Key_map1Value");
       });
 
-      List<Pair<String, String>> otherRecords = allRecords.stream().filter(t->!t.getKey().equals("map1Key")).collect(Collectors.toList());
+      List<Pair<String, String>> otherRecords = allRecords.stream().filter(t->!t.getValue().startsWith("map1Key")).collect(Collectors.toList());
       Assert.assertEquals(otherRecords.size(), numRecords);
       otherRecords.forEach(t -> {
-        Assert.assertEquals(t.getKey(), "key2");
+        Assert.assertEquals(t.getKey(), null);
         Assert.assertEquals(t.getValue(), "value2");
       });
     }
@@ -442,7 +442,7 @@ public class RecordSocketReadClientTest {
       writeClient.startUpload(map2TaskAttemptId3, numMaps, numPartitions);
       for (int i = 0; i < numRecords; i++) {
         writeClient.sendRecord(1,
-            ByteBuffer.wrap("key3".getBytes(StandardCharsets.UTF_8)),
+            null,
             ByteBuffer.wrap("value3".getBytes(StandardCharsets.UTF_8)));
       }
     }
@@ -457,7 +457,7 @@ public class RecordSocketReadClientTest {
       writeClient.startUpload(map2TaskAttemptId4, numMaps, numPartitions);
       for (int i = 0; i < numRecords; i++) {
         writeClient.sendRecord(1,
-            ByteBuffer.wrap("key4".getBytes(StandardCharsets.UTF_8)),
+            null,
             ByteBuffer.wrap("value4".getBytes(StandardCharsets.UTF_8)));
       }
       writeClient.finishUpload();
@@ -473,22 +473,22 @@ public class RecordSocketReadClientTest {
       for (int i = 0; i < numRecords * 2; i++) {
         RecordKeyValuePair record = readClient.readRecord();
         Assert.assertNotNull(record);
-        allRecords.add(Pair.of(new String(record.getKey(), StandardCharsets.UTF_8), new String(record.getValue(), StandardCharsets.UTF_8)));
+        allRecords.add(Pair.of(null, new String(record.getValue(), StandardCharsets.UTF_8)));
       }
       RecordKeyValuePair record = readClient.readRecord();
       Assert.assertNull(record);
 
-      List<Pair<String, String>> map1Records = allRecords.stream().filter(t->t.getKey().equals("map1Key")).collect(Collectors.toList());
+      List<Pair<String, String>> map1Records = allRecords.stream().filter(t->t.getValue().startsWith("map1Key")).collect(Collectors.toList());
       Assert.assertEquals(map1Records.size(), numRecords);
       map1Records.forEach(t -> {
-        Assert.assertEquals(t.getKey(), "map1Key");
-        Assert.assertEquals(t.getValue(), "map1Value");
+        Assert.assertEquals(t.getKey(), null);
+        Assert.assertEquals(t.getValue(), "map1Key_map1Value");
       });
 
-      List<Pair<String, String>> otherRecords = allRecords.stream().filter(t->!t.getKey().equals("map1Key")).collect(Collectors.toList());
+      List<Pair<String, String>> otherRecords = allRecords.stream().filter(t->!t.getValue().startsWith("map1Key")).collect(Collectors.toList());
       Assert.assertEquals(otherRecords.size(), numRecords);
       otherRecords.forEach(t -> {
-        Assert.assertEquals(t.getKey(), "key4");
+        Assert.assertEquals(t.getKey(), null);
         Assert.assertEquals(t.getValue(), "value4");
       });
     }

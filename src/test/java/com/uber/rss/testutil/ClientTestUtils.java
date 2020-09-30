@@ -64,7 +64,7 @@ public class ClientTestUtils {
     for (Integer partition : mapTaskData.keySet()) {
       List<Pair<String, String>> records = mapTaskData.get(partition);
       for (Pair<String, String> record : records) {
-        writeClient.sendRecord(partition, ByteBuffer.wrap(record.getKey().getBytes(StandardCharsets.UTF_8)), ByteBuffer.wrap(record.getValue().getBytes(StandardCharsets.UTF_8)));
+        writeClient.sendRecord(partition, null, ByteBuffer.wrap(record.getValue().getBytes(StandardCharsets.UTF_8)));
       }
     }
     writeClient.finishUpload();
@@ -82,15 +82,11 @@ public class ClientTestUtils {
   }
 
   public static SingleServerWriteClient getOrCreateWriteClient(int port, String appId, String appAttempt) {
-    return getOrCreateWriteClient(port, appId, appAttempt, 0, true);
+    return getOrCreateWriteClient(port, appId, appAttempt, true);
   }
 
-  public static SingleServerWriteClient getOrCreateWriteClient(int port, String appId, String appAttempt, int compressionBufferSize) {
-    return getOrCreateWriteClient(port, appId, appAttempt, compressionBufferSize, true);
-  }
-
-  public static SingleServerWriteClient getOrCreateWriteClient(int port, String appId, String appAttempt, int compressionBufferSize, boolean finishUploadAck) {
+  public static SingleServerWriteClient getOrCreateWriteClient(int port, String appId, String appAttempt, boolean finishUploadAck) {
     ShuffleWriteConfig shuffleWriteConfig = new ShuffleWriteConfig("", (short)3);
-    return PooledWriteClientFactory.getInstance().getOrCreateClient("localhost", port, TestConstants.NETWORK_TIMEOUT, finishUploadAck, "user1", appId, appAttempt, compressionBufferSize, shuffleWriteConfig);
+    return PooledWriteClientFactory.getInstance().getOrCreateClient("localhost", port, TestConstants.NETWORK_TIMEOUT, finishUploadAck, "user1", appId, appAttempt, shuffleWriteConfig);
   }
 }

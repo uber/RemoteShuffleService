@@ -130,7 +130,7 @@ public class ShufflePartitionWriter {
         }
         
         for (ShuffleOutputStream shuffleOutputStream: outputStreams) {
-            logger.debug("Flushing shuffle file: " + shuffleOutputStream + ", fsync: " + fsync);
+            logger.debug("Flushing shuffle file: {}, fsync: {}", shuffleOutputStream, fsync);
             shuffleOutputStream.flush();
 
             streamPersistedBytesSnapshots.put(shuffleOutputStream.getLocation(), shuffleOutputStream.getWrittenBytes());
@@ -145,12 +145,12 @@ public class ShufflePartitionWriter {
 
     public synchronized void close() {
         if (!closed) {
-            logger.info(String.format("Closing stream file: %s", filePathBase));
+            logger.info("Closing stream file: {}", filePathBase);
 
             flush();
 
             for (ShuffleOutputStream shuffleOutputStream: outputStreams) {
-                logger.debug(String.format("Closing shuffle file: %s", shuffleOutputStream));
+                logger.debug("Closing shuffle file: {}", shuffleOutputStream);
                 shuffleOutputStream.close();
                 streamPersistedBytesSnapshots.put(shuffleOutputStream.getLocation(), shuffleOutputStream.getWrittenBytes());
             }
@@ -160,7 +160,7 @@ public class ShufflePartitionWriter {
 
             isDirty = false;
         } else {
-            logger.warn(String.format("Shuffle file already closed: %s, do not need to close it again", filePathBase));
+            logger.debug("Shuffle file already closed: {}, do not need to close it again", filePathBase);
         }
     }
 
@@ -231,7 +231,7 @@ public class ShufflePartitionWriter {
         for (int i = 0; i < outputStreams.length; i++) {
             int fileIndex = i + fileStartIndex;
             String actualFile = filePathBase + "." + fileIndex;
-            logger.info("Opening shuffle file: " + actualFile);
+            logger.info("Opening shuffle file: {}", actualFile);
             outputStreams[i] = storage.createWriterStream(actualFile, compressionCodec);
         }
         closed = false;

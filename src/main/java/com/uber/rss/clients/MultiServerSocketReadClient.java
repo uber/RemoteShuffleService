@@ -17,8 +17,8 @@ package com.uber.rss.clients;
 import com.uber.rss.common.AppShufflePartitionId;
 import com.uber.rss.common.ServerReplicationGroup;
 import com.uber.rss.exceptions.ExceptionWrapper;
-import com.uber.rss.exceptions.RssInvalidStateException;
 import com.uber.rss.exceptions.RssException;
+import com.uber.rss.exceptions.RssInvalidStateException;
 import com.uber.rss.metrics.M3Stats;
 import com.uber.rss.util.RetryUtils;
 import org.slf4j.Logger;
@@ -36,7 +36,6 @@ public class MultiServerSocketReadClient implements MultiServerReadClient {
 
   private final int timeoutMillis;
   private final ClientRetryOptions clientRetryOptions;
-  private final boolean compressed;
   private final int readQueueSize;
   private final String user;
   private final AppShufflePartitionId appShufflePartitionId;
@@ -52,7 +51,6 @@ public class MultiServerSocketReadClient implements MultiServerReadClient {
 
   public MultiServerSocketReadClient(Collection<ServerReplicationGroup> servers,
                                      int timeoutMillis,
-                                     boolean compressed,
                                      int readQueueSize,
                                      String user,
                                      AppShufflePartitionId appShufflePartitionId,
@@ -61,7 +59,6 @@ public class MultiServerSocketReadClient implements MultiServerReadClient {
     this(servers,
         timeoutMillis,
         new ClientRetryOptions(dataOptions.getDataAvailablePollInterval(), timeoutMillis, serverDetail -> serverDetail),
-        compressed,
         readQueueSize,
         user,
         appShufflePartitionId,
@@ -72,7 +69,6 @@ public class MultiServerSocketReadClient implements MultiServerReadClient {
   public MultiServerSocketReadClient(Collection<ServerReplicationGroup> servers,
                                      int timeoutMillis,
                                      ClientRetryOptions retryOptions,
-                                     boolean compressed,
                                      int readQueueSize,
                                      String user,
                                      AppShufflePartitionId appShufflePartitionId,
@@ -81,7 +77,6 @@ public class MultiServerSocketReadClient implements MultiServerReadClient {
     this.servers = new ArrayList<>(servers);
     this.timeoutMillis = timeoutMillis;
     this.clientRetryOptions = retryOptions;
-    this.compressed = compressed;
     this.readQueueSize = readQueueSize;
     this.user = user;
     this.appShufflePartitionId = appShufflePartitionId;
@@ -159,7 +154,6 @@ public class MultiServerSocketReadClient implements MultiServerReadClient {
         aClient = new ReplicatedReadClient(serverReplicationGroup,
             timeoutMillis,
             clientRetryOptions,
-            compressed,
             readQueueSize,
             user,
             appShufflePartitionId,

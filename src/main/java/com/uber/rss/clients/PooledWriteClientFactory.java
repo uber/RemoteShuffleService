@@ -63,10 +63,10 @@ public class PooledWriteClientFactory implements WriteClientFactory {
   }
 
   @Override
-  public RecordSyncWriteClient getOrCreateClient(String host, int port, int timeoutMillis, boolean finishUploadAck, String user, String appId, String appAttempt, int compressBufferSize, ShuffleWriteConfig shuffleWriteConfig) {
+  public RecordSyncWriteClient getOrCreateClient(String host, int port, int timeoutMillis, boolean finishUploadAck, String user, String appId, String appAttempt, ShuffleWriteConfig shuffleWriteConfig) {
     ClientKey clientKey = new ClientKey(host, port, user, appId, appAttempt);
     ClientPool pool = getPool(clientKey);
-    RecordSyncWriteClient client = pool.getOrCreateClient(timeoutMillis, finishUploadAck, compressBufferSize, shuffleWriteConfig);
+    RecordSyncWriteClient client = pool.getOrCreateClient(timeoutMillis, finishUploadAck, shuffleWriteConfig);
     return client;
   }
 
@@ -195,7 +195,7 @@ public class PooledWriteClientFactory implements WriteClientFactory {
       this.clientKey = clientKey;
     }
 
-    public RecordSyncWriteClient getOrCreateClient(int timeoutMillis, boolean finishUploadAck, int compressBufferSize, ShuffleWriteConfig shuffleWriteConfig) {
+    public RecordSyncWriteClient getOrCreateClient(int timeoutMillis, boolean finishUploadAck, ShuffleWriteConfig shuffleWriteConfig) {
       ClientAndState clientAndState;
       synchronized (this) {
         if (!idleClients.isEmpty()) {
@@ -204,7 +204,7 @@ public class PooledWriteClientFactory implements WriteClientFactory {
           if (numCreatedClients > MaxClients) {
             throw new RssInvalidStateException(String.format("Creating too many clients (current: %s, max: %s)", numCreatedClients, MaxClients));
           }
-          PooledRecordSyncWriteClient client = createClient(clientKey.host, clientKey.port, timeoutMillis, finishUploadAck, clientKey.user, clientKey.appId, clientKey.appAttempt, compressBufferSize, shuffleWriteConfig);
+          PooledRecordSyncWriteClient client = createClient(clientKey.host, clientKey.port, timeoutMillis, finishUploadAck, clientKey.user, clientKey.appId, clientKey.appAttempt, shuffleWriteConfig);
           numCreatedClients++;
           clientAndState = new ClientAndState(client);
         }
@@ -244,13 +244,9 @@ public class PooledWriteClientFactory implements WriteClientFactory {
       }
     }
 
-    private PooledRecordSyncWriteClient createClient(String host, int port, int timeoutMillis, boolean finishUploadAck, String user, String appId, String appAttempt, int compressBufferSize, ShuffleWriteConfig shuffleWriteConfig) {
+    private PooledRecordSyncWriteClient createClient(String host, int port, int timeoutMillis, boolean finishUploadAck, String user, String appId, String appAttempt, ShuffleWriteConfig shuffleWriteConfig) {
       RecordSyncWriteClient client;
-      if (compressBufferSize > 0) {
-        client = new CompressedRecordSyncWriteClient(host, port, timeoutMillis, finishUploadAck, user, appId, appAttempt, compressBufferSize, shuffleWriteConfig);
-      } else {
-        client = new PlainRecordSyncWriteClient(host, port, timeoutMillis, finishUploadAck, user, appId, appAttempt, shuffleWriteConfig);
-      }
+      client = new PlainRecordSyncWriteClient(host, port, timeoutMillis, finishUploadAck, user, appId, appAttempt, shuffleWriteConfig);
       logger.info(String.format("Created new client: %s", client));
       return new PooledRecordSyncWriteClient(client, PooledWriteClientFactory.this);
     }

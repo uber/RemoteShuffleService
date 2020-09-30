@@ -87,6 +87,14 @@ public class MapTaskCommitStatus {
             .equals(knownLatestTaskAttemptIds.stream().sorted().collect(Collectors.toList()));
     }
 
+    public String toShortString() {
+        String str = String.format("(%s items)", taskAttemptIds.size());
+        return "MapTaskCommitStatus{" +
+            "mapperCount=" + mapperCount +
+            ", taskAttemptIds=" + str +
+            '}';
+    }
+
     @Override
     public String toString() {
         String str = StringUtils.join(taskAttemptIds.values(), ',');

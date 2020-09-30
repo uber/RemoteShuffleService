@@ -55,7 +55,7 @@ public class StreamServerWritingTooMuchDataTest {
 
             writeClient.finishUpload();
 
-            StreamServerTestUtils.readAllRecords(testServer.getShufflePort(), appTaskAttemptId.getAppShuffleId(), 1, Arrays.asList(appTaskAttemptId.getTaskAttemptId()));
+            StreamServerTestUtils.readAllRecords2(testServer.getShufflePort(), appTaskAttemptId.getAppShuffleId(), 1, Arrays.asList(appTaskAttemptId.getTaskAttemptId()));
         } finally {
             testServer.shutdown();
         }
@@ -98,7 +98,7 @@ public class StreamServerWritingTooMuchDataTest {
                 writeClient.finishUpload();
             }
 
-            StreamServerTestUtils.readAllRecords(testServer.getShufflePort(), appTaskAttemptId.getAppShuffleId(), 1, Arrays.asList(appTaskAttemptId.getTaskAttemptId()));
+            StreamServerTestUtils.readAllRecords2(testServer.getShufflePort(), appTaskAttemptId.getAppShuffleId(), 1, Arrays.asList(appTaskAttemptId.getTaskAttemptId()));
         } finally {
             testServer.shutdown();
         }

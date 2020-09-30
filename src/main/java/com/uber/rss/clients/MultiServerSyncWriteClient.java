@@ -14,13 +14,11 @@
 
 package com.uber.rss.clients;
 
-import com.google.common.util.concurrent.Uninterruptibles;
 import com.uber.m3.tally.Stopwatch;
 import com.uber.rss.common.AppTaskAttemptId;
 import com.uber.rss.common.ServerReplicationGroup;
 import com.uber.rss.exceptions.RssInvalidDataException;
 import com.uber.rss.exceptions.RssInvalidStateException;
-import com.uber.rss.exceptions.RssException;
 import com.uber.rss.metrics.M3Stats;
 import com.uber.rss.metrics.WriteClientMetrics;
 import com.uber.rss.metrics.WriteClientMetricsKey;
@@ -32,8 +30,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
-import java.util.Random;
-import java.util.concurrent.TimeUnit;
 
 /***
  * This write client writes records to different shuffle servers based on its partition.
@@ -47,7 +43,6 @@ public class MultiServerSyncWriteClient implements MultiServerWriteClient {
     private final ServerConnectionRefresher serverConnectionRefresher;
     private final boolean finishUploadAck;
     private final boolean usePooledConnection;
-    private final int compressionBufferSize;
     private final String user;
     private final String appId;
     private final String appAttempt;
@@ -62,12 +57,12 @@ public class MultiServerSyncWriteClient implements MultiServerWriteClient {
 
     private long taskAttemptId;
 
-    public MultiServerSyncWriteClient(Collection<ServerReplicationGroup> servers, int networkTimeoutMillis, long maxTryingMillis, boolean finishUploadAck, boolean usePooledConnection, int compressionBufferSize, String user, String appId, String appAttempt, ShuffleWriteConfig shuffleWriteConfig) {
-        this(servers, 1, networkTimeoutMillis, maxTryingMillis, null, finishUploadAck, usePooledConnection, compressionBufferSize, user, appId, appAttempt, shuffleWriteConfig);
+    public MultiServerSyncWriteClient(Collection<ServerReplicationGroup> servers, int networkTimeoutMillis, long maxTryingMillis, boolean finishUploadAck, boolean usePooledConnection, String user, String appId, String appAttempt, ShuffleWriteConfig shuffleWriteConfig) {
+        this(servers, 1, networkTimeoutMillis, maxTryingMillis, null, finishUploadAck, usePooledConnection, user, appId, appAttempt, shuffleWriteConfig);
     }
 
     @SuppressWarnings("unchecked")
-    public MultiServerSyncWriteClient(Collection<ServerReplicationGroup> servers, int partitionFanout, int networkTimeoutMillis, long maxTryingMillis, ServerConnectionRefresher serverConnectionRefresher, boolean finishUploadAck, boolean usePooledConnection, int compressionBufferSize, String user, String appId, String appAttempt, ShuffleWriteConfig shuffleWriteConfig) {
+    public MultiServerSyncWriteClient(Collection<ServerReplicationGroup> servers, int partitionFanout, int networkTimeoutMillis, long maxTryingMillis, ServerConnectionRefresher serverConnectionRefresher, boolean finishUploadAck, boolean usePooledConnection, String user, String appId, String appAttempt, ShuffleWriteConfig shuffleWriteConfig) {
         for (ServerReplicationGroup entry: servers) {
             this.servers.add(new ServerConnectionInfo(this.servers.size(), entry));
         }
@@ -77,7 +72,6 @@ public class MultiServerSyncWriteClient implements MultiServerWriteClient {
         this.serverConnectionRefresher = serverConnectionRefresher;
         this.finishUploadAck = finishUploadAck;
         this.usePooledConnection = usePooledConnection;
-        this.compressionBufferSize = compressionBufferSize;
         this.user = user;
         this.appId = appId;
         this.appAttempt = appAttempt;
@@ -168,7 +162,7 @@ public class MultiServerSyncWriteClient implements MultiServerWriteClient {
     private void connectSingleClient(ServerConnectionInfo server) {
         final long startTime = System.currentTimeMillis();
         ReplicatedWriteClient client = new ReplicatedWriteClient(
-            server.server, networkTimeoutMillis, serverConnectionRefresher, finishUploadAck, usePooledConnection, compressionBufferSize, user, appId, appAttempt, shuffleWriteConfig);
+            server.server, networkTimeoutMillis, serverConnectionRefresher, finishUploadAck, usePooledConnection, user, appId, appAttempt, shuffleWriteConfig);
         client.connect();
         // use synchronize to make sure writes on clients array element visible to other threads
         // see http://www.cs.umd.edu/~pugh/java/memoryModel/jsr-133-faq.html

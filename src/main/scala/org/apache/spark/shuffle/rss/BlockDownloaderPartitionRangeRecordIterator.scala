@@ -17,15 +17,15 @@ package org.apache.spark.shuffle.rss
 import java.util
 import java.util.Random
 
-import com.uber.rss.clients.{ClientRetryOptions, MultiServerSocketReadClient, ReadClientDataOptions, RecordReader, ServerConnectionCacheUpdateRefresher, ServerConnectionRefresher, ServerConnectionStringCache, ServerConnectionStringResolver}
+import com.uber.rss.clients._
 import com.uber.rss.common.{AppShufflePartitionId, ServerDetail, ServerList}
-import com.uber.rss.exceptions.{RssException, RssInvalidMapStatusException, RssInvalidStateException, RssRetryTimeoutException, RssServerResolveException}
+import com.uber.rss.exceptions._
 import com.uber.rss.metadata.ServiceRegistry
 import com.uber.rss.metrics.M3Stats
 import com.uber.rss.util.{ExceptionUtils, ThreadUtils}
 import org.apache.spark.executor.ShuffleReadMetrics
 import org.apache.spark.internal.Logging
-import org.apache.spark.serializer.SerializerInstance
+import org.apache.spark.serializer.Serializer
 import org.apache.spark.shuffle.FetchFailedException
 
 import scala.collection.JavaConverters
@@ -37,7 +37,7 @@ class BlockDownloaderPartitionRangeRecordIterator[K, C](
     shuffleId: Int,
     startPartition: Int,
     endPartition: Int,
-    serializer: SerializerInstance,
+    serializer: Serializer,
     numMaps: Int,
     rssServers: ServerList,
     partitionFanout: Int,
@@ -48,7 +48,6 @@ class BlockDownloaderPartitionRangeRecordIterator[K, C](
     maxRetryMillis: Int,
     dataAvailablePollInterval: Long,
     dataAvailableWaitTime: Long,
-    dataCompressed: Boolean,
     queueSize: Int,
     shuffleReplicas: Int,
     checkShuffleReplicaConsistency: Boolean,
@@ -127,7 +126,6 @@ class BlockDownloaderPartitionRangeRecordIterator[K, C](
           serverReplicationGroups,
           timeoutMillis,
           new ClientRetryOptions(dataAvailablePollInterval, maxRetryMillis, serverConnectionRefresher),
-          dataCompressed,
           queueSize,
           user,
           appShufflePartitionId,
@@ -205,7 +203,7 @@ class BlockDownloaderPartitionRangeRecordIterator[K, C](
 
     val mapOutputRssInfo = RssUtils.getRssInfoFromMapOutputTracker(shuffleId, partition, dataAvailablePollInterval, maxRetryMillis)
     if (mapOutputRssInfo.numMaps != numMaps) {
-      throw new RssInvalidMapStatusException(s"Invalid number of maps from map output tracker, expected: $numMaps, got: ${mapOutputRssInfo.numMaps}, more info: $mapOutputRssInfo")
+      throw new RssInvalidMapStatusException(s"Invalid number of maps from map output tracker for shuffleId $shuffleId, partition $partition, expected: $numMaps, got: ${mapOutputRssInfo.numMaps}, more info: $mapOutputRssInfo")
     }
 
     if (mapOutputRssInfo.numRssServers != rssServers.getSeverCount) {

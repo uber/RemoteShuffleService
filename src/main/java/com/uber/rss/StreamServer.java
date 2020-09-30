@@ -14,8 +14,8 @@
 
 package com.uber.rss;
 
-import com.google.common.net.HostAndPort;
 import com.uber.rss.common.AppShuffleId;
+import com.uber.rss.common.ServerDetail;
 import com.uber.rss.common.ServerDetailCollection;
 import com.uber.rss.decoders.StreamServerVersionDecoder;
 import com.uber.rss.exceptions.RssAggregateException;
@@ -118,7 +118,7 @@ public class StreamServer {
                 serverConfig.getAppMaxWriteBytes(),
                 serverConfig.getStateCommitIntervalMillis());
 
-        channelManager = new UploadChannelManager(shuffleWorkerGroup, serverConfig.getThrottleMemoryPercentage(), serverConfig.getMaxUploadPauseMillis());
+        channelManager = new UploadChannelManager();
         channelManager.setMaxConnections(serverConfig.getMaxConnections());
     }
 
@@ -144,9 +144,9 @@ public class StreamServer {
             case ServiceRegistry.TYPE_STANDALONE:
                 String registryServer = serverConfig.getRegistryServer();
                 if (registryServer != null && !registryServer.isEmpty()) {
-                    HostAndPort hostAndPort = HostAndPort.fromString(registryServer);
-                    logger.info(String.format("Creating registry client connecting to registry server: %s:%s", hostAndPort.getHostText(), hostAndPort.getPort()));
-                    this.serviceRegistry = new StandaloneServiceRegistryClient(hostAndPort.getHostText(), hostAndPort.getPort(), serverConfig.getNetworkTimeout(), "streamServer");
+                    ServerHostAndPort hostAndPort = ServerHostAndPort.fromString(registryServer);
+                    logger.info(String.format("Creating registry client connecting to registry server: %s:%s", hostAndPort.getHost(), hostAndPort.getPort()));
+                    this.serviceRegistry = new StandaloneServiceRegistryClient(hostAndPort.getHost(), hostAndPort.getPort(), serverConfig.getNetworkTimeout(), "streamServer");
                 } else {
                     logger.info("Registry server is not specified, will use localhost as registry server and create registry client when local stream server is started (need to get port at that time)");
                 }
@@ -255,6 +255,10 @@ public class StreamServer {
     public String getServerId() {
         // use host name and root directory to uniquely identify a server
         return String.format("%s:%s", hostName, serverConfig.getRootDirectory());
+    }
+
+    public ServerDetail getServerDetail() {
+        return new ServerDetail(getServerId(), getRunningVersion(), getShuffleConnectionString());
     }
 
     public ServiceRegistry getServiceRegistry() {

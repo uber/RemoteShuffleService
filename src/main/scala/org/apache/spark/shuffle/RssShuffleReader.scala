@@ -16,20 +16,19 @@ package org.apache.spark.shuffle
 
 import com.uber.rss.common.{AppShuffleId, ServerList}
 import com.uber.rss.metadata.ServiceRegistry
-import org.apache.hadoop.conf.Configuration
 import org.apache.spark.internal.Logging
-import org.apache.spark.serializer.SerializerInstance
+import org.apache.spark.serializer.Serializer
 import org.apache.spark.shuffle.rss.BlockDownloaderPartitionRangeRecordIterator
 import org.apache.spark.util.CompletionIterator
 import org.apache.spark.util.collection.ExternalSorter
-import org.apache.spark.{InterruptibleIterator, ShuffleDependency, SparkConf, TaskContext}
+import org.apache.spark.{InterruptibleIterator, ShuffleDependency, TaskContext}
 
 class RssShuffleReader[K, C](
                               user: String,
                               shuffleInfo: AppShuffleId,
                               startPartition: Int,
                               endPartition: Int,
-                              serializer: SerializerInstance,
+                              serializer: Serializer,
                               context: TaskContext,
                               shuffleDependency: ShuffleDependency[K, _, C],
                               numMaps: Int,
@@ -42,7 +41,6 @@ class RssShuffleReader[K, C](
                               maxRetryMillis: Int,
                               dataAvailablePollInterval: Long,
                               dataAvailableWaitTime: Long,
-                              dataCompressed: Boolean,
                               queueSize: Int,
                               shuffleReplicas: Int,
                               checkShuffleReplicaConsistency: Boolean) extends ShuffleReader[K, C] with Logging {
@@ -70,7 +68,6 @@ class RssShuffleReader[K, C](
       maxRetryMillis = maxRetryMillis,
       dataAvailablePollInterval = dataAvailablePollInterval,
       dataAvailableWaitTime = dataAvailableWaitTime,
-      dataCompressed = dataCompressed,
       queueSize = queueSize,
       shuffleReplicas = shuffleReplicas,
       checkShuffleReplicaConsistency = checkShuffleReplicaConsistency,
@@ -100,12 +97,12 @@ class RssShuffleReader[K, C](
     // Sort the output if there is a sort ordering defined.
     val resultIter = dep.keyOrdering match {
       case Some(keyOrd: Ordering[K]) =>
-        // Create an ExternalSorter to sort the data.
-        val sorter =
-          new ExternalSorter[K, C, C](context, ordering = Some(keyOrd), serializer = dep.serializer)
+        // Create an ExternalSorter to sort the data
+        val sorter = new ExternalSorter[K, C, C](context, ordering = Some(keyOrd), serializer = dep.serializer)
         logInfo(s"Inserting aggregated records to sorter: $shuffleInfo")
+        val startTime = System.currentTimeMillis()
         sorter.insertAll(aggregatedIter)
-        logInfo(s"Inserted aggregated records to sorter: $shuffleInfo")
+        logInfo(s"Inserted aggregated records to sorter: $shuffleInfo, partition [$startPartition, $endPartition), millis: ${System.currentTimeMillis() - startTime}")
         context.taskMetrics().incMemoryBytesSpilled(sorter.memoryBytesSpilled)
         context.taskMetrics().incDiskBytesSpilled(sorter.diskBytesSpilled)
         context.taskMetrics().incPeakExecutionMemory(sorter.peakMemoryUsedBytes)

@@ -182,8 +182,7 @@ class RssShuffleManagerServerRestartTest {
     val lastMapId = numMaps1 - 1
     val lastMapTaskAttemptId = lastMapId + 1000
     val partitionLengths: Array[Long] = Array.fill(numPartitions)(1L)
-    val stageAttemptNumber = 0
-    val blockManagerId = RssUtils.createMapTaskDummyBlockManagerId(lastMapId, lastMapTaskAttemptId, stageAttemptNumber, shuffleHandle1.asInstanceOf[RssShuffleHandle[_, _, _]].getServerList)
+    val blockManagerId = RssUtils.createMapTaskDummyBlockManagerId(lastMapId, lastMapTaskAttemptId, shuffleHandle1.asInstanceOf[RssShuffleHandle[_, _, _]].getServerList)
     val lastMapStatus = MapStatus(blockManagerId, partitionLengths)
     mapOutputTrackerMaster.registerMapOutput(shuffleId1, numMaps1 - 1, lastMapStatus)
 
@@ -304,8 +303,7 @@ class RssShuffleManagerServerRestartTest {
     val lastMapId = numMaps1 - 1
     val lastMapTaskAttemptId = lastMapId + 1000
     val partitionLengths: Array[Long] = Array.fill(numPartitions)(1L)
-    val stageAttemptNumber = 0
-    val blockManagerId = RssUtils.createMapTaskDummyBlockManagerId(lastMapId, lastMapTaskAttemptId, stageAttemptNumber, shuffleHandle1.asInstanceOf[RssShuffleHandle[_, _, _]].getServerList)
+    val blockManagerId = RssUtils.createMapTaskDummyBlockManagerId(lastMapId, lastMapTaskAttemptId, shuffleHandle1.asInstanceOf[RssShuffleHandle[_, _, _]].getServerList)
     val lastMapStatus = MapStatus(blockManagerId, partitionLengths)
     mapOutputTrackerMaster.registerMapOutput(shuffleId1, numMaps1 - 1, lastMapStatus)
 

@@ -48,9 +48,10 @@ public class MessageConstants {
     public final static int MESSAGE_ConnectUploadResponse = -302;
     public final static int MESSAGE_StartUploadMessage = -303;
     public final static int MESSAGE_FinishUpload2Message = -317;
-    public final static int MESSAGE_ConnectDownloadRequest = -316;
+    public final static int MESSAGE_HeartbeatMessage = -319;
+    public final static int MESSAGE_ConnectDownload2Request = -318;
     public final static int MESSAGE_ConnectDownloadResponse = -307;
-    public final static int MESSAGE_GetDataAvailabilityRequest = -308;
+    public final static int MESSAGE_GetDataAvailability2Request = -310;
     public final static int MESSAGE_GetDataAvailabilityResponse = -309;
     public final static int MESSAGE_ConnectNotifyRequest = -311;
     public final static int MESSAGE_ConnectNotifyResponse = -312;

@@ -19,22 +19,22 @@ import io.netty.buffer.ByteBuf;
 /***
  * Message sent by the client to check shuffle data availability
  */
-public class GetDataAvailabilityRequest extends BaseMessage {
+public class GetDataAvailability2Request extends BaseMessage {
 
-    public GetDataAvailabilityRequest() {
+    public GetDataAvailability2Request() {
     }
 
     @Override
     public int getMessageType() {
-        return MessageConstants.MESSAGE_GetDataAvailabilityRequest;
+        return MessageConstants.MESSAGE_GetDataAvailability2Request;
     }
 
     @Override
     public void serialize(ByteBuf buf) {
     }
 
-    public static GetDataAvailabilityRequest deserialize(ByteBuf buf) {
-        return new GetDataAvailabilityRequest();
+    public static GetDataAvailability2Request deserialize(ByteBuf buf) {
+        return new GetDataAvailability2Request();
     }
 
     @Override

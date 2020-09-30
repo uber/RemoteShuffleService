@@ -32,11 +32,6 @@ public class PlainRecordSocketReadClient extends RecordSocketReadClient {
   }
 
   @Override
-  protected KeyValueStreamDecoder createKeyValueStreamDecoder() {
-    return new PlainKeyValueStreamDecoder();
-  }
-
-  @Override
   public String toString() {
     return "PlainRecordSocketReadClient{" +
         super.toString() +

@@ -14,15 +14,14 @@
 
 package com.uber.rss.clients;
 
-import com.google.common.util.concurrent.Uninterruptibles;
 import com.uber.m3.tally.Stopwatch;
 import com.uber.rss.common.AppTaskAttemptId;
 import com.uber.rss.common.ServerReplicationGroup;
+import com.uber.rss.exceptions.RssAggregateException;
+import com.uber.rss.exceptions.RssException;
 import com.uber.rss.exceptions.RssInvalidDataException;
 import com.uber.rss.exceptions.RssInvalidStateException;
 import com.uber.rss.exceptions.RssQueueNotReadyException;
-import com.uber.rss.exceptions.RssAggregateException;
-import com.uber.rss.exceptions.RssException;
 import com.uber.rss.metrics.M3Stats;
 import com.uber.rss.metrics.WriteClientMetrics;
 import com.uber.rss.metrics.WriteClientMetricsKey;
@@ -36,7 +35,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
-import java.util.Random;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -58,7 +56,6 @@ public class MultiServerAsyncWriteClient implements MultiServerWriteClient {
     private final ServerConnectionRefresher serverConnectionRefresher;
     private final boolean finishUploadAck;
     private final boolean usePooledConnection;
-    private final int compressionBufferSize;
     private final String user;
     private final String appId;
     private final String appAttempt;
@@ -85,12 +82,12 @@ public class MultiServerAsyncWriteClient implements MultiServerWriteClient {
 
     private final int partitionFanout;
 
-    public MultiServerAsyncWriteClient(Collection<ServerReplicationGroup> servers, int networkTimeoutMillis, long maxTryingMillis, boolean finishUploadAck, boolean usePooledConnection, int compressionBufferSize, int writeQueueSize, int numThreads, String user, String appId, String appAttempt, ShuffleWriteConfig shuffleWriteConfig) {
-        this(servers, 1, networkTimeoutMillis, maxTryingMillis, null, finishUploadAck, usePooledConnection, compressionBufferSize, writeQueueSize, numThreads, user, appId, appAttempt, shuffleWriteConfig);
+    public MultiServerAsyncWriteClient(Collection<ServerReplicationGroup> servers, int networkTimeoutMillis, long maxTryingMillis, boolean finishUploadAck, boolean usePooledConnection, int writeQueueSize, int numThreads, String user, String appId, String appAttempt, ShuffleWriteConfig shuffleWriteConfig) {
+        this(servers, 1, networkTimeoutMillis, maxTryingMillis, null, finishUploadAck, usePooledConnection, writeQueueSize, numThreads, user, appId, appAttempt, shuffleWriteConfig);
     }
 
     @SuppressWarnings("unchecked")
-    public MultiServerAsyncWriteClient(Collection<ServerReplicationGroup> servers, int partitionFanout, int networkTimeoutMillis, long maxTryingMillis, ServerConnectionRefresher serverConnectionRefresher, boolean finishUploadAck, boolean usePooledConnection, int compressionBufferSize, int writeQueueSize, int numThreads, String user, String appId, String appAttempt, ShuffleWriteConfig shuffleWriteConfig) {
+    public MultiServerAsyncWriteClient(Collection<ServerReplicationGroup> servers, int partitionFanout, int networkTimeoutMillis, long maxTryingMillis, ServerConnectionRefresher serverConnectionRefresher, boolean finishUploadAck, boolean usePooledConnection, int writeQueueSize, int numThreads, String user, String appId, String appAttempt, ShuffleWriteConfig shuffleWriteConfig) {
         for (ServerReplicationGroup entry: servers) {
             this.servers.add(new ServerConnectionInfo(this.servers.size(), entry));
         }
@@ -100,7 +97,6 @@ public class MultiServerAsyncWriteClient implements MultiServerWriteClient {
         this.serverConnectionRefresher = serverConnectionRefresher;
         this.finishUploadAck = finishUploadAck;
         this.usePooledConnection = usePooledConnection;
-        this.compressionBufferSize = compressionBufferSize;
         this.user = user;
         this.appId = appId;
         this.appAttempt = appAttempt;
@@ -163,7 +159,7 @@ public class MultiServerAsyncWriteClient implements MultiServerWriteClient {
                             writeClient.sendRecord(record.partition, record.key, record.value);
                             socketTime.addAndGet(System.nanoTime() - startTime);
                         } else {
-                            throw new RssQueueNotReadyException(String.format("Record queue %s has no record after waiting %s millis", threadIndex, pollMaxWait));
+                            logger.info("Record queue {} has no record after waiting {} millis", threadIndex, pollMaxWait);
                         }
                     }
                 } catch (Throwable e) {
@@ -299,7 +295,7 @@ public class MultiServerAsyncWriteClient implements MultiServerWriteClient {
 
     private void connectSingleClient(ServerConnectionInfo server) {
         ReplicatedWriteClient client = new ReplicatedWriteClient(
-            server.server, networkTimeoutMillis, serverConnectionRefresher, finishUploadAck, usePooledConnection, compressionBufferSize, user, appId, appAttempt, shuffleWriteConfig);
+            server.server, networkTimeoutMillis, serverConnectionRefresher, finishUploadAck, usePooledConnection, user, appId, appAttempt, shuffleWriteConfig);
         client.connect();
 
         // use synchronize to make sure writes on clients array element visible to other threads

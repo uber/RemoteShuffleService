@@ -19,12 +19,12 @@ import com.google.common.collect.Maps;
 import com.uber.rss.common.AppShufflePartitionId;
 import com.uber.rss.common.ServerDetail;
 import com.uber.rss.common.ServerReplicationGroup;
+import com.uber.rss.exceptions.RssAggregateException;
+import com.uber.rss.exceptions.RssException;
 import com.uber.rss.exceptions.RssInconsistentReplicaException;
 import com.uber.rss.exceptions.RssInvalidStateException;
 import com.uber.rss.exceptions.RssNoActiveReadClientException;
 import com.uber.rss.exceptions.RssNonRecoverableException;
-import com.uber.rss.exceptions.RssAggregateException;
-import com.uber.rss.exceptions.RssException;
 import com.uber.rss.metrics.M3Stats;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -48,7 +48,6 @@ public class ReplicatedReadClient implements MultiServerReadClient {
   private final ServerReplicationGroup serverReplicationGroup;
   private final int timeoutMillis;
   private final ClientRetryOptions clientRetryOptions;
-  private final boolean compressed;
   private final int readQueueSize;
   private final String user;
   private final AppShufflePartitionId appShufflePartitionId;
@@ -77,7 +76,6 @@ public class ReplicatedReadClient implements MultiServerReadClient {
 
   public ReplicatedReadClient(ServerReplicationGroup serverReplicationGroup,
                               int timeoutMillis,
-                              boolean compressed,
                               int readQueueSize,
                               String user,
                               AppShufflePartitionId appShufflePartitionId,
@@ -85,7 +83,6 @@ public class ReplicatedReadClient implements MultiServerReadClient {
     this(serverReplicationGroup,
         timeoutMillis,
         new ClientRetryOptions(dataOptions.getDataAvailablePollInterval(), timeoutMillis, serverDetail->serverDetail),
-        compressed,
         readQueueSize,
         user,
         appShufflePartitionId,
@@ -95,7 +92,6 @@ public class ReplicatedReadClient implements MultiServerReadClient {
 
   public ReplicatedReadClient(ServerReplicationGroup serverReplicationGroup,
                               int timeoutMillis,
-                              boolean compressed,
                               int readQueueSize,
                               String user,
                               AppShufflePartitionId appShufflePartitionId,
@@ -104,7 +100,6 @@ public class ReplicatedReadClient implements MultiServerReadClient {
     this(serverReplicationGroup,
         timeoutMillis,
         new ClientRetryOptions(dataOptions.getDataAvailablePollInterval(), timeoutMillis, serverDetail->serverDetail),
-        compressed,
         readQueueSize,
         user,
         appShufflePartitionId,
@@ -115,7 +110,6 @@ public class ReplicatedReadClient implements MultiServerReadClient {
   public ReplicatedReadClient(ServerReplicationGroup serverReplicationGroup,
                               int timeoutMillis,
                               ClientRetryOptions retryOptions,
-                              boolean compressed,
                               int readQueueSize,
                               String user,
                               AppShufflePartitionId appShufflePartitionId,
@@ -124,7 +118,6 @@ public class ReplicatedReadClient implements MultiServerReadClient {
     this.serverReplicationGroup = serverReplicationGroup;
     this.timeoutMillis = timeoutMillis;
     this.clientRetryOptions = retryOptions;
-    this.compressed = compressed;
     this.readQueueSize = readQueueSize;
     this.user = user;
     this.appShufflePartitionId = appShufflePartitionId;
@@ -294,7 +287,6 @@ public class ReplicatedReadClient implements MultiServerReadClient {
       RetriableSocketReadClient client = new RetriableSocketReadClient(serverDetail,
           timeoutMillis,
           clientRetryOptions,
-          compressed,
           readQueueSize,
           user,
           appShufflePartitionId,

@@ -72,7 +72,7 @@ public class StreamServerCleanupTest {
 
             writeClient.finishUpload();
 
-            StreamServerTestUtils.waitTillDataAvailable(testServer.getShufflePort(), appTaskAttemptId1.getAppShuffleId(), Arrays.asList(1, 2, 3), Arrays.asList(appTaskAttemptId1.getTaskAttemptId()), false);
+            StreamServerTestUtils.waitTillDataAvailable(testServer.getShufflePort(), appTaskAttemptId1.getAppShuffleId(), Arrays.asList(1, 2, 3), Arrays.asList(appTaskAttemptId1.getTaskAttemptId()));
             
             // The shuffle files should be still there. Those files will only be deleted when they expire and 
             // there is new application shuffle upload.

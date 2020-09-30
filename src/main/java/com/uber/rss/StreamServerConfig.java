@@ -31,7 +31,7 @@ import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
 
 public class StreamServerConfig {
-  public static final long DEFAULT_SERVER_SIDE_CONNECTION_IDLE_TIMEOUT_MILLIS = 60 * 60 * 1000;
+  public static final long DEFAULT_SERVER_SIDE_CONNECTION_IDLE_TIMEOUT_MILLIS = 2 * 60 * 60 * 1000;
 
   public static final String DEFAULT_DATA_CENTER = "dataCenter1";
 

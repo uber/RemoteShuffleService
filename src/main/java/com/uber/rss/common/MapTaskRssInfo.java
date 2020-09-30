@@ -26,21 +26,18 @@ public class MapTaskRssInfo {
   private final int mapId;
   private final long taskAttemptId;
   private final int numRssServers;
-  private final int stageAttemptNumber;
 
   public void serialize(ByteBuf buf) {
     buf.writeInt(mapId);
     buf.writeLong(taskAttemptId);
     buf.writeInt(numRssServers);
-    buf.writeInt(stageAttemptNumber);
   }
 
   public static MapTaskRssInfo deserialize(ByteBuf buf) {
     int mapId = buf.readInt();
     long taskAttemptId = buf.readLong();
     int numRssServers = buf.readInt();
-    int stageAttemptNumber = buf.readInt();
-    return new MapTaskRssInfo(mapId, taskAttemptId, numRssServers, stageAttemptNumber);
+    return new MapTaskRssInfo(mapId, taskAttemptId, numRssServers);
   }
 
   /***
@@ -69,11 +66,10 @@ public class MapTaskRssInfo {
     }
   }
 
-  public MapTaskRssInfo(int mapId, long taskAttemptId, int numRssServers, int stageAttemptNumber) {
+  public MapTaskRssInfo(int mapId, long taskAttemptId, int numRssServers) {
     this.mapId = mapId;
     this.taskAttemptId = taskAttemptId;
     this.numRssServers = numRssServers;
-    this.stageAttemptNumber = stageAttemptNumber;
   }
 
   public int getMapId() {
@@ -88,17 +84,12 @@ public class MapTaskRssInfo {
     return numRssServers;
   }
 
-  public int getStageAttemptNumber() {
-    return stageAttemptNumber;
-  }
-
   @Override
   public String toString() {
     return "MapTaskRssInfo{" +
         "mapId=" + mapId +
         ", taskAttemptId=" + taskAttemptId +
         ", numRssServers=" + numRssServers +
-        ", stageAttemptNumber=" + stageAttemptNumber +
         '}';
   }
 }

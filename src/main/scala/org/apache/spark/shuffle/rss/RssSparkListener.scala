@@ -15,11 +15,11 @@
 package org.apache.spark.shuffle.rss
 
 import java.util
-import java.util.{HashMap, Map, Random}
+import java.util.Random
 
-import com.google.common.net.HostAndPort
-import com.uber.rss.clients.NotifyClient
+import com.uber.rss.clients.{MultiServerHeartbeatClient, NotifyClient}
 import com.uber.rss.metrics.M3Stats
+import com.uber.rss.util.ServerHostAndPort
 import org.apache.commons.lang3.exception.ExceptionUtils
 import org.apache.spark.SparkContext
 import org.apache.spark.internal.Logging
@@ -127,6 +127,8 @@ class RssSparkListener(val user: String, val appId: String, val attemptId: Strin
       return
     }
 
+    MultiServerHeartbeatClient.getInstance().clearServers()
+
     invokeRandomNotifyServer(client => {
       client.finishApplicationAttempt(appId, attemptId)
     })
@@ -138,7 +140,7 @@ class RssSparkListener(val user: String, val appId: String, val attemptId: Strin
       val server = getRandomNotifyServer()
       logInfo(s"Invoking on random control server $server")
 
-      client = new NotifyClient(server.getHostText(), server.getPort, networkTimeoutMillis, user)
+      client = new NotifyClient(server.getHost, server.getPort, networkTimeoutMillis, user)
       client.connect()
       run(client)
     } catch {
@@ -154,7 +156,7 @@ class RssSparkListener(val user: String, val appId: String, val attemptId: Strin
   private def getRandomNotifyServer() = {
     val random = new Random()
     val randomIndex = random.nextInt(notifyServers.length)
-    HostAndPort.fromString(notifyServers(randomIndex))
+    ServerHostAndPort.fromString(notifyServers(randomIndex))
   }
 
 }

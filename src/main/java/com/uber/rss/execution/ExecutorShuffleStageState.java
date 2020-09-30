@@ -215,6 +215,15 @@ public class ExecutorShuffleStageState {
         }
     }
 
+    public synchronized void closeWriter(int partitionId) {
+        ShufflePartitionWriter writer = writers.get(partitionId);
+        if (writer == null) {
+          logger.info("Did not find partition writer for shuffle {} partition {}", appShuffleId, partitionId);
+          return;
+        }
+        writer.close();
+    }
+
     public synchronized int getNumOpenedWriters() {
         return (int)writers.values().stream().filter(t->!t.isClosed()).count();
     }

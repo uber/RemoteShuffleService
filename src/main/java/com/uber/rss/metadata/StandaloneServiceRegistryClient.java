@@ -69,4 +69,14 @@ public class StandaloneServiceRegistryClient implements ServiceRegistry {
   @Override
   public void close() {
   }
+
+  @Override
+  public String toString() {
+    return "StandaloneServiceRegistryClient{" +
+        "host='" + host + '\'' +
+        ", port=" + port +
+        ", timeoutMillis=" + timeoutMillis +
+        ", user='" + user + '\'' +
+        '}';
+  }
 }

@@ -60,11 +60,11 @@ public class StreamServerMultiAttemptTest {
                 writeClient.sendRecord(1, null, null);
 
                 writeClient.sendRecord(2,
-                        ByteBuffer.wrap(new byte[0]),
+                        null,
                         ByteBuffer.wrap(new byte[0]));
 
                 writeClient.sendRecord(3,
-                        ByteBuffer.wrap("key1".getBytes(StandardCharsets.UTF_8)),
+                    null,
                         ByteBuffer.wrap("value1".getBytes(StandardCharsets.UTF_8)));
 
                 writeClient.finishUpload();
@@ -75,7 +75,7 @@ public class StreamServerMultiAttemptTest {
             if (waitShuffleFileClosed) {
                 testServer.pollAndWaitShuffleFilesClosed(appTaskAttemptId1.getAppShuffleId(), TestConstants.DATA_AVAILABLE_TIMEOUT);
 
-                records = StreamServerTestUtils.readAllRecords(testServer.getShufflePort(), appTaskAttemptId1.getAppShuffleId(), 1, Arrays.asList(appTaskAttemptId1.getTaskAttemptId()));
+                records = StreamServerTestUtils.readAllRecords2(testServer.getShufflePort(), appTaskAttemptId1.getAppShuffleId(), 1, Arrays.asList(appTaskAttemptId1.getTaskAttemptId()));
                 Assert.assertEquals(records.size(), 1);
             }
 
@@ -89,28 +89,28 @@ public class StreamServerMultiAttemptTest {
                 writeClient.sendRecord(2, null, null);
 
                 writeClient.sendRecord(9,
-                        ByteBuffer.wrap("key9".getBytes(StandardCharsets.UTF_8)),
+                    null,
                         ByteBuffer.wrap("value9".getBytes(StandardCharsets.UTF_8)));
 
                 writeClient.finishUpload();
             }
 
-            records = StreamServerTestUtils.readAllRecords(testServer.getShufflePort(), appTaskAttemptId1.getAppShuffleId(), 1, Arrays.asList(appTaskAttemptId2.getTaskAttemptId()));
+            records = StreamServerTestUtils.readAllRecords2(testServer.getShufflePort(), appTaskAttemptId1.getAppShuffleId(), 1, Arrays.asList(appTaskAttemptId2.getTaskAttemptId()));
             Assert.assertEquals(records.size(), 0);
 
-            records = StreamServerTestUtils.readAllRecords(testServer.getShufflePort(), appTaskAttemptId1.getAppShuffleId(), 2, Arrays.asList(appTaskAttemptId2.getTaskAttemptId()));
+            records = StreamServerTestUtils.readAllRecords2(testServer.getShufflePort(), appTaskAttemptId1.getAppShuffleId(), 2, Arrays.asList(appTaskAttemptId2.getTaskAttemptId()));
             Assert.assertEquals(records.size(), 1);
             Assert.assertEquals(records.get(0).getKey(), null);
-            Assert.assertEquals(records.get(0).getValue(), null);
+            Assert.assertEquals(records.get(0).getValue(), new byte[0]);
 
-            records = StreamServerTestUtils.readAllRecords(testServer.getShufflePort(), appTaskAttemptId1.getAppShuffleId(), 3, Arrays.asList(appTaskAttemptId2.getTaskAttemptId()));
+            records = StreamServerTestUtils.readAllRecords2(testServer.getShufflePort(), appTaskAttemptId1.getAppShuffleId(), 3, Arrays.asList(appTaskAttemptId2.getTaskAttemptId()));
             Assert.assertEquals(records.size(), 0);
 
-            records = StreamServerTestUtils.readAllRecords(testServer.getShufflePort(), appTaskAttemptId1.getAppShuffleId(), 9, Arrays.asList(appTaskAttemptId2.getTaskAttemptId()));
+            records = StreamServerTestUtils.readAllRecords2(testServer.getShufflePort(), appTaskAttemptId1.getAppShuffleId(), 9, Arrays.asList(appTaskAttemptId2.getTaskAttemptId()));
             Assert.assertEquals(records.size(), 1);
             
             RecordKeyValuePair record = records.get(0);
-            Assert.assertEquals(new String(record.getKey(), StandardCharsets.UTF_8), "key9");
+            Assert.assertEquals(record.getKey(), null);
             Assert.assertEquals(new String(record.getValue(), StandardCharsets.UTF_8), "value9");
         } finally {
             writeClientsToClose.forEach(SingleServerWriteClient::close);
@@ -138,11 +138,11 @@ public class StreamServerMultiAttemptTest {
                 writeClient.sendRecord(1, null, null);
 
                 writeClient.sendRecord(2,
-                        ByteBuffer.wrap(new byte[0]),
+                        null,
                         ByteBuffer.wrap(new byte[0]));
 
                 writeClient.sendRecord(3,
-                        ByteBuffer.wrap("key1".getBytes(StandardCharsets.UTF_8)),
+                        null,
                         ByteBuffer.wrap("value1".getBytes(StandardCharsets.UTF_8)));
 
                 writeClient.finishUpload();
@@ -156,23 +156,23 @@ public class StreamServerMultiAttemptTest {
                 writeClient.startUpload(appTaskAttemptId2, 1, 20);
 
                 writeClient.sendRecord(3,
-                        ByteBuffer.wrap("key3_1".getBytes(StandardCharsets.UTF_8)),
+                        null,
                         ByteBuffer.wrap("value3_1".getBytes(StandardCharsets.UTF_8)));
 
                 writeClient.finishUpload();
             }
 
-            List<RecordKeyValuePair> records = StreamServerTestUtils.readAllRecords(testServer.getShufflePort(), appTaskAttemptId1.getAppShuffleId(), 1, Arrays.asList(appTaskAttemptId2.getTaskAttemptId()));
+            List<RecordKeyValuePair> records = StreamServerTestUtils.readAllRecords2(testServer.getShufflePort(), appTaskAttemptId1.getAppShuffleId(), 1, Arrays.asList(appTaskAttemptId2.getTaskAttemptId()));
             Assert.assertEquals(records.size(), 0);
 
-            records = StreamServerTestUtils.readAllRecords(testServer.getShufflePort(), appTaskAttemptId1.getAppShuffleId(), 2, Arrays.asList(appTaskAttemptId2.getTaskAttemptId()));
+            records = StreamServerTestUtils.readAllRecords2(testServer.getShufflePort(), appTaskAttemptId1.getAppShuffleId(), 2, Arrays.asList(appTaskAttemptId2.getTaskAttemptId()));
             Assert.assertEquals(records.size(), 0);
 
-            records = StreamServerTestUtils.readAllRecords(testServer.getShufflePort(), appTaskAttemptId1.getAppShuffleId(), 3, Arrays.asList(appTaskAttemptId2.getTaskAttemptId()));
+            records = StreamServerTestUtils.readAllRecords2(testServer.getShufflePort(), appTaskAttemptId1.getAppShuffleId(), 3, Arrays.asList(appTaskAttemptId2.getTaskAttemptId()));
             Assert.assertEquals(records.size(), 1);
 
             RecordKeyValuePair record = records.get(0);
-            Assert.assertEquals(new String(record.getKey(), StandardCharsets.UTF_8), "key3_1");
+            Assert.assertEquals(record.getKey(),  null);
             Assert.assertEquals(new String(record.getValue(), StandardCharsets.UTF_8), "value3_1");
         } finally {
             writeClientsToClose.forEach(SingleServerWriteClient::close);
@@ -199,11 +199,11 @@ public class StreamServerMultiAttemptTest {
                 writeClient.sendRecord(1, null, null);
 
                 writeClient.sendRecord(2,
-                        ByteBuffer.wrap(new byte[0]),
+                        null,
                         ByteBuffer.wrap(new byte[0]));
 
                 writeClient.sendRecord(3,
-                        ByteBuffer.wrap("key1".getBytes(StandardCharsets.UTF_8)),
+                        null,
                         ByteBuffer.wrap("value1".getBytes(StandardCharsets.UTF_8)));
             }
 
@@ -216,25 +216,25 @@ public class StreamServerMultiAttemptTest {
                 writeClient.startUpload(appTaskAttemptId2, 1, 20);
 
                 writeClient.sendRecord(3,
-                        ByteBuffer.wrap("key3_1".getBytes(StandardCharsets.UTF_8)),
+                        null,
                         ByteBuffer.wrap("value3_1".getBytes(StandardCharsets.UTF_8)));
 
                 writeClient.finishUpload();
 
-                StreamServerTestUtils.waitTillDataAvailable(testServer.getShufflePort(), appTaskAttemptId2.getAppShuffleId(), Arrays.asList(3), Arrays.asList(appTaskAttemptId2.getTaskAttemptId()), false);
+                StreamServerTestUtils.waitTillDataAvailable(testServer.getShufflePort(), appTaskAttemptId2.getAppShuffleId(), Arrays.asList(3), Arrays.asList(appTaskAttemptId2.getTaskAttemptId()));
             }
 
-            List<RecordKeyValuePair> records = StreamServerTestUtils.readAllRecords(testServer.getShufflePort(), appTaskAttemptId1.getAppShuffleId(), 1, Arrays.asList(appTaskAttemptId2.getTaskAttemptId()));
+            List<RecordKeyValuePair> records = StreamServerTestUtils.readAllRecords2(testServer.getShufflePort(), appTaskAttemptId1.getAppShuffleId(), 1, Arrays.asList(appTaskAttemptId2.getTaskAttemptId()));
             Assert.assertEquals(records.size(), 0);
 
-            records = StreamServerTestUtils.readAllRecords(testServer.getShufflePort(), appTaskAttemptId1.getAppShuffleId(), 2, Arrays.asList(appTaskAttemptId2.getTaskAttemptId()));
+            records = StreamServerTestUtils.readAllRecords2(testServer.getShufflePort(), appTaskAttemptId1.getAppShuffleId(), 2, Arrays.asList(appTaskAttemptId2.getTaskAttemptId()));
             Assert.assertEquals(records.size(), 0);
 
-            records = StreamServerTestUtils.readAllRecords(testServer.getShufflePort(), appTaskAttemptId1.getAppShuffleId(), 3, Arrays.asList(appTaskAttemptId2.getTaskAttemptId()));
+            records = StreamServerTestUtils.readAllRecords2(testServer.getShufflePort(), appTaskAttemptId1.getAppShuffleId(), 3, Arrays.asList(appTaskAttemptId2.getTaskAttemptId()));
             Assert.assertEquals(records.size(), 1);
 
             RecordKeyValuePair record = records.get(0);
-            Assert.assertEquals(new String(record.getKey(), StandardCharsets.UTF_8), "key3_1");
+            Assert.assertEquals(record.getKey(), null);
             Assert.assertEquals(new String(record.getValue(), StandardCharsets.UTF_8), "value3_1");
         } finally {
             writeClientsToClose.forEach(SingleServerWriteClient::close);
@@ -275,16 +275,16 @@ public class StreamServerMultiAttemptTest {
             writeClient2.startUpload(appTaskAttemptId2, 1, 20);
 
             writeClient2.sendRecord(3,
-                    ByteBuffer.wrap("key3_1".getBytes(StandardCharsets.UTF_8)),
+                    null,
                     ByteBuffer.wrap("value3_1".getBytes(StandardCharsets.UTF_8)));
 
             writeClient2.finishUpload();
 
-            StreamServerTestUtils.waitTillDataAvailable(testServer.getShufflePort(), appTaskAttemptId2.getAppShuffleId(), Arrays.asList(1, 2, 3), Arrays.asList(appTaskAttemptId2.getTaskAttemptId()), false);
+            StreamServerTestUtils.waitTillDataAvailable(testServer.getShufflePort(), appTaskAttemptId2.getAppShuffleId(), Arrays.asList(1, 2, 3), Arrays.asList(appTaskAttemptId2.getTaskAttemptId()));
 
             // Write with taskAttemptId=0 again
             writeClient1.sendRecord(3,
-                    ByteBuffer.wrap("key1".getBytes(StandardCharsets.UTF_8)),
+                    null,
                     ByteBuffer.wrap("value1".getBytes(StandardCharsets.UTF_8)));
             try {
                 writeClient1.close();
@@ -293,17 +293,17 @@ public class StreamServerMultiAttemptTest {
             }
 
             // Read records and verify
-            List<RecordKeyValuePair> records = StreamServerTestUtils.readAllRecords(testServer.getShufflePort(), appTaskAttemptId1.getAppShuffleId(), 1, Arrays.asList(appTaskAttemptId2.getTaskAttemptId()));
+            List<RecordKeyValuePair> records = StreamServerTestUtils.readAllRecords2(testServer.getShufflePort(), appTaskAttemptId1.getAppShuffleId(), 1, Arrays.asList(appTaskAttemptId2.getTaskAttemptId()));
             Assert.assertEquals(records.size(), 0);
 
-            records = StreamServerTestUtils.readAllRecords(testServer.getShufflePort(), appTaskAttemptId1.getAppShuffleId(), 2, Arrays.asList(appTaskAttemptId2.getTaskAttemptId()));
+            records = StreamServerTestUtils.readAllRecords2(testServer.getShufflePort(), appTaskAttemptId1.getAppShuffleId(), 2, Arrays.asList(appTaskAttemptId2.getTaskAttemptId()));
             Assert.assertEquals(records.size(), 0);
 
-            records = StreamServerTestUtils.readAllRecords(testServer.getShufflePort(), appTaskAttemptId1.getAppShuffleId(), 3, Arrays.asList(appTaskAttemptId2.getTaskAttemptId()));
+            records = StreamServerTestUtils.readAllRecords2(testServer.getShufflePort(), appTaskAttemptId1.getAppShuffleId(), 3, Arrays.asList(appTaskAttemptId2.getTaskAttemptId()));
             Assert.assertEquals(records.size(), 1);
 
             RecordKeyValuePair record = records.get(0);
-            Assert.assertEquals(new String(record.getKey(), StandardCharsets.UTF_8), "key3_1");
+            Assert.assertEquals(record.getKey(),  null);
             Assert.assertEquals(new String(record.getValue(), StandardCharsets.UTF_8), "value3_1");
         } finally {
             writeClientsToClose.forEach(SingleServerWriteClient::close);
@@ -324,12 +324,12 @@ public class StreamServerMultiAttemptTest {
                 writeClient.startUpload(appTaskAttemptId, numMaps, 20);
 
                 writeClient.sendRecord(9,
-                        ByteBuffer.wrap("key9".getBytes(StandardCharsets.UTF_8)),
+                        null,
                         ByteBuffer.wrap("value9".getBytes(StandardCharsets.UTF_8)));
 
                 writeClient.finishUpload();
 
-                StreamServerTestUtils.waitTillDataAvailable(testServer.getShufflePort(), appTaskAttemptId.getAppShuffleId(), Arrays.asList(9), Arrays.asList(appTaskAttemptId.getTaskAttemptId()), false);
+                StreamServerTestUtils.waitTillDataAvailable(testServer.getShufflePort(), appTaskAttemptId.getAppShuffleId(), Arrays.asList(9), Arrays.asList(appTaskAttemptId.getTaskAttemptId()));
             }
             
             // Write stale attempt with taskAttemptId=0
@@ -339,30 +339,30 @@ public class StreamServerMultiAttemptTest {
                 writeClient.sendRecord(1, null, null);
 
                 writeClient.sendRecord(2,
-                        ByteBuffer.wrap(new byte[0]),
+                        null,
                         ByteBuffer.wrap(new byte[0]));
 
                 writeClient.sendRecord(3,
-                        ByteBuffer.wrap("key1".getBytes(StandardCharsets.UTF_8)),
+                        null,
                         ByteBuffer.wrap("value1".getBytes(StandardCharsets.UTF_8)));
 
                 writeClient.finishUpload();
             }
 
-            List<RecordKeyValuePair> records = StreamServerTestUtils.readAllRecords(testServer.getShufflePort(), appTaskAttemptId.getAppShuffleId(), 1, Arrays.asList(appTaskAttemptId.getTaskAttemptId()));
+            List<RecordKeyValuePair> records = StreamServerTestUtils.readAllRecords2(testServer.getShufflePort(), appTaskAttemptId.getAppShuffleId(), 1, Arrays.asList(appTaskAttemptId.getTaskAttemptId()));
             Assert.assertEquals(records.size(), 0);
 
-            records = StreamServerTestUtils.readAllRecords(testServer.getShufflePort(), appTaskAttemptId.getAppShuffleId(), 2, Arrays.asList(appTaskAttemptId.getTaskAttemptId()));
+            records = StreamServerTestUtils.readAllRecords2(testServer.getShufflePort(), appTaskAttemptId.getAppShuffleId(), 2, Arrays.asList(appTaskAttemptId.getTaskAttemptId()));
             Assert.assertEquals(records.size(), 0);
 
-            records = StreamServerTestUtils.readAllRecords(testServer.getShufflePort(), appTaskAttemptId.getAppShuffleId(), 3, Arrays.asList(appTaskAttemptId.getTaskAttemptId()));
+            records = StreamServerTestUtils.readAllRecords2(testServer.getShufflePort(), appTaskAttemptId.getAppShuffleId(), 3, Arrays.asList(appTaskAttemptId.getTaskAttemptId()));
             Assert.assertEquals(records.size(), 0);
 
-            records = StreamServerTestUtils.readAllRecords(testServer.getShufflePort(), appTaskAttemptId.getAppShuffleId(), 9, Arrays.asList(appTaskAttemptId.getTaskAttemptId()));
+            records = StreamServerTestUtils.readAllRecords2(testServer.getShufflePort(), appTaskAttemptId.getAppShuffleId(), 9, Arrays.asList(appTaskAttemptId.getTaskAttemptId()));
             Assert.assertEquals(records.size(), 1);
 
             RecordKeyValuePair record = records.get(0);
-            Assert.assertEquals(new String(record.getKey(), StandardCharsets.UTF_8), "key9");
+            Assert.assertEquals(record.getKey(),  null);
             Assert.assertEquals(new String(record.getValue(), StandardCharsets.UTF_8), "value9");
         } finally {
             testServer.shutdown();

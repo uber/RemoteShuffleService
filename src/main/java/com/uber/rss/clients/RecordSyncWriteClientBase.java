@@ -115,20 +115,14 @@ public abstract class RecordSyncWriteClientBase implements RecordSyncWriteClient
   protected int getRecordSerializedSize(ByteBuffer key, ByteBuffer value) {
     int numKeyBytes = key == null ? 0 : key.remaining();
     int numValueBytes = value == null ? 0 : value.remaining();
-    return Integer.BYTES + numKeyBytes + Integer.BYTES + numValueBytes;
+    return numKeyBytes + numValueBytes;
   }
 
   protected void writeRecordToBuffer(ByteBuf buffer, ByteBuffer key, ByteBuffer value) {
-    if (key == null) {
-      buffer.writeInt(-1);
-    } else {
-      buffer.writeInt(key.remaining());
+    if (key != null) {
       buffer.writeBytes(key);
     }
-    if (value == null) {
-      buffer.writeInt(-1);
-    } else {
-      buffer.writeInt(value.remaining());
+    if (value != null) {
       buffer.writeBytes(value);
     }
   }

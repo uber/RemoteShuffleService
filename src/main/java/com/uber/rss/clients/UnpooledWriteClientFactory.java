@@ -30,32 +30,16 @@ public class UnpooledWriteClientFactory implements WriteClientFactory {
   }
 
   @Override
-  public RecordSyncWriteClient getOrCreateClient(String host, int port, int timeoutMillis, boolean finishUploadAck, String user, String appId, String appAttempt, int compressBufferSize, ShuffleWriteConfig shuffleWriteConfig) {
-    final RecordSyncWriteClient writeClient;
-    if (compressBufferSize > 0) {
-      writeClient = new CompressedRecordSyncWriteClient(
-          host,
-          port,
-          timeoutMillis,
-          finishUploadAck,
-          user,
-          appId,
-          appAttempt,
-          compressBufferSize,
-          shuffleWriteConfig);
-      logger.debug(String.format("Using CompressedRecordSyncWriteClient with compression buffer size %s", compressBufferSize));
-    } else {
-      writeClient = new PlainRecordSyncWriteClient(
-          host,
-          port,
-          timeoutMillis,
-          finishUploadAck,
-          user,
-          appId,
-          appAttempt,
-          shuffleWriteConfig);
-      logger.debug(String.format("Using PlainRecordSyncWriteClient due to compression buffer size %s", compressBufferSize));
-    }
+  public RecordSyncWriteClient getOrCreateClient(String host, int port, int timeoutMillis, boolean finishUploadAck, String user, String appId, String appAttempt, ShuffleWriteConfig shuffleWriteConfig) {
+    final RecordSyncWriteClient writeClient = new PlainRecordSyncWriteClient(
+        host,
+        port,
+        timeoutMillis,
+        finishUploadAck,
+        user,
+        appId,
+        appAttempt,
+        shuffleWriteConfig);
     return writeClient;
   }
 }
