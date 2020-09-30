@@ -4,6 +4,16 @@ Uber Remote Shuffle Service provides the capability for Apache Spark application
 on remote servers. See more details on Spark community document: 
 [[SPARK-25299][DISCUSSION] Improving Spark Shuffle Reliability](https://docs.google.com/document/d/1uCkzGGVG17oGC6BJ75TpzLAZNorvrAU3FRd2X-rVHSM/edit?ts=5e3c57b8).
 
+## Current Limitation
+
+To work with this Remote Shuffle Service, Spark applications need to keep following configures as false (or do not set them since their default values are false):
+
+```
+spark.shuffle.service.enabled=false
+spark.speculation=false
+```
+We are still actively developing and may support those configures in the future.
+
 ## How to Build
 
 Make sure JDK 8+ and maven is installed on your machine.
