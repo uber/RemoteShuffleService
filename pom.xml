@@ -9,7 +9,7 @@
     <artifactId>remote-shuffle-service</artifactId>
     <version>0.0.9</version>
     <name>remote-shuffle-service</name>
-    <description>A shuffle manager prototype.</description>
+    <description>Remote shuffle service and client.</description>
     <url></url>
 
     <licenses>
