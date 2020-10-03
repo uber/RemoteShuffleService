@@ -208,15 +208,9 @@ public class ShuffleExecutor {
         }
     }
 
-    public void registerShuffle(AppShuffleId appShuffleId, int numMaps, int numPartitions, ShuffleWriteConfig config) {
+    public void registerShuffle(AppShuffleId appShuffleId, int numPartitions, ShuffleWriteConfig config) {
         ExecutorShuffleStageState stageState = stageStates.get(appShuffleId);
         if (stageState != null) {
-          if (stageState.getNumMaps() != numMaps) {
-            stageState.setFileCorrupted();
-            throw new RssShuffleCorruptedException(String.format(
-                "Hit mismatched numMaps (%s vs %s) for %s",
-                numMaps, stageState.getNumMaps(), appShuffleId));
-          }
           if (stageState.getNumPartitions() != numPartitions) {
             stageState.setFileCorrupted();
             throw new RssShuffleCorruptedException(String.format(
@@ -233,12 +227,12 @@ public class ShuffleExecutor {
         }
 
         ExecutorShuffleStageState newState = new ExecutorShuffleStageState(appShuffleId, config);
-        newState.setNumMapsPartitions(numMaps, numPartitions);
+        newState.setNumMapsPartitions(numPartitions);
         ExecutorShuffleStageState oldState = stageStates.putIfAbsent(appShuffleId, newState);
 
         if (oldState == null) {
           // this is the first time to register this shuffle stage, add it to state store
-          StagePersistentInfo info = new StagePersistentInfo(numMaps, numPartitions, newState.getFileStartIndex(), newState.getWriteConfig(), newState.getFileStatus());
+          StagePersistentInfo info = new StagePersistentInfo(numPartitions, newState.getFileStartIndex(), newState.getWriteConfig(), newState.getFileStatus());
           stateStore.storeStageInfo(appShuffleId, info);
         }
     }
@@ -795,7 +789,6 @@ public class ShuffleExecutor {
             AppShuffleId appShuffleId = stageInfoStateItem.getAppShuffleId();
             appIds.add(appShuffleId.getAppId());
             stages.add(appShuffleId);
-            int numMaps = stageInfoStateItem.getNumMaps();
             int numPartitions = stageInfoStateItem.getNumPartitions();
             ShuffleWriteConfig writeConfig = stageInfoStateItem.getWriteConfig();
             int newStartIndex = stageInfoStateItem.getFileStartIndex() + writeConfig.getNumSplits();
@@ -806,20 +799,12 @@ public class ShuffleExecutor {
             if (oldStageState == null) {
                 // stage state is not set, add stage state
                 ExecutorShuffleStageState newStageState = new ExecutorShuffleStageState(appShuffleId, writeConfig, newStartIndex);
-                newStageState.setNumMapsPartitions(stageInfoStateItem.getNumMaps(), stageInfoStateItem.getNumPartitions());
+                newStageState.setNumMapsPartitions(stageInfoStateItem.getNumPartitions());
                 stageStates.put(appShuffleId, newStageState);
                 effectiveStageState = newStageState;
             } else {
                 effectiveStageState = oldStageState;
                 // stage state is already set, check against values loaded from state
-                if (oldStageState.getNumMaps() != numMaps) {
-                    oldStageState.setFileCorrupted();
-                    stateLoadWarnings.inc(1);
-                    logger.warn(String.format(
-                        "Got different numMaps when loading state for %s, old value: %s, new value: %s",
-                        appShuffleId, oldStageState.getNumMaps(), numMaps));
-                    corruptedStages.add(appShuffleId);
-                }
                 if (oldStageState.getNumPartitions() != numPartitions) {
                     oldStageState.setFileCorrupted();
                     stateLoadWarnings.inc(1);
@@ -853,7 +838,7 @@ public class ShuffleExecutor {
                 effectiveStageState.setFileCorrupted();
             }
             // store stage info to make sure next time run will use new file start index
-            stateStore.storeStageInfo(appShuffleId, new StagePersistentInfo(effectiveStageState.getNumMaps(),
+            stateStore.storeStageInfo(appShuffleId, new StagePersistentInfo(
                 effectiveStageState.getNumPartitions(),
                 effectiveStageState.getFileStartIndex(),
                 effectiveStageState.getWriteConfig(),

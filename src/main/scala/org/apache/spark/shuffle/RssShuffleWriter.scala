@@ -35,7 +35,6 @@ class RssShuffleWriter[K, V, C](
                                  rssServers: ServerList,
                                  writeClient: RecordWriter,
                                  mapInfo: AppTaskAttemptId,
-                                 numMaps: Int,
                                  serializer: Serializer,
                                  bufferOptions: BufferManagerOptions,
                                  shuffleDependency: ShuffleDependency[K, V, C],
@@ -59,6 +58,8 @@ class RssShuffleWriter[K, V, C](
 
   private val compressor = LZ4Factory.fastestInstance.fastCompressor
 
+  private var mapStatus: MapStatus = null
+
   private def getPartition(key: K): Int = {
     if (shouldPartition) partitioner.getPartition(key) else 0
   }
@@ -69,6 +70,7 @@ class RssShuffleWriter[K, V, C](
     var numRecords = 0
 
     val startUploadStartTime = System.nanoTime()
+    val numMaps = 1 // TODO hack for Spark 3.0, remove this later
     writeClient.startUpload(mapInfo, numMaps, numPartitions)
     val startUploadTime = System.nanoTime() - startUploadStartTime
 
@@ -123,6 +125,11 @@ class RssShuffleWriter[K, V, C](
     shuffleWriteMetrics.incWriteTime(startUploadTime + writeRecordTime + finishUploadTime)
 
     closeWriteClientAsync()
+
+    // fill partitionLengths with non zero dummy value so map output tracker could work correctly
+    val partitionLengths: Array[Long] = Array.fill(numPartitions)(1L)
+    val blockManagerId = RssUtils.createMapTaskDummyBlockManagerId(mapInfo.getMapId, mapInfo.getTaskAttemptId, rssServers)
+    mapStatus = MapStatus(blockManagerId, partitionLengths, mapInfo.getMapId)
   }
 
   private def sendDataBlocks(fullFilledData: Seq[(Int, Array[Byte])]) = {
@@ -146,11 +153,7 @@ class RssShuffleWriter[K, V, C](
       if (remainingBytes != 0) {
         throw new RssInvalidStateException(s"Writer buffer should be empty, but still has $remainingBytes bytes, $mapInfo")
       }
-
-      // fill partitionLengths with non zero dummy value so map output tracker could work correctly
-      val partitionLengths: Array[Long] = Array.fill(numPartitions)(1L)
-      val blockManagerId = RssUtils.createMapTaskDummyBlockManagerId(mapInfo.getMapId, mapInfo.getTaskAttemptId, rssServers)
-      Some(MapStatus(blockManagerId, partitionLengths))
+      Option(mapStatus)
     } else {
       None
     }

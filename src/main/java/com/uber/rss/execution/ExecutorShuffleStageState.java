@@ -52,7 +52,6 @@ public class ExecutorShuffleStageState {
 
     private int fileStartIndex;
 
-    private int numMaps;
     private int numPartitions;
 
     // This field stores shuffle output writers. There is one writer per 
@@ -109,23 +108,11 @@ public class ExecutorShuffleStageState {
         this.fileStartIndex = value;
     }
 
-    public synchronized int getNumMaps() {
-        return numMaps;
-    }
-
     public synchronized int getNumPartitions() {
         return numPartitions;
     }
 
-    public synchronized void setNumMapsPartitions(int numMaps, int numPartitions) {
-        if (this.numMaps != 0 && this.numMaps != numMaps) {
-            throw new RssInvalidStateException(String.format(
-                    "Inconsistent value for number of maps, old value: %s, new value %s, app shuffle %s",
-                    this.numMaps, numMaps, appShuffleId));
-        }
-        
-        this.numMaps = numMaps;
-
+    public synchronized void setNumMapsPartitions(int numPartitions) {
         if (this.numPartitions != 0 && this.numPartitions != numPartitions) {
             throw new RssInvalidStateException(String.format(
                 "Inconsistent value for number of partitions, old value: %s, new value %s, app shuffle %s",
@@ -310,7 +297,7 @@ public class ExecutorShuffleStageState {
      * @param mapId
      * @param taskId
      */
-    public synchronized void commitMapTask(int mapId, long taskId) {
+    public synchronized void commitMapTask(long mapId, long taskId) {
         TaskAttemptIdAndState taskState = getTaskState(new AppMapId(appShuffleId, mapId), taskId);
         taskState.markCommitted();
 
@@ -322,9 +309,9 @@ public class ExecutorShuffleStageState {
      * @return
      */
     public synchronized ShuffleStageStatus getShuffleStageStatus() {
-        HashMap<Integer, Long> committedMapTaskIds = new HashMap<>(taskAttempts.size());
+        HashMap<Long, Long> committedMapTaskIds = new HashMap<>(taskAttempts.size());
         for (Map.Entry<AppMapId, TaskAttemptCollection> entry: taskAttempts.entrySet()) {
-            int mapId = entry.getKey().getMapId();
+            long mapId = entry.getKey().getMapId();
             TaskAttemptCollection taskAttemptCollection = entry.getValue();
             // TODO support spark.speculation execution later
             TaskAttemptIdAndState latestTaskAttempt = taskAttemptCollection.getLatestTaskOrNull();
@@ -333,7 +320,7 @@ public class ExecutorShuffleStageState {
             }
         }
 
-        MapTaskCommitStatus mapTaskCommitStatus = new MapTaskCommitStatus(numMaps, committedMapTaskIds);
+        MapTaskCommitStatus mapTaskCommitStatus = new MapTaskCommitStatus(committedMapTaskIds);
         return new ShuffleStageStatus(fileStatus, mapTaskCommitStatus);
     }
 
@@ -352,6 +339,8 @@ public class ExecutorShuffleStageState {
 
     // fetch map task attempts for which we need to flush shuffle files
     public synchronized Collection<AppTaskAttemptId> fetchFlushMapAttempts() {
+        // TODO hack for spark 3.0, need to improve later
+        int numMaps = 1;
         if (taskAttempts.size() >= numMaps) {
             return new ArrayList<>(pendingFlushMapAttempts);
         } else {
@@ -370,7 +359,6 @@ public class ExecutorShuffleStageState {
 
         sb.append(String.format(", write config: %s", appConfig));
         sb.append(String.format(", file start index: %s", fileStartIndex));
-        sb.append(String.format(", maps: %s", numMaps));
         sb.append(String.format(", partitions: %s", numPartitions));
 
         sb.append(System.lineSeparator());

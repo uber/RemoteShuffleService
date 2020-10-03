@@ -35,11 +35,10 @@ object RssUtils extends Logging {
    * Create dummy BlockManagerId and embed shuffle servers inside it.
    * @param mapId map id
    * @param taskAttemptId task attempt id
-   * @param stageAttemptNumber stage attempt number
    * @param rssServers rss servers
    * @return
    */
-  def createMapTaskDummyBlockManagerId(mapId: Int,
+  def createMapTaskDummyBlockManagerId(mapId: Long,
                                        taskAttemptId: Long,
                                        rssServers: ServerList = new ServerList(new util.ArrayList[ServerDetail]())): BlockManagerId = {
     // Spark will check the host and port in BlockManagerId, thus use dummy values there
@@ -80,9 +79,9 @@ object RssUtils extends Logging {
    * @param partition partition id
    * @return
    */
-  def getRssInfoFromMapOutputTracker(shuffleId: Int, partition: Int, retryIntervalMillis: Long, maxRetryMillis: Long): MapOutputRssInfo = {
+  def getRssInfoFromMapOutputTracker(shuffleId: Int, partition: Int, retryIntervalMillis: Long, maxRetryMillis: Long): Option[MapOutputRssInfo] = {
     // this hash map stores rss servers for each map task's latest attempt
-    val mapLatestAttemptRssServers = scala.collection.mutable.HashMap[Int, MapTaskRssInfo]()
+    val mapLatestAttemptRssServers = scala.collection.mutable.HashMap[Long, MapTaskRssInfo]()
     val mapAttemptRssInfoList =
       RetryUtils.retry(retryIntervalMillis,
         retryIntervalMillis * 10,
@@ -97,7 +96,7 @@ object RssUtils extends Logging {
         })
     logInfo(s"Got ${mapAttemptRssInfoList.size} items after parsing mapOutputTracker.getMapSizesByExecutorId result")
     if (mapAttemptRssInfoList.isEmpty) {
-      throw new RssInvalidMapStatusException(s"Failed to get information from map output tracker, shuffleId: $shuffleId, partition: $partition")
+      return None
     }
     for (mapAttemptRssInfo <- mapAttemptRssInfoList) {
       val mapId = mapAttemptRssInfo.getMapId
@@ -119,7 +118,7 @@ object RssUtils extends Logging {
       .map(_.getTaskAttemptId)
       .toArray
       .distinct
-    new MapOutputRssInfo(numMaps, numRssServers, latestTaskAttemptIds)
+    Some(MapOutputRssInfo(numMaps, numRssServers, latestTaskAttemptIds))
   }
 
   /**

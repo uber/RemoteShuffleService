@@ -72,10 +72,10 @@ class RssShuffleManager(conf: SparkConf) extends ShuffleManager with Logging {
   private def getSparkContext = {
     SparkContext.getActive.get
   }
-  
+
   // This method is called in Spark driver side, and Spark driver will make some decision, e.g. determining what 
   // RSS servers to use. Then Spark driver will return a ShuffleHandle and pass that ShuffleHandle to executors (getWriter/getReader).
-  override def registerShuffle[K, V, C](shuffleId: Int, numMaps: Int, dependency: ShuffleDependency[K, V, C]): ShuffleHandle = {
+  override def registerShuffle[K, V, C](shuffleId: Int, dependency: ShuffleDependency[K, V, C]): ShuffleHandle = {
     // RSS does not support speculation yet, due to the random task attempt ids (finished map task attempt id not always increasing).
     // We will fall back to SortShuffleManager if speculation is configured to true.
     val useSpeculation = conf.getBoolean("spark.speculation", false)
@@ -106,9 +106,9 @@ class RssShuffleManager(conf: SparkConf) extends ShuffleManager with Logging {
     val excludeHostsConfigValue = conf.get(RssOpts.excludeHosts)
     val excludeHosts = excludeHostsConfigValue.split(",").filter(!_.isEmpty).distinct
 
-    rssServerSelectionResult = getRssServers(numMaps, numPartitions, excludeHosts)
+    rssServerSelectionResult = getRssServers(numPartitions, excludeHosts)
     val rssServers = rssServerSelectionResult.servers
-    logInfo(s"Selected ${rssServers.size} RSS servers for shuffle $shuffleId, maps: $numMaps, partitions: $numPartitions, replicas: ${rssServerSelectionResult.replicas}, partition fanout: ${rssServerSelectionResult.partitionFanout}, ${rssServers.mkString(",")}")
+    logInfo(s"Selected ${rssServers.size} RSS servers for shuffle $shuffleId, partitions: $numPartitions, replicas: ${rssServerSelectionResult.replicas}, partition fanout: ${rssServerSelectionResult.partitionFanout}, ${rssServers.mkString(",")}")
 
     val tagMap = new java.util.HashMap[String, String]()
     tagMap.put(RssDataCenterTagName, dataCenter)
@@ -128,7 +128,7 @@ class RssShuffleManager(conf: SparkConf) extends ShuffleManager with Logging {
     shuffleClientStageMetrics = new ShuffleClientStageMetrics(shuffleClientStageMetricsKey)
 
     shuffleClientStageMetrics.getNumRegisterShuffle.inc(1)
-    shuffleClientStageMetrics.getNumMappers().recordValue(numMaps)
+    shuffleClientStageMetrics.getNumMappers().recordValue(1)
     shuffleClientStageMetrics.getNumReducers().recordValue(numPartitions)
     
     val dependencyInfo = s"numPartitions: ${dependency.partitioner.numPartitions}, " +
@@ -139,14 +139,14 @@ class RssShuffleManager(conf: SparkConf) extends ShuffleManager with Logging {
       s"keyClassName: ${dependency.keyClassName}, " +
       s"valueClassName: ${dependency.valueClassName}"
 
-    logInfo(s"registerShuffle: $appId, $appAttempt, $shuffleId, $numMaps, $dependencyInfo")
+    logInfo(s"registerShuffle: $appId, $appAttempt, $shuffleId, $dependencyInfo")
 
     val rssServerHandles = rssServerSelectionResult.servers.map(t => new RssShuffleServerHandle(t.getServerId(), t.getRunningVersion(), t.getConnectionString())).toArray
-    new RssShuffleHandle(shuffleId, appId, appAttempt, numMaps, user, queue, dependency, rssServerHandles, rssServerSelectionResult.partitionFanout)
+    new RssShuffleHandle(shuffleId, appId, appAttempt, user, queue, dependency, rssServerHandles, rssServerSelectionResult.partitionFanout)
   }
 
   // This method is called in Spark executor, getting information from Spark driver via the ShuffleHandle.
-  override def getWriter[K, V](handle: ShuffleHandle, mapId: Int, context: TaskContext): ShuffleWriter[K, V] = {
+  override def getWriter[K, V](handle: ShuffleHandle, mapId: Long, context: TaskContext, metrics: ShuffleWriteMetricsReporter): ShuffleWriter[K, V] = {
     logInfo(s"getWriter: Use ShuffleManager: ${this.getClass().getSimpleName()}, $handle, mapId: $mapId, stageId: ${context.stageId()}, shuffleId: ${handle.shuffleId}")
 
     handle match {
@@ -170,7 +170,7 @@ class RssShuffleManager(conf: SparkConf) extends ShuffleManager with Logging {
         val useConnectionPool = conf.get(RssOpts.useConnectionPool)
         val rssFileCompressionCodec = conf.get(RssOpts.fileCompressionCodec)
         val rssMapsPerSplit = conf.get(RssOpts.mapsPerSplit)
-        var rssNumSplits = Math.ceil(rssShuffleHandle.numMaps.toDouble/rssMapsPerSplit.toDouble).toInt
+        var rssNumSplits = 1
         val rssMinSplits = conf.get(RssOpts.minSplits)
         val rssMaxSplits = conf.get(RssOpts.maxSplits)
         if (rssNumSplits < rssMinSplits) {
@@ -194,6 +194,7 @@ class RssShuffleManager(conf: SparkConf) extends ShuffleManager with Logging {
                 bmAddress = RssUtils.createMapTaskDummyBlockManagerId(mapInfo.getMapId, mapInfo.getTaskAttemptId),
                 shuffleId = rssShuffleHandle.shuffleId,
                 mapId = -1,
+                mapIndex = -1,
                 reduceId = 0,
                 message = s"Failed to get server detail for $serverId from shuffle handle: $rssShuffleHandle")
             }
@@ -216,6 +217,7 @@ class RssShuffleManager(conf: SparkConf) extends ShuffleManager with Logging {
                 bmAddress = RssUtils.createMapTaskDummyBlockManagerId(mapInfo.getMapId, mapInfo.getTaskAttemptId),
                 shuffleId = rssShuffleHandle.shuffleId,
                 mapId = -1,
+                mapIndex = -1,
                 reduceId = 0,
                 message = s"Detected server restart, current server: $refreshedServer, previous server: $serverDetailInShuffleHandle")
             }
@@ -274,7 +276,6 @@ class RssShuffleManager(conf: SparkConf) extends ShuffleManager with Logging {
                 new ServerList(rssShuffleHandle.rssServers.map(_.toServerDetail()).toArray),
                 writeClient,
                 mapInfo,
-                rssShuffleHandle.numMaps,
                 serializer,
                 bufferOptions,
                 rssShuffleHandle.dependency,
@@ -293,7 +294,7 @@ class RssShuffleManager(conf: SparkConf) extends ShuffleManager with Logging {
   }
 
   // This method is called in Spark executor, getting information from Spark driver via the ShuffleHandle.
-  override def getReader[K, C](handle: ShuffleHandle, startPartition: Int, endPartition: Int, context: TaskContext): ShuffleReader[K, C] = {
+  override def getReader[K, C](handle: ShuffleHandle, startPartition: Int, endPartition: Int, context: TaskContext, metrics: ShuffleReadMetricsReporter): ShuffleReader[K, C] = {
     logInfo(s"getReader: Use ShuffleManager: ${this.getClass().getSimpleName()}, $handle, partitions: [$startPartition, $endPartition)")
 
     val rssShuffleHandle = handle.asInstanceOf[RssShuffleHandle[K, _, C]]
@@ -302,13 +303,6 @@ class RssShuffleManager(conf: SparkConf) extends ShuffleManager with Logging {
       rssShuffleHandle.appAttempt,
       handle.shuffleId
     )
-
-    if (rssShuffleHandle.numMaps == 0) {
-      return new RssEmptyShuffleReader(
-        shuffleInfo,
-        startPartition,
-        endPartition)
-    }
 
     val queueSize = conf.get(RssOpts.readerQueueSize)
 
@@ -325,7 +319,6 @@ class RssShuffleManager(conf: SparkConf) extends ShuffleManager with Logging {
       serializer = serializer,
       context = context,
       shuffleDependency = rssShuffleHandle.dependency,
-      numMaps = rssShuffleHandle.numMaps,
       rssServers = rssServers,
       partitionFanout = rssShuffleHandle.partitionFanout,
       serviceRegistry = serviceRegistry,
@@ -390,14 +383,14 @@ class RssShuffleManager(conf: SparkConf) extends ShuffleManager with Logging {
     serversValue
   }
 
-  private def getRssServers(numMaps: Int, numPartitions: Int, excludeHosts: Seq[String]): RssServerSelectionResult = {
+  private def getRssServers(numPartitions: Int, excludeHosts: Seq[String]): RssServerSelectionResult = {
     val maxServerCount = conf.get(RssOpts.maxServerCount)
     val minServerCount = conf.get(RssOpts.minServerCount)
 
     var selectedServerCount = maxServerCount
 
     val shuffleServerRatio = conf.get(RssOpts.serverRatio)
-    val serverCountEstimate = Math.ceil(Math.max(numMaps, numPartitions).doubleValue()/shuffleServerRatio).intValue()
+    val serverCountEstimate = Math.ceil(numPartitions.doubleValue()/shuffleServerRatio).intValue()
     if (selectedServerCount > serverCountEstimate) {
       selectedServerCount = serverCountEstimate
     }
@@ -467,4 +460,5 @@ class RssShuffleManager(conf: SparkConf) extends ShuffleManager with Logging {
     new ServerConnectionCacheUpdateRefresher(serverConnectionResolver, MultiServerHeartbeatClient.getServerCache)
   }
 
+  override def getReaderForRange[K, C](handle: ShuffleHandle, startMapIndex: Int, endMapIndex: Int, startPartition: Int, endPartition: Int, context: TaskContext, metrics: ShuffleReadMetricsReporter): ShuffleReader[K, C] = ???
 }

@@ -23,13 +23,13 @@ public class AppMapId {
     private final String appId;
     private final String appAttempt;
     private final int shuffleId;
-    private final int mapId;
+    private final long mapId;
 
-    public AppMapId(AppShuffleId appShuffleId, int mapId) {
+    public AppMapId(AppShuffleId appShuffleId, long mapId) {
         this(appShuffleId.getAppId(), appShuffleId.getAppAttempt(), appShuffleId.getShuffleId(), mapId);
     }
 
-    public AppMapId(String appId, String appAttempt, int shuffleId, int mapId) {
+    public AppMapId(String appId, String appAttempt, int shuffleId, long mapId) {
         this.appId = appId;
         this.appAttempt = appAttempt;
         this.shuffleId = shuffleId;
@@ -48,7 +48,7 @@ public class AppMapId {
         return shuffleId;
     }
 
-    public int getMapId() {
+    public long getMapId() {
         return mapId;
     }
 

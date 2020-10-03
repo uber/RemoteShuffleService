@@ -325,7 +325,6 @@ class RssStressTool extends Logging {
       rssServers = new ServerList(serverDetails),
       writeClient = writeClient,
       mapInfo = new AppTaskAttemptId(appMapId, taskAttemptId),
-      numMaps = numMaps,
       serializer = new KryoSerializer(sparkConf),
       bufferOptions = BufferManagerOptions(writerBufferSize, 256 * 1024 * 1024, writerBufferSpill),
       shuffleDependency = shuffleDependency,
@@ -346,7 +345,7 @@ class RssStressTool extends Logging {
     }
 
     val mapStatus = shuffleWriter.stop(true)
-    mapOutputTrackerMaster.registerMapOutput(appShuffleId.getShuffleId, appMapId.getMapId, mapStatus.get)
+    mapOutputTrackerMaster.registerMapOutput(appShuffleId.getShuffleId, appMapId.getMapId.intValue(), mapStatus.get)
 
     // TODO simulate broken map tasks without proper closing
     logInfo(s"Map $appMapId attempt $taskAttemptId finished")
@@ -361,7 +360,6 @@ class RssStressTool extends Logging {
       serializer = shuffleDependency.serializer,
       context = new MockTaskContext(1, 0, taskAttemptIdSeed.incrementAndGet()),
       shuffleDependency = shuffleDependency,
-      numMaps = numMaps,
       rssServers = new ServerList(serverDetails),
       partitionFanout = 1,
       serviceRegistry = registryServer.getServiceRegistry,

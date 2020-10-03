@@ -92,7 +92,6 @@ public class LocalFileStateStore implements StateStore {
 
   public void storeStageInfo(AppShuffleId appShuffleId, StagePersistentInfo info) {
     StageInfoStateItem item = new StageInfoStateItem(appShuffleId,
-        info.getNumMaps(),
         info.getNumPartitions(),
         info.getFileStartIndex(),
         info.getShuffleWriteConfig(),

@@ -49,7 +49,7 @@ public class TaskAttemptCommitStateItem extends BaseMessage {
         buf.writeInt(appShuffleId.getShuffleId());
         buf.writeInt(mapTaskAttemptIds.size());
         for (MapTaskAttemptId entry: mapTaskAttemptIds) {
-            buf.writeInt(entry.getMapId());
+            buf.writeLong(entry.getMapId());
             buf.writeLong(entry.getTaskAttemptId());
         }
         buf.writeInt(partitionFilePathAndLengths.size());
@@ -67,7 +67,7 @@ public class TaskAttemptCommitStateItem extends BaseMessage {
         int count = buf.readInt();
         List<MapTaskAttemptId> mapTaskAttemptIdList = new ArrayList<>(count);
         for (int i = 0; i < count; i++) {
-            int mapId = buf.readInt();
+            long mapId = buf.readLong();
             long taskAttemptId = buf.readLong();
             mapTaskAttemptIdList.add(new MapTaskAttemptId(mapId, taskAttemptId));
         }

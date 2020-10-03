@@ -12,7 +12,7 @@ spark.shuffle.service.enabled=false
 spark.speculation=false
 ```
 
-- The supported Spark version is Spark 2.4.x. For Spark 3.x, we are still testing and developing.
+- The supported Spark version is Spark 2.4.x. We have a branch **spark30** for working to support Spark 3.0.x.
 
 ## How to Build
 

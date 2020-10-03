@@ -199,7 +199,7 @@ public class LocalFileLocalFileStateStoreIteratorTest {
     AppShuffleId appShuffleId1 = new AppShuffleId("app1", "1", 2);
     ShuffleWriteConfig shuffleWriteConfig1 = new ShuffleWriteConfig("gzip", (short)6);
     StageInfoStateItem stageInfoStateItem1 = new StageInfoStateItem(appShuffleId1,
-        3, 4, 5, shuffleWriteConfig1, ShuffleStageStatus.FILE_STATUS_OK);
+        4, 5, shuffleWriteConfig1, ShuffleStageStatus.FILE_STATUS_OK);
     ByteBuf stageInfoStateItemBuf1 = Unpooled.buffer();
     stageInfoStateItem1.serialize(stageInfoStateItemBuf1);
     byte[] stageInfoStateItemBytes1;
@@ -209,7 +209,7 @@ public class LocalFileLocalFileStateStoreIteratorTest {
     ShuffleWriteConfig shuffleWriteConfig2 = new ShuffleWriteConfig("gzip", (short)60);
     AppShuffleId appShuffleId2 = new AppShuffleId("app10", "10", 20);
     StageInfoStateItem stageInfoStateItem2 = new StageInfoStateItem(appShuffleId2,
-        30, 40, 50, shuffleWriteConfig2, ShuffleStageStatus.FILE_STATUS_OK);
+        40, 50, shuffleWriteConfig2, ShuffleStageStatus.FILE_STATUS_OK);
     ByteBuf stageInfoStateItemBuf2 = Unpooled.buffer();
     stageInfoStateItem2.serialize(stageInfoStateItemBuf2);
     byte[] stageInfoStateItemBytes2;
@@ -285,7 +285,6 @@ public class LocalFileLocalFileStateStoreIteratorTest {
     BaseMessage item = iterator.next();
     StageInfoStateItem stageInfoStateItem = (StageInfoStateItem)item;
     Assert.assertEquals(stageInfoStateItem.getAppShuffleId(), appShuffleId1);
-    Assert.assertEquals(stageInfoStateItem.getNumMaps(), 3);
     Assert.assertEquals(stageInfoStateItem.getNumPartitions(), 4);
     Assert.assertEquals(stageInfoStateItem.getFileStartIndex(), 5);
     Assert.assertEquals(stageInfoStateItem.getWriteConfig(), shuffleWriteConfig1);
@@ -294,7 +293,6 @@ public class LocalFileLocalFileStateStoreIteratorTest {
     item = iterator.next();
     stageInfoStateItem = (StageInfoStateItem)item;
     Assert.assertEquals(stageInfoStateItem.getAppShuffleId(), appShuffleId2);
-    Assert.assertEquals(stageInfoStateItem.getNumMaps(), 30);
     Assert.assertEquals(stageInfoStateItem.getNumPartitions(), 40);
     Assert.assertEquals(stageInfoStateItem.getFileStartIndex(), 50);
     Assert.assertEquals(stageInfoStateItem.getWriteConfig(), shuffleWriteConfig2);
@@ -303,7 +301,6 @@ public class LocalFileLocalFileStateStoreIteratorTest {
     item = iterator.next();
     stageInfoStateItem = (StageInfoStateItem)item;
     Assert.assertEquals(stageInfoStateItem.getAppShuffleId(), appShuffleId2);
-    Assert.assertEquals(stageInfoStateItem.getNumMaps(), 30);
     Assert.assertEquals(stageInfoStateItem.getNumPartitions(), 40);
     Assert.assertEquals(stageInfoStateItem.getFileStartIndex(), 50);
     Assert.assertEquals(stageInfoStateItem.getWriteConfig(), shuffleWriteConfig2);
@@ -313,7 +310,6 @@ public class LocalFileLocalFileStateStoreIteratorTest {
       item = iterator.next();
       stageInfoStateItem = (StageInfoStateItem) item;
       Assert.assertEquals(stageInfoStateItem.getAppShuffleId(), appShuffleId1);
-      Assert.assertEquals(stageInfoStateItem.getNumMaps(), 3);
       Assert.assertEquals(stageInfoStateItem.getNumPartitions(), 4);
       Assert.assertEquals(stageInfoStateItem.getFileStartIndex(), 5);
       Assert.assertEquals(stageInfoStateItem.getWriteConfig(), shuffleWriteConfig1);
@@ -334,7 +330,7 @@ public class LocalFileLocalFileStateStoreIteratorTest {
     PartitionFilePathAndLength partitionFilePathAndLength1 = new PartitionFilePathAndLength(1, "file1", 123);
 
     LocalFileStateStore store = new LocalFileStateStore(tempPath.toString());
-    store.storeStageInfo(appShuffleId1, new StagePersistentInfo(3, 4, 5, shuffleWriteConfig1, ShuffleStageStatus.FILE_STATUS_OK));
+    store.storeStageInfo(appShuffleId1, new StagePersistentInfo(4, 5, shuffleWriteConfig1, ShuffleStageStatus.FILE_STATUS_OK));
     store.storeTaskAttemptCommit(appShuffleId1,
         Arrays.asList(new MapTaskAttemptId(appTaskAttemptId1.getMapId(), appTaskAttemptId1.getTaskAttemptId())),
         Arrays.asList(partitionFilePathAndLength1));
@@ -352,7 +348,6 @@ public class LocalFileLocalFileStateStoreIteratorTest {
     Assert.assertTrue(dataItem instanceof StageInfoStateItem);
     StageInfoStateItem stageInfoStateItem = (StageInfoStateItem)dataItem;
     Assert.assertEquals(stageInfoStateItem.getAppShuffleId(), appShuffleId1);
-    Assert.assertEquals(stageInfoStateItem.getNumMaps(), 3);
     Assert.assertEquals(stageInfoStateItem.getNumPartitions(), 4);
     Assert.assertEquals(stageInfoStateItem.getFileStartIndex(), 5);
     Assert.assertEquals(stageInfoStateItem.getWriteConfig(), shuffleWriteConfig1);

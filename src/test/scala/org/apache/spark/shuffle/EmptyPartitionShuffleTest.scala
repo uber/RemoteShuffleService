@@ -17,6 +17,7 @@ package org.apache.spark.shuffle
 import java.util.UUID
 
 import com.uber.rss.testutil.{RssMiniCluster, RssZookeeperCluster}
+import org.apache.spark.executor.{ShuffleWriteMetrics, TempShuffleReadMetrics}
 import org.apache.spark.{HashPartitioner, MapOutputTrackerMaster, ShuffleDependency, SparkConf, SparkContext, SparkEnv}
 import org.scalatest.Assertions._
 import org.testng.annotations._
@@ -75,7 +76,7 @@ class EmptyPartitionShuffleTest {
 
     val shuffleDependency = new ShuffleDependency[Int, Int, Int](rdd, rdd.partitioner.get)
 
-    val shuffleHandle = driverShuffleManager.registerShuffle(shuffleId, numMaps, shuffleDependency)
+    val shuffleHandle = driverShuffleManager.registerShuffle(shuffleId, shuffleDependency)
 
     val mapOutputTrackerMaster = SparkEnv.get.mapOutputTracker.asInstanceOf[MapOutputTrackerMaster]
     mapOutputTrackerMaster.registerShuffle(shuffleId, numMaps)
@@ -87,7 +88,7 @@ class EmptyPartitionShuffleTest {
 
     (0 until numMaps).toList.par.map(mapId => {
       val mapTaskContext = new MockTaskContext(shuffleId, mapId)
-      val shuffleWriter = executorShuffleManager.getWriter[Int, Int]( shuffleHandle, mapId, mapTaskContext )
+      val shuffleWriter = executorShuffleManager.getWriter[Int, Int]( shuffleHandle, mapId, mapTaskContext, new ShuffleWriteMetrics() )
       val records = (0 until numValuesInMap).map(t => t*2 -> t).iterator
       shuffleWriter.write(records)
       val mapStatus = shuffleWriter.stop(true).get
@@ -99,7 +100,7 @@ class EmptyPartitionShuffleTest {
       val startPartition = 0
       val endPartition = 0
       val reduceTaskContext = new MockTaskContext( shuffleId, startPartition )
-      val shuffleReader = executorShuffleManager.getReader( shuffleHandle, startPartition, endPartition, reduceTaskContext )
+      val shuffleReader = executorShuffleManager.getReader( shuffleHandle, startPartition, endPartition, reduceTaskContext, new TempShuffleReadMetrics() )
       val readRecords = shuffleReader.read().toList
       assert( readRecords.size === numValuesInMap )
       assert( readRecords(0)._1.toString === "0" )
@@ -112,7 +113,7 @@ class EmptyPartitionShuffleTest {
       val startPartition = 1
       val endPartition = 1
       val reduceTaskContext = new MockTaskContext( shuffleId, startPartition )
-      val shuffleReader = executorShuffleManager.getReader( shuffleHandle, startPartition, endPartition, reduceTaskContext )
+      val shuffleReader = executorShuffleManager.getReader( shuffleHandle, startPartition, endPartition, reduceTaskContext, new TempShuffleReadMetrics() )
       val readRecords = shuffleReader.read().toList
       assert( readRecords.size === 0 )
     }

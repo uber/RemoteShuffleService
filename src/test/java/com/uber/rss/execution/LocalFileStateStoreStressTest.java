@@ -77,7 +77,7 @@ public class LocalFileStateStoreStressTest {
           switch (randomInt) {
             case 0:
               stateStore.storeStageInfo(appShuffleId,
-                  new StagePersistentInfo(1, 2, 3, shuffleWriteConfig,  ShuffleStageStatus.FILE_STATUS_OK));
+                  new StagePersistentInfo(2, 3, shuffleWriteConfig,  ShuffleStageStatus.FILE_STATUS_OK));
               break;
             case 1:
               stateStore.storeTaskAttemptCommit(appShuffleId,

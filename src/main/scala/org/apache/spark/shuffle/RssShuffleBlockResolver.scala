@@ -15,10 +15,10 @@
 package org.apache.spark.shuffle
 
 import org.apache.spark.network.buffer.ManagedBuffer
-import org.apache.spark.storage.ShuffleBlockId
+import org.apache.spark.storage.{BlockId, ShuffleBlockId}
 
 class RssShuffleBlockResolver extends ShuffleBlockResolver {
-  override def getBlockData(blockId: ShuffleBlockId): ManagedBuffer = {
+  override def getBlockData(blockId: BlockId, dirs: Option[Array[String]]): ManagedBuffer = {
     throw new RuntimeException("RssShuffleBlockResolver.getBlockData not implemented")
   }
 

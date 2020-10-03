@@ -31,7 +31,6 @@ class RssShuffleReader[K, C](
                               serializer: Serializer,
                               context: TaskContext,
                               shuffleDependency: ShuffleDependency[K, _, C],
-                              numMaps: Int,
                               rssServers: ServerList,
                               partitionFanout: Int,
                               serviceRegistry: ServiceRegistry,
@@ -58,7 +57,6 @@ class RssShuffleReader[K, C](
       startPartition = startPartition,
       endPartition = endPartition,
       serializer = serializer,
-      numMaps = numMaps,
       rssServers = rssServers,
       partitionFanout = partitionFanout,
       serviceRegistry = serviceRegistry,
@@ -107,7 +105,7 @@ class RssShuffleReader[K, C](
         context.taskMetrics().incDiskBytesSpilled(sorter.diskBytesSpilled)
         context.taskMetrics().incPeakExecutionMemory(sorter.peakMemoryUsedBytes)
         // Use completion callback to stop sorter if task was finished/cancelled.
-        context.addTaskCompletionListener(_ => {
+        context.addTaskCompletionListener[Unit](_ => {
           sorter.stop()
         })
         CompletionIterator[Product2[K, C], Iterator[Product2[K, C]]](sorter.iterator, sorter.stop())

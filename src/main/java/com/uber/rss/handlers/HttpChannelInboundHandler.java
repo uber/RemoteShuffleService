@@ -26,7 +26,6 @@ import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.handler.codec.http.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.spark_project.guava.util.concurrent.RateLimiter;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;

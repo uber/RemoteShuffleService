@@ -203,22 +203,21 @@ public class DataBlockSocketReadClient extends com.uber.rss.clients.ClientBase {
       if (getDataAvailabilityRetryResult != null && getDataAvailabilityRetryResult.getMapTaskCommitStatus() != null) {
         MapTaskCommitStatus mapTaskCommitStatus = getDataAvailabilityRetryResult.getMapTaskCommitStatus();
         if (mapTaskCommitStatus.getTaskAttemptIds().isEmpty()) {
-          taskAttemptIdInfo = String.format("0 out %s map ids committed", mapTaskCommitStatus.getMapperCount());
+          taskAttemptIdInfo = String.format("0 map ids committed");
         } else {
-          List<Map.Entry<Integer, Long>> mapIdAndTaskIds = mapTaskCommitStatus.getTaskAttemptIds().entrySet().stream().sorted(new Comparator<Map.Entry<Integer, Long>>() {
+          List<Map.Entry<Long, Long>> mapIdAndTaskIds = mapTaskCommitStatus.getTaskAttemptIds().entrySet().stream().sorted(new Comparator<Map.Entry<Long, Long>>() {
             @Override
-            public int compare(Map.Entry<Integer, Long> o1, Map.Entry<Integer, Long> o2) {
-              return Integer.compare(o1.getKey(), o2.getKey());
+            public int compare(Map.Entry<Long, Long> o1, Map.Entry<Long, Long> o2) {
+              return Long.compare(o1.getKey(), o2.getKey());
             }
           }).collect(Collectors.toList());
 
-          List<Integer> mapIds = mapIdAndTaskIds.stream().map(t->t.getKey()).collect(Collectors.toList());
+          List<Long> mapIds = mapIdAndTaskIds.stream().map(t->t.getKey()).collect(Collectors.toList());
           List<Long> taskAttemptIds = mapIdAndTaskIds.stream().map(t->t.getValue()).collect(Collectors.toList());
           Collections.sort(mapIds);
           Collections.sort(taskAttemptIds);
-          taskAttemptIdInfo = String.format("%s out %s map ids committed, committed map ids: %s, committed task ids: %s, expected committed tasks: %s",
+          taskAttemptIdInfo = String.format("%s map ids committed, committed map ids: %s, committed task ids: %s, expected committed tasks: %s",
               mapIds.size(),
-              mapTaskCommitStatus.getMapperCount(),
               StringUtils.toString4SortedIntList(mapIds),
               StringUtils.toString4SortedIntList(taskAttemptIds),
               StringUtils.toString4SortedIntList(latestTaskAttemptIds));

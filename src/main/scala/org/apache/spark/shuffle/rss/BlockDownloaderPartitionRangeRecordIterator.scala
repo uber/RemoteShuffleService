@@ -38,7 +38,6 @@ class BlockDownloaderPartitionRangeRecordIterator[K, C](
     startPartition: Int,
     endPartition: Int,
     serializer: Serializer,
-    numMaps: Int,
     rssServers: ServerList,
     partitionFanout: Int,
     serviceRegistry: ServiceRegistry,
@@ -97,7 +96,12 @@ class BlockDownloaderPartitionRangeRecordIterator[K, C](
   private def createBlockDownloaderPartitionRecordIteratorWithoutRetry(partition: Int): Iterator[Product2[K, C]] = {
     var downloader: RecordReader = null
     try {
-      val mapOutputRssInfo = getPartitionRssInfo(partition)
+      val mapOutputRssInfoOptional = getPartitionRssInfo(partition)
+      if (mapOutputRssInfoOptional.isEmpty) {
+        return new EmptyRecordIterator[K, C]()
+      }
+
+      val mapOutputRssInfo = mapOutputRssInfoOptional.get
 
       if (shuffleReplicas >= 1) {
         val serverReplicationGroups = RssUtils.getRssServerReplicationGroups(rssServers, shuffleReplicas, partition, partitionFanout)
@@ -155,6 +159,7 @@ class BlockDownloaderPartitionRangeRecordIterator[K, C](
           RssUtils.createReduceTaskDummyBlockManagerId(shuffleId, partition),
           shuffleId,
           -1,
+          -1,
           partition,
           s"Cannot fetch shuffle $shuffleId partition $partition due to ${ExceptionUtils.getSimpleMessage(ex)})",
           ex)
@@ -198,17 +203,18 @@ class BlockDownloaderPartitionRangeRecordIterator[K, C](
     }
   }
 
-  private def getPartitionRssInfo(partition: Int): MapOutputRssInfo = {
+  private def getPartitionRssInfo(partition: Int): Option[MapOutputRssInfo] = {
     logInfo(s"Fetching RSS servers from map output tracker to check with shuffle handle, shuffleId $shuffleId, partition $partition")
 
-    val mapOutputRssInfo = RssUtils.getRssInfoFromMapOutputTracker(shuffleId, partition, dataAvailablePollInterval, maxRetryMillis)
-    if (mapOutputRssInfo.numMaps != numMaps) {
-      throw new RssInvalidMapStatusException(s"Invalid number of maps from map output tracker for shuffleId $shuffleId, partition $partition, expected: $numMaps, got: ${mapOutputRssInfo.numMaps}, more info: $mapOutputRssInfo")
+    val mapOutputRssInfoOptional = RssUtils.getRssInfoFromMapOutputTracker(shuffleId, partition, dataAvailablePollInterval, maxRetryMillis)
+    if (mapOutputRssInfoOptional.isEmpty) {
+      None
+    } else {
+      val mapOutputRssInfo = mapOutputRssInfoOptional.get
+      if (mapOutputRssInfoOptional.get.numRssServers != rssServers.getSeverCount) {
+        throw new RssException(s"RSS servers from map output are different from shuffle handle (shuffleId $shuffleId, partition $partition): ${mapOutputRssInfo.numRssServers} <=> ${rssServers.getSeverCount}")
+      }
+      mapOutputRssInfoOptional
     }
-
-    if (mapOutputRssInfo.numRssServers != rssServers.getSeverCount) {
-      throw new RssException(s"RSS servers from map output are different from shuffle handle (shuffleId $shuffleId, partition $partition): ${mapOutputRssInfo.numRssServers} <=> ${rssServers.getSeverCount}")
-    }
-    mapOutputRssInfo
   }
 }

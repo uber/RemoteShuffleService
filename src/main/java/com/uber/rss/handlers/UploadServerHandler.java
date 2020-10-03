@@ -45,7 +45,6 @@ public class UploadServerHandler {
 
     private String connectionInfo;
 
-    private int numMaps;
     private int numPartitions;
     private ShuffleWriteConfig writeConfig;
 
@@ -65,7 +64,6 @@ public class UploadServerHandler {
     private void initializeAppTaskAttemptImpl(AppTaskAttemptId appTaskAttemptId, int numMaps, int numPartitions, ShuffleWriteConfig writeConfig, ChannelHandlerContext ctx, String networkCompressionCodecName) {
         this.connectionInfo = NettyUtils.getServerConnectionInfo(ctx.channel());
 
-        this.numMaps = numMaps;
         this.numPartitions = numPartitions;
         this.writeConfig = writeConfig;
 
@@ -135,7 +133,7 @@ public class UploadServerHandler {
     // could retry connecting to the server without really start the upload
     private void lazyStartUpload(AppTaskAttemptId appTaskAttemptIdToStartUpload) {
         if (!taskAttemptUploadStarted.getOrDefault(appTaskAttemptIdToStartUpload.getTaskAttemptId(), false)) {
-            executor.registerShuffle(appTaskAttemptIdToStartUpload.getAppShuffleId(), numMaps, numPartitions, writeConfig);
+            executor.registerShuffle(appTaskAttemptIdToStartUpload.getAppShuffleId(), numPartitions, writeConfig);
             executor.startUpload(appTaskAttemptIdToStartUpload);
 
             taskAttemptUploadStarted.put(appTaskAttemptIdToStartUpload.getTaskAttemptId(), true);

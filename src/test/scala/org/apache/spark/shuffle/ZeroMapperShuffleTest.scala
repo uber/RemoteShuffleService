@@ -18,6 +18,7 @@ import java.util.UUID
 
 import com.uber.rss.metadata.ServiceRegistry
 import com.uber.rss.testutil.{RssMiniCluster, RssZookeeperCluster}
+import org.apache.spark.executor.TempShuffleReadMetrics
 import org.apache.spark.{HashPartitioner, MapOutputTrackerMaster, ShuffleDependency, SparkConf, SparkContext, SparkEnv}
 import org.scalatest.Assertions._
 import org.testng.annotations._
@@ -73,7 +74,7 @@ class ZeroMapperShuffleTest {
 
     val shuffleDependency = new ShuffleDependency[Int, Int, Int](rdd, rdd.partitioner.get)
 
-    val shuffleHandle = driverShuffleManager.registerShuffle(shuffleId, numMaps, shuffleDependency)
+    val shuffleHandle = driverShuffleManager.registerShuffle(shuffleId, shuffleDependency)
 
     val mapOutputTrackerMaster = SparkEnv.get.mapOutputTracker.asInstanceOf[MapOutputTrackerMaster]
     mapOutputTrackerMaster.registerShuffle(shuffleId, numMaps)
@@ -84,7 +85,7 @@ class ZeroMapperShuffleTest {
     shuffleManagers :+= executorShuffleManager
 
     val reduceTaskContext = new MockTaskContext( shuffleId, partitionId )
-    val shuffleReader = executorShuffleManager.getReader( shuffleHandle, partitionId, partitionId, reduceTaskContext )
+    val shuffleReader = executorShuffleManager.getReader( shuffleHandle, partitionId, partitionId, reduceTaskContext, new TempShuffleReadMetrics() )
     val readRecords = shuffleReader.read().toList
     assert( readRecords.size === 0 )
   }

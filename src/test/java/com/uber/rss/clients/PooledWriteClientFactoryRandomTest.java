@@ -20,9 +20,10 @@ import com.uber.rss.clients.RecordSyncWriteClient;
 import com.uber.rss.exceptions.RssAggregateException;
 import com.uber.rss.testutil.TestConstants;
 import com.uber.rss.testutil.TestStreamServer;
-import org.spark_project.jetty.util.ConcurrentArrayQueue;
 import org.testng.Assert;
 import org.testng.annotations.Test;
+
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class PooledWriteClientFactoryRandomTest {
 
@@ -39,7 +40,7 @@ public class PooledWriteClientFactoryRandomTest {
       String appId = "app1";
       String appAttempt = "attempt1";
 
-      ConcurrentArrayQueue<Throwable> threadExceptions = new ConcurrentArrayQueue<>();
+      ConcurrentLinkedQueue<Throwable> threadExceptions = new ConcurrentLinkedQueue<>();
 
       Thread[] threads = new Thread[numThreads];
       for (int i = 0; i < numThreads; i++) {
