@@ -25,7 +25,7 @@ import org.testng.annotations._
 import scala.collection.mutable.ArrayBuffer
 
 /***
- * This is to test scenario where there is some partitions with no data.
+ * This is to test scenario where there are no partitions from map side.
  */
 class EmptyPartitionShuffleTest {
 
@@ -61,7 +61,7 @@ class EmptyPartitionShuffleTest {
     shuffleManagers :+= driverShuffleManager
 
     val shuffleId = 1
-    val numMaps = 1
+    val numMaps = 0
     val numValuesInMap = 5
     val numPartitions = 2
 
@@ -86,32 +86,28 @@ class EmptyPartitionShuffleTest {
     val executorShuffleManager = new RssShuffleManager(conf)
     shuffleManagers :+= executorShuffleManager
 
-    (0 until numMaps).toList.par.map(mapId => {
-      val mapTaskContext = new MockTaskContext(shuffleId, mapId)
-      val shuffleWriter = executorShuffleManager.getWriter[Int, Int]( shuffleHandle, mapId, mapTaskContext, new ShuffleWriteMetrics() )
-      val records = (0 until numValuesInMap).map(t => t*2 -> t).iterator
-      shuffleWriter.write(records)
-      val mapStatus = shuffleWriter.stop(true).get
-      mapOutputTrackerMaster.registerMapOutput(shuffleId, mapId, mapStatus)
-    })
-
-    // partition 0 should be: (0, 0), (2, 1), (4, 2), (6, 3), (8, 4)
+    // read partition 0
     {
       val startPartition = 0
-      val endPartition = 0
+      val endPartition = 1
       val reduceTaskContext = new MockTaskContext( shuffleId, startPartition )
       val shuffleReader = executorShuffleManager.getReader( shuffleHandle, startPartition, endPartition, reduceTaskContext, new TempShuffleReadMetrics() )
       val readRecords = shuffleReader.read().toList
-      assert( readRecords.size === numValuesInMap )
-      assert( readRecords(0)._1.toString === "0" )
-      assert( readRecords(0)._2.toString === "0" )
-      assert( readRecords(4)._1.toString === "8" )
-      assert( readRecords(4)._2.toString === "4" )
+      assert( readRecords.size === 0 )
     }
-    // partition 1 should has no data
+    // read partition 1
     {
       val startPartition = 1
-      val endPartition = 1
+      val endPartition = 2
+      val reduceTaskContext = new MockTaskContext( shuffleId, startPartition )
+      val shuffleReader = executorShuffleManager.getReader( shuffleHandle, startPartition, endPartition, reduceTaskContext, new TempShuffleReadMetrics() )
+      val readRecords = shuffleReader.read().toList
+      assert( readRecords.size === 0 )
+    }
+    // read partition 0 to 2
+    {
+      val startPartition = 0
+      val endPartition = 3
       val reduceTaskContext = new MockTaskContext( shuffleId, startPartition )
       val shuffleReader = executorShuffleManager.getReader( shuffleHandle, startPartition, endPartition, reduceTaskContext, new TempShuffleReadMetrics() )
       val readRecords = shuffleReader.read().toList
