@@ -295,6 +295,10 @@ class RssShuffleManager(conf: SparkConf) extends ShuffleManager with Logging {
 
   // This method is called in Spark executor, getting information from Spark driver via the ShuffleHandle.
   override def getReader[K, C](handle: ShuffleHandle, startPartition: Int, endPartition: Int, context: TaskContext, metrics: ShuffleReadMetricsReporter): ShuffleReader[K, C] = {
+    getReaderForRange(handle, 0, Integer.MAX_VALUE, startPartition, endPartition, context, metrics)
+  }
+
+  override def getReaderForRange[K, C](handle: ShuffleHandle, startMapIndex: Int, endMapIndex: Int, startPartition: Int, endPartition: Int, context: TaskContext, metrics: ShuffleReadMetricsReporter): ShuffleReader[K, C] = {
     logInfo(s"getReader: Use ShuffleManager: ${this.getClass().getSimpleName()}, $handle, partitions: [$startPartition, $endPartition)")
 
     val rssShuffleHandle = handle.asInstanceOf[RssShuffleHandle[K, _, C]]
@@ -314,6 +318,8 @@ class RssShuffleManager(conf: SparkConf) extends ShuffleManager with Logging {
     new RssShuffleReader(
       user = rssShuffleHandle.user,
       shuffleInfo = shuffleInfo,
+      startMapIndex = startMapIndex,
+      endMapIndex = endMapIndex,
       startPartition = startPartition,
       endPartition = endPartition,
       serializer = serializer,
@@ -460,5 +466,4 @@ class RssShuffleManager(conf: SparkConf) extends ShuffleManager with Logging {
     new ServerConnectionCacheUpdateRefresher(serverConnectionResolver, MultiServerHeartbeatClient.getServerCache)
   }
 
-  override def getReaderForRange[K, C](handle: ShuffleHandle, startMapIndex: Int, endMapIndex: Int, startPartition: Int, endPartition: Int, context: TaskContext, metrics: ShuffleReadMetricsReporter): ShuffleReader[K, C] = ???
 }

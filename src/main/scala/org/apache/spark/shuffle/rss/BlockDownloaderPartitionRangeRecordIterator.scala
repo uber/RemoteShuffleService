@@ -35,6 +35,8 @@ class BlockDownloaderPartitionRangeRecordIterator[K, C](
     appId: String,
     appAttempt: String,
     shuffleId: Int,
+    startMapIndex: Int,
+    endMapIndex: Int,
     startPartition: Int,
     endPartition: Int,
     serializer: Serializer,
@@ -96,7 +98,7 @@ class BlockDownloaderPartitionRangeRecordIterator[K, C](
   private def createBlockDownloaderPartitionRecordIteratorWithoutRetry(partition: Int): Iterator[Product2[K, C]] = {
     var downloader: RecordReader = null
     try {
-      val mapOutputRssInfoOptional = getPartitionRssInfo(partition)
+      val mapOutputRssInfoOptional = getPartitionRssInfo(startMapIndex, endMapIndex, partition)
       if (mapOutputRssInfoOptional.isEmpty) {
         return new EmptyRecordIterator[K, C]()
       }
@@ -203,10 +205,10 @@ class BlockDownloaderPartitionRangeRecordIterator[K, C](
     }
   }
 
-  private def getPartitionRssInfo(partition: Int): Option[MapOutputRssInfo] = {
+  private def getPartitionRssInfo(startMapIndex: Int, endMapIndex: Int, partition: Int): Option[MapOutputRssInfo] = {
     logInfo(s"Fetching RSS servers from map output tracker to check with shuffle handle, shuffleId $shuffleId, partition $partition")
 
-    val mapOutputRssInfoOptional = RssUtils.getRssInfoFromMapOutputTracker(shuffleId, partition, dataAvailablePollInterval, maxRetryMillis)
+    val mapOutputRssInfoOptional = RssUtils.getRssInfoFromMapOutputTracker(shuffleId, startMapIndex, endMapIndex, partition, dataAvailablePollInterval, maxRetryMillis)
     if (mapOutputRssInfoOptional.isEmpty) {
       None
     } else {

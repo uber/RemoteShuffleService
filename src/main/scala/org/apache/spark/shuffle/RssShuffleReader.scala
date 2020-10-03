@@ -26,6 +26,8 @@ import org.apache.spark.{InterruptibleIterator, ShuffleDependency, TaskContext}
 class RssShuffleReader[K, C](
                               user: String,
                               shuffleInfo: AppShuffleId,
+                              startMapIndex: Int,
+                              endMapIndex: Int,
                               startPartition: Int,
                               endPartition: Int,
                               serializer: Serializer,
@@ -54,6 +56,8 @@ class RssShuffleReader[K, C](
       appId = shuffleInfo.getAppId,
       appAttempt = shuffleInfo.getAppAttempt,
       shuffleId = shuffleInfo.getShuffleId,
+      startMapIndex = startMapIndex,
+      endMapIndex = endMapIndex,
       startPartition = startPartition,
       endPartition = endPartition,
       serializer = serializer,

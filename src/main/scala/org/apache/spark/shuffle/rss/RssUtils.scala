@@ -23,7 +23,7 @@ import com.uber.rss.exceptions.{RssException, RssInvalidMapStatusException}
 import com.uber.rss.util.RetryUtils
 import org.apache.spark.SparkEnv
 import org.apache.spark.internal.Logging
-import org.apache.spark.storage.BlockManagerId
+import org.apache.spark.storage.{BlockId, BlockManagerId}
 
 object RssUtils extends Logging {
 
@@ -79,7 +79,7 @@ object RssUtils extends Logging {
    * @param partition partition id
    * @return
    */
-  def getRssInfoFromMapOutputTracker(shuffleId: Int, partition: Int, retryIntervalMillis: Long, maxRetryMillis: Long): Option[MapOutputRssInfo] = {
+  def getRssInfoFromMapOutputTracker(shuffleId: Int, startMapIndex: Int, endMapIndex: Int, partition: Int, retryIntervalMillis: Long, maxRetryMillis: Long): Option[MapOutputRssInfo] = {
     // this hash map stores rss servers for each map task's latest attempt
     val mapLatestAttemptRssServers = scala.collection.mutable.HashMap[Long, MapTaskRssInfo]()
     val mapAttemptRssInfoList =
@@ -89,9 +89,12 @@ object RssUtils extends Logging {
         s"get information from map output tracker, shuffleId: $shuffleId, partition: $partition",
         new Supplier[Seq[MapTaskRssInfo]] {
           override def get(): Seq[MapTaskRssInfo] = {
-            val mapStatusInfo = SparkEnv.get.mapOutputTracker.getMapSizesByExecutorId(shuffleId, partition, partition + 1)
+            val mapStatusInfo = SparkEnv.get.mapOutputTracker.getMapSizesByRange(shuffleId, startMapIndex, endMapIndex, partition, partition + 1)
             logInfo(s"Got result from mapOutputTracker.getMapSizesByExecutorId")
-            mapStatusInfo.toParArray.flatMap(mapStatusInfoEntry=>RssUtils.getRssInfoFromBlockManagerId(mapStatusInfoEntry._1)).toList
+            mapStatusInfo
+              .toParArray
+              .flatMap(mapStatusInfoEntry=>RssUtils.getRssInfoFromBlockManagerId(mapStatusInfoEntry._1))
+              .toList
           }
         })
     logInfo(s"Got ${mapAttemptRssInfoList.size} items after parsing mapOutputTracker.getMapSizesByExecutorId result")
@@ -133,4 +136,5 @@ object RssUtils extends Logging {
     val dummyPort = 99999
     BlockManagerId(s"reduce_${shuffleId}_$partition", dummyHost, dummyPort, None)
   }
+
 }

@@ -355,6 +355,8 @@ class RssStressTool extends Logging {
     val shuffleReader = new RssShuffleReader[String, String](
       user = "user1",
       shuffleInfo = appShuffleId,
+      startMapIndex = 0,
+      endMapIndex = Integer.MAX_VALUE,
       startPartition = readPartitionId,
       endPartition = readPartitionId + 1,
       serializer = shuffleDependency.serializer,
