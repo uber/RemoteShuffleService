@@ -12,7 +12,7 @@ spark.shuffle.service.enabled=false
 spark.speculation=false
 ```
 
-- The supported Spark version is Spark 2.4.x. For Spark 3.x, we are still testing and developing.
+- The currently supported Spark version is Spark 2.4.x. We have a branch **spark30** for on-going work to support Spark 3.0.x. Please contact us (remoteshuffleservice@googlegroups.com) if you want to try Spark 3.0.x with Remote Shuffle Service and we could work together on that.
 
 ## How to Build
 
