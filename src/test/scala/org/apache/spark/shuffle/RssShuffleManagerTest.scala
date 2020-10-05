@@ -90,19 +90,6 @@ class RssShuffleManagerTest {
   }
 
   @Test
-  def run_compressed(): Unit = {
-    val conf = TestUtil.newSparkConfWithZooKeeperRegistryServer(appId, rssTestCluster.getZooKeeperServers)
-    runWithSparkConf(conf)
-  }
-
-  @Test
-  def run_uncompressed(): Unit = {
-    val conf = TestUtil.newSparkConfWithZooKeeperRegistryServer(appId, rssTestCluster.getZooKeeperServers)
-    conf.set("spark.shuffle.rss.compressionBufferSize", "0")
-    runWithSparkConf(conf)
-  }
-
-  @Test
   def run_singleSplit(): Unit = {
     val conf = TestUtil.newSparkConfWithZooKeeperRegistryServer(appId, rssTestCluster.getZooKeeperServers)
     conf.set("spark.shuffle.rss.numSplits", "1")

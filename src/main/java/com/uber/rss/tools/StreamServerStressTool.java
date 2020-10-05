@@ -18,14 +18,13 @@ import com.uber.rss.StreamServer;
 import com.uber.rss.StreamServerConfig;
 import com.uber.rss.clients.MultiServerAsyncWriteClient;
 import com.uber.rss.clients.MultiServerSyncWriteClient;
-import com.uber.rss.clients.ServerReplicationGroupUtil;
 import com.uber.rss.clients.MultiServerWriteClient;
 import com.uber.rss.clients.PooledWriteClientFactory;
+import com.uber.rss.clients.ServerReplicationGroupUtil;
 import com.uber.rss.clients.ShuffleWriteConfig;
 import com.uber.rss.common.AppMapId;
 import com.uber.rss.common.AppShuffleId;
 import com.uber.rss.common.AppTaskAttemptId;
-import com.uber.rss.common.Compression;
 import com.uber.rss.common.ServerDetail;
 import com.uber.rss.common.ServerReplicationGroup;
 import com.uber.rss.metadata.InMemoryServiceRegistry;
@@ -135,18 +134,11 @@ public class StreamServerStressTool {
     // Whether to use fsyncEnabled in stream server
     private boolean fsyncEnabled = true;
 
-    // Buffer size to use
-    private int bufferSize = ShuffleFileStorage.DEFAULT_BUFFER_SIZE;
-
     private int writeClientQueueSize = 100;
     private int writeClientThreads = 4;
 
     // Whether to delete files after the test
     private boolean deleteFiles = true;
-
-    private String compressCodec = Compression.COMPRESSION_CODEC_LZ4;
-
-    private int compressionBufferSize = 64 * 1024;
 
     // Total number of test values to use. This tool wil generate a list of test values and use them
     // to fill shuffle data.
@@ -281,10 +273,6 @@ public class StreamServerStressTool {
         this.fsyncEnabled = fsyncEnabled;
     }
 
-    public void setBufferSize(int bufferSize) {
-        this.bufferSize = bufferSize;
-    }
-
     public void setWriteClientQueueSize(int writeClientQueueSize) {
         this.writeClientQueueSize = writeClientQueueSize;
     }
@@ -293,17 +281,8 @@ public class StreamServerStressTool {
         this.writeClientThreads = writeClientThreads;
     }
 
-
     public void setDeleteFiles(boolean deleteFiles) {
         this.deleteFiles = deleteFiles;
-    }
-
-    public void setCompressCodec(String compressCodec) {
-        this.compressCodec = compressCodec;
-    }
-
-    public void setCompressionBufferSize(int compressionBufferSize) {
-        this.compressionBufferSize = compressionBufferSize;
     }
 
     public void setNumTestValues(int numTestValues) {
@@ -329,7 +308,7 @@ public class StreamServerStressTool {
         
         appShuffleId = new AppShuffleId(appId, appAttempt, 1);
 
-        storage = new ShuffleFileStorage(bufferSize);
+        storage = new ShuffleFileStorage();
 
         // Start Remote Shuffle Service servers if no server hosts are provided
         if (serverHosts.isEmpty()) {
@@ -567,11 +546,9 @@ public class StreamServerStressTool {
                 ", mapSlowness=" + mapSlowness +
                 ", maxWait=" + maxWait +
                 ", fsyncEnabled=" + fsyncEnabled +
-                ", bufferSize=" + bufferSize +
                 ", writeClientQueueSize=" + writeClientQueueSize +
                 ", writeClientThreads=" + writeClientThreads +
                 ", deleteFiles=" + deleteFiles +
-                ", compressCodec='" + compressCodec + '\'' +
                 ", numTestValues=" + numTestValues +
                 ", maxTestValueLen=" + maxTestValueLen +
                 ", storage=" + storage +
@@ -598,7 +575,7 @@ public class StreamServerStressTool {
             }
         }
 
-        ShuffleWriteConfig shuffleWriteConfig = new ShuffleWriteConfig("lz4", (short)numSplits);
+        ShuffleWriteConfig shuffleWriteConfig = new ShuffleWriteConfig((short)numSplits);
 
         MultiServerWriteClient writeClient;
         int networkTimeoutMillis = 120 * 1000;
@@ -754,8 +731,6 @@ public class StreamServerStressTool {
             serverConfig.setRootDirectory(serverDirFullPath);
             serverConfig.setDataCenter(ServiceRegistry.DEFAULT_DATA_CENTER);
             serverConfig.setCluster(ServiceRegistry.DEFAULT_TEST_CLUSTER);
-            serverConfig.setNetworkCompressionCodec(compressCodec);
-            serverConfig.setFileCompressionCodec(compressCodec);
             serverConfig.setAppMemoryRetentionMillis(TimeUnit.HOURS.toMillis(1));
             StreamServer server = new StreamServer(serverConfig, serviceRegistry);
             server.run();
@@ -816,8 +791,6 @@ public class StreamServerStressTool {
                 tool.numServerThreads = Integer.parseInt(args[i++]);
             } else if (argName.equalsIgnoreCase("-fsyncEnabled")) {
                 tool.fsyncEnabled = Boolean.parseBoolean(args[i++]);
-            } else if (argName.equalsIgnoreCase("-bufferSize")) {
-                tool.bufferSize = Integer.parseInt(args[i++]);
             } else if (argName.equalsIgnoreCase("-writeClientQueueSize")) {
                 tool.writeClientQueueSize = Integer.parseInt(args[i++]);
             } else if (argName.equalsIgnoreCase("-writeClientThreads")) {
@@ -853,8 +826,6 @@ public class StreamServerStressTool {
                 tool.partitionFanout = Integer.parseInt(args[i++]);
             } else if (argName.equalsIgnoreCase("-deleteFiles")) {
                 tool.deleteFiles = Boolean.parseBoolean(args[i++]);
-            } else if (argName.equalsIgnoreCase("-compressCodec")) {
-                tool.compressCodec = args[i++];
             } else {
                 throw new IllegalArgumentException("Unsupported argument: " + argName);
             }

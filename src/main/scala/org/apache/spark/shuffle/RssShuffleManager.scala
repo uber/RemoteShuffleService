@@ -168,7 +168,6 @@ class RssShuffleManager(conf: SparkConf) extends ShuffleManager with Logging {
         val serializer = rssShuffleHandle.dependency.serializer
         val maxWaitMillis = conf.get( RssOpts.maxWaitTime )
         val useConnectionPool = conf.get(RssOpts.useConnectionPool)
-        val rssFileCompressionCodec = conf.get(RssOpts.fileCompressionCodec)
         val rssMapsPerSplit = conf.get(RssOpts.mapsPerSplit)
         var rssNumSplits = Math.ceil(rssShuffleHandle.numMaps.toDouble/rssMapsPerSplit.toDouble).toInt
         val rssMinSplits = conf.get(RssOpts.minSplits)
@@ -178,7 +177,7 @@ class RssShuffleManager(conf: SparkConf) extends ShuffleManager with Logging {
         } else if (rssNumSplits > rssMaxSplits) {
           rssNumSplits = rssMaxSplits
         }
-        val shuffleWriteConfig = new ShuffleWriteConfig(rssFileCompressionCodec, rssNumSplits.toShort)
+        val shuffleWriteConfig = new ShuffleWriteConfig(rssNumSplits.toShort)
         val rssReplicas = conf.get(RssOpts.replicas)
         if (rssReplicas <= 0) {
           throw new RssException(s"Invalid config value for ${RssOpts.replicas.key}: $rssReplicas")

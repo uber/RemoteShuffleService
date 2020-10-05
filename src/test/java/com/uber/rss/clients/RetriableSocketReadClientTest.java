@@ -87,29 +87,29 @@ public class RetriableSocketReadClientTest {
           queueSize,"user1", appShufflePartitionId,
           readClientDataOptions)) {
         readClient.connect();
-        RecordKeyValuePair record = readClient.readRecord();
+        TaskByteArrayDataBlock record = readClient.readRecord();
         Assert.assertNotNull(record);
-        Assert.assertNull(record.getKey());
+
         Assert.assertEquals(record.getValue(), new byte[0]);
 
         record = readClient.readRecord();
         Assert.assertNotNull(record);
-        Assert.assertEquals(record.getKey(), null);
+
         Assert.assertEquals(record.getValue(), new byte[0]);
 
         record = readClient.readRecord();
         Assert.assertNotNull(record);
-        Assert.assertEquals(record.getKey(), null);
+
         Assert.assertEquals(new String(record.getValue(), StandardCharsets.UTF_8), "");
 
         record = readClient.readRecord();
         Assert.assertNotNull(record);
-        Assert.assertEquals(record.getKey(), null);
+
         Assert.assertEquals(new String(record.getValue(), StandardCharsets.UTF_8), "value1");
 
         record = readClient.readRecord();
         Assert.assertNotNull(record);
-        Assert.assertEquals(record.getKey(), null);
+
         Assert.assertEquals(new String(record.getValue(), StandardCharsets.UTF_8), "value1");
 
         record = readClient.readRecord();
@@ -172,7 +172,7 @@ public class RetriableSocketReadClientTest {
           queueSize,"user1", appShufflePartitionId,
           readClientDataOptions)) {
         readClient.connect();
-        RecordKeyValuePair record = readClient.readRecord();
+        TaskByteArrayDataBlock record = readClient.readRecord();
         Assert.assertNotNull(record);
       }
 
@@ -189,29 +189,29 @@ public class RetriableSocketReadClientTest {
           queueSize,"user1", appShufflePartitionId,
           readClientDataOptions)) {
         readClient.connect();
-        RecordKeyValuePair record = readClient.readRecord();
+        TaskByteArrayDataBlock record = readClient.readRecord();
         Assert.assertNotNull(record);
-        Assert.assertNull(record.getKey());
+
         Assert.assertEquals(record.getValue(), new byte[0]);
 
         record = readClient.readRecord();
         Assert.assertNotNull(record);
-        Assert.assertEquals(record.getKey(), null);
+
         Assert.assertEquals(record.getValue(), new byte[0]);
 
         record = readClient.readRecord();
         Assert.assertNotNull(record);
-        Assert.assertEquals(record.getKey(), null);
+
         Assert.assertEquals(new String(record.getValue(), StandardCharsets.UTF_8), "");
 
         record = readClient.readRecord();
         Assert.assertNotNull(record);
-        Assert.assertEquals(record.getKey(), null);
+
         Assert.assertEquals(new String(record.getValue(), StandardCharsets.UTF_8), "value1");
 
         record = readClient.readRecord();
         Assert.assertNotNull(record);
-        Assert.assertEquals(record.getKey(), null);
+
         Assert.assertEquals(new String(record.getValue(), StandardCharsets.UTF_8), "value1");
 
         record = readClient.readRecord();
@@ -237,29 +237,29 @@ public class RetriableSocketReadClientTest {
           queueSize,"user1", appShufflePartitionId,
           readClientDataOptions)) {
         readClient.connect();
-        RecordKeyValuePair record = readClient.readRecord();
+        TaskByteArrayDataBlock record = readClient.readRecord();
         Assert.assertNotNull(record);
-        Assert.assertNull(record.getKey());
+
         Assert.assertEquals(record.getValue(), new byte[0]);
 
         record = readClient.readRecord();
         Assert.assertNotNull(record);
-        Assert.assertEquals(record.getKey(), null);
+
         Assert.assertEquals(record.getValue(), new byte[0]);
 
         record = readClient.readRecord();
         Assert.assertNotNull(record);
-        Assert.assertEquals(record.getKey(), null);
+
         Assert.assertEquals(new String(record.getValue(), StandardCharsets.UTF_8), "");
 
         record = readClient.readRecord();
         Assert.assertNotNull(record);
-        Assert.assertEquals(record.getKey(), null);
+
         Assert.assertEquals(new String(record.getValue(), StandardCharsets.UTF_8), "value1");
 
         record = readClient.readRecord();
         Assert.assertNotNull(record);
-        Assert.assertEquals(record.getKey(), null);
+
         Assert.assertEquals(new String(record.getValue(), StandardCharsets.UTF_8), "value1");
 
         record = readClient.readRecord();
@@ -327,7 +327,7 @@ public class RetriableSocketReadClientTest {
           queueSize,"user1", appShufflePartitionId,
           readClientDataOptions)) {
         readClient.connect();
-        RecordKeyValuePair record = readClient.readRecord();
+        TaskByteArrayDataBlock record = readClient.readRecord();
         Assert.assertNotNull(record);
       }
 
@@ -355,28 +355,28 @@ public class RetriableSocketReadClientTest {
           queueSize,"user1", appShufflePartitionId,
           readClientDataOptions)) {
         readClient.connect();
-        RecordKeyValuePair record = readClient.readRecord();
+        TaskByteArrayDataBlock record = readClient.readRecord();
         Assert.assertNotNull(record);
-        Assert.assertNull(record.getKey());
+
 
         record = readClient.readRecord();
         Assert.assertNotNull(record);
-        Assert.assertEquals(record.getKey(), null);
+
         Assert.assertEquals(record.getValue(), new byte[0]);
 
         record = readClient.readRecord();
         Assert.assertNotNull(record);
-        Assert.assertEquals(record.getKey(), null);
+
         Assert.assertEquals(new String(record.getValue(), StandardCharsets.UTF_8), "");
 
         record = readClient.readRecord();
         Assert.assertNotNull(record);
-        Assert.assertEquals(record.getKey(), null);
+
         Assert.assertEquals(new String(record.getValue(), StandardCharsets.UTF_8), "value1");
 
         record = readClient.readRecord();
         Assert.assertNotNull(record);
-        Assert.assertEquals(record.getKey(), null);
+
         Assert.assertEquals(new String(record.getValue(), StandardCharsets.UTF_8), "value1");
 
         record = readClient.readRecord();
@@ -447,7 +447,7 @@ public class RetriableSocketReadClientTest {
           queueSize,"user1", appShufflePartitionId,
           readClientDataOptions)) {
         readClient.connect();
-        RecordKeyValuePair record = readClient.readRecord();
+        TaskByteArrayDataBlock record = readClient.readRecord();
         Assert.assertNotNull(record);
       }
 

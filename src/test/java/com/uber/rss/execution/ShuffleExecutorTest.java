@@ -49,7 +49,7 @@ public class ShuffleExecutorTest {
         
         AppTaskAttemptId appTaskAttemptId = new AppTaskAttemptId(appShuffleId, mapId1, 0L);
 
-        executor.registerShuffle(appShuffleId, numMaps, numPartitions, new ShuffleWriteConfig("", (short)1));
+        executor.registerShuffle(appShuffleId, numMaps, numPartitions, new ShuffleWriteConfig((short)1));
 
         executor.startUpload(appTaskAttemptId);
 
@@ -97,7 +97,7 @@ public class ShuffleExecutorTest {
         int mapId3 = 3;
         int numPartitions = 2;
 
-        executor.registerShuffle(appShuffleId, numMaps, numPartitions, new ShuffleWriteConfig("", numSplits));
+        executor.registerShuffle(appShuffleId, numMaps, numPartitions, new ShuffleWriteConfig(numSplits));
         
         List<AppMapId> appMapIds = new ArrayList<>();
         List<AppTaskAttemptId> appTaskAttemptIds = new ArrayList<>();
@@ -194,7 +194,7 @@ public class ShuffleExecutorTest {
 
         AppTaskAttemptId appTaskAttemptId = new AppTaskAttemptId(appShuffleId, mapId1, taskAttemptId);
 
-        executor.registerShuffle(appShuffleId, numMaps, numPartitions, new ShuffleWriteConfig("", (short)1));
+        executor.registerShuffle(appShuffleId, numMaps, numPartitions, new ShuffleWriteConfig((short)1));
 
         executor.startUpload(appTaskAttemptId);
 

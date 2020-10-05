@@ -103,29 +103,24 @@ public class MultiServerSocketReadClientTest {
         readClient.connect();
         Assert.assertEquals(readClient.getShuffleReadBytes(), 0);
 
-        RecordKeyValuePair record = readClient.readRecord();
+        TaskByteArrayDataBlock record = readClient.readRecord();
         Assert.assertNotNull(record);
-        Assert.assertNull(record.getKey());
         Assert.assertEquals(record.getValue(), new byte[0]);
 
         record = readClient.readRecord();
         Assert.assertNotNull(record);
-        Assert.assertEquals(record.getKey(), null);
         Assert.assertEquals(record.getValue(), new byte[0]);
 
         record = readClient.readRecord();
         Assert.assertNotNull(record);
-        Assert.assertEquals(record.getKey(), null);
         Assert.assertEquals(new String(record.getValue(), StandardCharsets.UTF_8), "");
 
         record = readClient.readRecord();
         Assert.assertNotNull(record);
-        Assert.assertEquals(record.getKey(), null);
         Assert.assertEquals(new String(record.getValue(), StandardCharsets.UTF_8), "value1");
 
         record = readClient.readRecord();
         Assert.assertNotNull(record);
-        Assert.assertEquals(record.getKey(), null);
         Assert.assertEquals(new String(record.getValue(), StandardCharsets.UTF_8), "value1");
 
         record = readClient.readRecord();
@@ -263,29 +258,24 @@ public class MultiServerSocketReadClientTest {
         readClient.connect();
         Assert.assertEquals(readClient.getShuffleReadBytes(), 0);
 
-        RecordKeyValuePair record = readClient.readRecord();
+        TaskByteArrayDataBlock record = readClient.readRecord();
         Assert.assertNotNull(record);
-        Assert.assertNull(record.getKey());
         Assert.assertEquals(record.getValue(), new byte[0]);
 
         record = readClient.readRecord();
         Assert.assertNotNull(record);
-        Assert.assertEquals(record.getKey(), null);
         Assert.assertEquals(record.getValue(), new byte[0]);
 
         record = readClient.readRecord();
         Assert.assertNotNull(record);
-        Assert.assertEquals(record.getKey(), null);
         Assert.assertEquals(new String(record.getValue(), StandardCharsets.UTF_8), "");
 
         record = readClient.readRecord();
         Assert.assertNotNull(record);
-        Assert.assertEquals(record.getKey(), null);
         Assert.assertEquals(new String(record.getValue(), StandardCharsets.UTF_8), "value1");
 
         record = readClient.readRecord();
         Assert.assertNotNull(record);
-        Assert.assertEquals(record.getKey(), null);
         Assert.assertEquals(new String(record.getValue(), StandardCharsets.UTF_8), "value1");
 
         record = readClient.readRecord();
@@ -434,39 +424,32 @@ public class MultiServerSocketReadClientTest {
         readClient.connect();
         Assert.assertEquals(readClient.getShuffleReadBytes(), 0);
 
-        RecordKeyValuePair record = readClient.readRecord();
+        TaskByteArrayDataBlock record = readClient.readRecord();
         Assert.assertNotNull(record);
-        Assert.assertNull(record.getKey());
         Assert.assertEquals(record.getValue(), new byte[0]);
 
         record = readClient.readRecord();
         Assert.assertNotNull(record);
-        Assert.assertEquals(record.getKey(), null);
         Assert.assertEquals(record.getValue(), new byte[0]);
 
         record = readClient.readRecord();
         Assert.assertNotNull(record);
-        Assert.assertEquals(record.getKey(), null);
         Assert.assertEquals(new String(record.getValue(), StandardCharsets.UTF_8), "");
 
         record = readClient.readRecord();
         Assert.assertNotNull(record);
-        Assert.assertEquals(record.getKey(), null);
         Assert.assertEquals(new String(record.getValue(), StandardCharsets.UTF_8), "value1");
 
         record = readClient.readRecord();
         Assert.assertNotNull(record);
-        Assert.assertEquals(record.getKey(), null);
         Assert.assertEquals(new String(record.getValue(), StandardCharsets.UTF_8), "value1");
 
         record = readClient.readRecord();
         Assert.assertNotNull(record);
-        Assert.assertEquals(record.getKey(), null);
         Assert.assertEquals(new String(record.getValue(), StandardCharsets.UTF_8), "value2");
 
         record = readClient.readRecord();
         Assert.assertNotNull(record);
-        Assert.assertEquals(record.getKey(), null);
         Assert.assertEquals(new String(record.getValue(), StandardCharsets.UTF_8), "value3");
 
         record = readClient.readRecord();
@@ -495,9 +478,8 @@ public class MultiServerSocketReadClientTest {
         readClient.connect();
         Assert.assertEquals(readClient.getShuffleReadBytes(), 0);
 
-        RecordKeyValuePair record = readClient.readRecord();
+        TaskByteArrayDataBlock record = readClient.readRecord();
         Assert.assertNotNull(record);
-        Assert.assertEquals(record.getKey(), null);
         Assert.assertEquals(record.getValue(), new byte[0]);
 
         record = readClient.readRecord();
@@ -525,8 +507,7 @@ public class MultiServerSocketReadClientTest {
         readClient.connect();
         Assert.assertEquals(readClient.getShuffleReadBytes(), 0);
 
-        RecordKeyValuePair record = readClient.readRecord();
-        Assert.assertEquals(record.getKey(), null);
+        TaskByteArrayDataBlock record = readClient.readRecord();
         Assert.assertEquals(new String(record.getValue(), StandardCharsets.UTF_8), "value1");
 
         record = readClient.readRecord();
@@ -555,7 +536,7 @@ public class MultiServerSocketReadClientTest {
         readClient.connect();
         Assert.assertEquals(readClient.getShuffleReadBytes(), 0);
 
-        RecordKeyValuePair record = readClient.readRecord();
+        TaskByteArrayDataBlock record = readClient.readRecord();
         Assert.assertNull(record);
 
         Assert.assertEquals(readClient.getShuffleReadBytes(), 0);
@@ -710,7 +691,7 @@ public class MultiServerSocketReadClientTest {
           new ReadClientDataOptions(Arrays.asList(appTaskAttemptId.getTaskAttemptId()), TestConstants.DATA_AVAILABLE_POLL_INTERVAL, dataAvailableMaxWaitTime),
           checkShuffleReplicaConsistency)) {
         readClient.connect();
-        RecordKeyValuePair record = readClient.readRecord();
+        TaskByteArrayDataBlock record = readClient.readRecord();
         while (record != null) {
           record = readClient.readRecord();
         }

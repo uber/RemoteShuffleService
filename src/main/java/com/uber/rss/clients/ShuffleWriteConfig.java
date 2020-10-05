@@ -18,20 +18,14 @@ import java.util.Objects;
 
 public class ShuffleWriteConfig {
 
-  private final String fileCompressionCodec;
   private final short numSplits;
 
   public ShuffleWriteConfig() {
-    this("", (short)1);
+    this((short)1);
   }
 
-  public ShuffleWriteConfig(String fileCompressionCodec, short numSplits) {
-    this.fileCompressionCodec = fileCompressionCodec;
+  public ShuffleWriteConfig(short numSplits) {
     this.numSplits = numSplits;
-  }
-
-  public String getFileCompressionCodec() {
-    return fileCompressionCodec;
   }
 
   public short getNumSplits() {
@@ -43,19 +37,17 @@ public class ShuffleWriteConfig {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
     ShuffleWriteConfig that = (ShuffleWriteConfig) o;
-    return numSplits == that.numSplits &&
-        Objects.equals(fileCompressionCodec, that.fileCompressionCodec);
+    return numSplits == that.numSplits;
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(fileCompressionCodec, numSplits);
+    return Objects.hash(numSplits);
   }
 
   @Override
   public String toString() {
     return "ShuffleWriteConfig{" +
-        "fileCompressionCodec='" + fileCompressionCodec + '\'' +
         ", numSplits=" + numSplits +
         '}';
   }

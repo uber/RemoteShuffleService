@@ -85,11 +85,7 @@ public class StreamServerConfig {
 
   private int maxConnections = UploadChannelManager.DEFAULT_MAX_CONNECTIONS;
 
-  private int bufferSize = ShuffleFileStorage.DEFAULT_BUFFER_SIZE;
-
   private String networkCompressionCodec = "";
-
-  private String fileCompressionCodec = Compression.COMPRESSION_CODEC_LZ4;
 
   // use client side idle timeout plus one extra minute as server side idle timeout. so client could close idle connection
   // before server side closes it. also make sure that the timeout is at least as long as
@@ -136,8 +132,6 @@ public class StreamServerConfig {
         serverConfig.networkRetries = Integer.parseInt(args[i++]);
       } else if (argName.equalsIgnoreCase("-fsync")) {
         serverConfig.isFsyncEnabled = Boolean.parseBoolean(args[i++]);
-      } else if (argName.equalsIgnoreCase("-bufferSize")) {
-        serverConfig.bufferSize = Integer.parseInt(args[i++]);
       } else if (argName.equalsIgnoreCase("-appMemoryRetentionMillis")) {
         serverConfig.appMemoryRetentionMillis = Long.parseLong(args[i++]);
       } else if (argName.equalsIgnoreCase("-appFileRetentionMillis")) {
@@ -168,8 +162,6 @@ public class StreamServerConfig {
         serverConfig.registryServer = args[i++];
       } else if (argName.equalsIgnoreCase("-networkCompressionCodec")) {
         serverConfig.networkCompressionCodec = args[i++];
-      } else if (argName.equalsIgnoreCase("-fileCompressionCodec")) {
-        serverConfig.fileCompressionCodec = args[i++];
       } else if (argName.equalsIgnoreCase("-stateCommitIntervalMillis")) {
         serverConfig.stateCommitIntervalMillis = Long.parseLong(args[i++]);
       } else {
@@ -185,7 +177,7 @@ public class StreamServerConfig {
       serverConfig.rootDir = Files.createTempDirectory("StreamServer_").toString();
     }
 
-    serverConfig.storage = new ShuffleFileStorage(serverConfig.bufferSize);
+    serverConfig.storage = new ShuffleFileStorage();
 
     return serverConfig;
   }
@@ -382,28 +374,8 @@ public class StreamServerConfig {
     this.maxConnections = maxConnections;
   }
 
-  public int getBufferSize() {
-    return bufferSize;
-  }
-
-  public void setBufferSize(int bufferSize) {
-    this.bufferSize = bufferSize;
-  }
-
-  public String getNetworkCompressionCodec() {
-    return networkCompressionCodec;
-  }
-
   public void setNetworkCompressionCodec(String networkCompressionCodec) {
     this.networkCompressionCodec = networkCompressionCodec;
-  }
-
-  public String getFileCompressionCodec() {
-    return fileCompressionCodec;
-  }
-
-  public void setFileCompressionCodec(String fileCompressionCodec) {
-    this.fileCompressionCodec = fileCompressionCodec;
   }
 
   public long getIdleTimeoutMillis() {
@@ -455,7 +427,6 @@ public class StreamServerConfig {
         ", zooKeeperServers='" + zooKeeperServers + '\'' +
         ", maxConnections=" + maxConnections +
         ", networkCompressionCodec=" + networkCompressionCodec +
-        ", fileCompressionCodec=" + fileCompressionCodec +
         ", idleTimeoutMillis=" + idleTimeoutMillis +
         ", keytab='" + keytab + '\'' +
         ", principal='" + principal + '\'' +

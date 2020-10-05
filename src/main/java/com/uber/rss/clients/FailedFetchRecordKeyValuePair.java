@@ -18,11 +18,11 @@ package com.uber.rss.clients;
  * This class is a marker to put into the record queue in async read client, so it knows 
  * there is an underlying failure.
  */
-public class FailedFetchRecordKeyValuePair extends RecordKeyValuePair {
+public class FailedFetchRecordKeyValuePair extends TaskByteArrayDataBlock {
     private Throwable cause;
     
     public FailedFetchRecordKeyValuePair(Throwable cause) {
-        super(null, null, 0L);
+        super(null, 0L);
         this.cause = cause;
     }
 
