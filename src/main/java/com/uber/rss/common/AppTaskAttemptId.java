@@ -23,10 +23,10 @@ public class AppTaskAttemptId {
     private final String appId;
     private final String appAttempt;
     private final int shuffleId;
-    private final long mapId;
+    private final int mapId;
     private final long taskAttemptId;
 
-    public AppTaskAttemptId(AppShuffleId appShuffleId, long mapId, long taskAttemptId) {
+    public AppTaskAttemptId(AppShuffleId appShuffleId, int mapId, long taskAttemptId) {
         this(appShuffleId.getAppId(), appShuffleId.getAppAttempt(), appShuffleId.getShuffleId(), mapId, taskAttemptId);
     }
 
@@ -34,7 +34,7 @@ public class AppTaskAttemptId {
         this(appMapId.getAppId(), appMapId.getAppAttempt(), appMapId.getShuffleId(), appMapId.getMapId(), taskAttemptId);
     }
 
-    public AppTaskAttemptId(String appId, String appAttempt, int shuffleId, long mapId, long taskAttemptId) {
+    public AppTaskAttemptId(String appId, String appAttempt, int shuffleId, int mapId, long taskAttemptId) {
         this.appId = appId;
         this.appAttempt = appAttempt;
         this.shuffleId = shuffleId;
@@ -54,7 +54,7 @@ public class AppTaskAttemptId {
         return shuffleId;
     }
 
-    public long getMapId() {
+    public int getMapId() {
         return mapId;
     }
 

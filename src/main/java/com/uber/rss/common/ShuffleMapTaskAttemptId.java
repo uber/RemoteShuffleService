@@ -21,10 +21,10 @@ import java.util.Objects;
  */
 public class ShuffleMapTaskAttemptId {
     private final int shuffleId;
-    private final long mapId;
+    private final int mapId;
     private final long taskAttemptId;
 
-    public ShuffleMapTaskAttemptId(int shuffleId, long mapId, long taskAttemptId) {
+    public ShuffleMapTaskAttemptId(int shuffleId, int mapId, long taskAttemptId) {
         this.shuffleId = shuffleId;
         this.mapId = mapId;
         this.taskAttemptId = taskAttemptId;
@@ -34,7 +34,7 @@ public class ShuffleMapTaskAttemptId {
         return shuffleId;
     }
 
-    public long getMapId() {
+    public int getMapId() {
         return mapId;
     }
 

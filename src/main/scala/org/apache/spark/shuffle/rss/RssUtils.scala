@@ -49,7 +49,8 @@ object RssUtils extends Logging {
     val topologyInfo = if (serverList.isEmpty) {
       ""
     } else {
-      val rssInfo = new MapTaskRssInfo(mapId, taskAttemptId, serverList.size())
+      // TODO Spark 3.0 for mapId.intValue()
+      val rssInfo = new MapTaskRssInfo(mapId.intValue(), taskAttemptId, serverList.size())
       rssInfo.serializeToString()
     }
     BlockManagerId(s"map_$mapId" + s"_$taskAttemptId", dummyHost, dummyPort, Some(topologyInfo))

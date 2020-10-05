@@ -20,14 +20,14 @@ import io.netty.buffer.ByteBuf;
 public class StartUploadMessage extends BaseMessage {
 
     private int shuffleId;
-    private long mapId;
+    private int mapId;
     private long attemptId;
     private int numMaps;
     private int numPartitions;
     private String fileCompressionCodec;
     private short numSplits;
 
-    public StartUploadMessage(int shuffleId, long mapId, long attemptId, int numMaps, int numPartitions, String fileCompressionCodec, short numSplits) {
+    public StartUploadMessage(int shuffleId, int mapId, long attemptId, int numMaps, int numPartitions, String fileCompressionCodec, short numSplits) {
         this.shuffleId = shuffleId;
         this.mapId = mapId;
         this.attemptId = attemptId;
@@ -45,7 +45,7 @@ public class StartUploadMessage extends BaseMessage {
     @Override
     public void serialize(ByteBuf buf) {
         buf.writeInt(shuffleId);
-        buf.writeLong(mapId);
+        buf.writeInt(mapId);
         buf.writeLong(attemptId);
         buf.writeInt(numMaps);
         buf.writeInt(numPartitions);
@@ -55,7 +55,7 @@ public class StartUploadMessage extends BaseMessage {
 
     public static StartUploadMessage deserialize(ByteBuf buf) {
         int shuffleId = buf.readInt();
-        long mapId = buf.readLong();
+        int mapId = buf.readInt();
         long attemptId = buf.readLong();
         int numMaps = buf.readInt();
         int numPartitions = buf.readInt();
@@ -68,7 +68,7 @@ public class StartUploadMessage extends BaseMessage {
         return shuffleId;
     }
 
-    public long getMapId() {
+    public int getMapId() {
         return mapId;
     }
 

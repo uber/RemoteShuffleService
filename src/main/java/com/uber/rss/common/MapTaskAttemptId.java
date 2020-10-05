@@ -17,15 +17,15 @@ package com.uber.rss.common;
 import java.util.Objects;
 
 public class MapTaskAttemptId {
-  private final long mapId;
+  private final int mapId;
   private final long taskAttemptId;
 
-  public MapTaskAttemptId(long mapId, long taskAttemptId) {
+  public MapTaskAttemptId(int mapId, long taskAttemptId) {
     this.mapId = mapId;
     this.taskAttemptId = taskAttemptId;
   }
 
-  public long getMapId() {
+  public int getMapId() {
     return mapId;
   }
 

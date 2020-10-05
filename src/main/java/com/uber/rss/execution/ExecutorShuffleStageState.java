@@ -297,7 +297,7 @@ public class ExecutorShuffleStageState {
      * @param mapId
      * @param taskId
      */
-    public synchronized void commitMapTask(long mapId, long taskId) {
+    public synchronized void commitMapTask(int mapId, long taskId) {
         TaskAttemptIdAndState taskState = getTaskState(new AppMapId(appShuffleId, mapId), taskId);
         taskState.markCommitted();
 
@@ -309,9 +309,9 @@ public class ExecutorShuffleStageState {
      * @return
      */
     public synchronized ShuffleStageStatus getShuffleStageStatus() {
-        HashMap<Long, Long> committedMapTaskIds = new HashMap<>(taskAttempts.size());
+        HashMap<Integer, Long> committedMapTaskIds = new HashMap<>(taskAttempts.size());
         for (Map.Entry<AppMapId, TaskAttemptCollection> entry: taskAttempts.entrySet()) {
-            long mapId = entry.getKey().getMapId();
+          int mapId = entry.getKey().getMapId();
             TaskAttemptCollection taskAttemptCollection = entry.getValue();
             // TODO support spark.speculation execution later
             TaskAttemptIdAndState latestTaskAttempt = taskAttemptCollection.getLatestTaskOrNull();

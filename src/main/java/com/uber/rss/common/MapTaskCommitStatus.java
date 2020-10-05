@@ -26,7 +26,7 @@ public class MapTaskCommitStatus {
     public void serialize(ByteBuf buf) {
         buf.writeInt(getTaskAttemptIds().size());
         getTaskAttemptIds().forEach((mapId, taskId) -> {
-            buf.writeLong(mapId);
+            buf.writeInt(mapId);
             buf.writeLong(taskId);
         });
     }
@@ -34,9 +34,9 @@ public class MapTaskCommitStatus {
     public static MapTaskCommitStatus deserialize(ByteBuf buf) {
         int size = buf.readInt();
 
-        Map<Long, Long> hashMap = new HashMap<>();
+        Map<Integer, Long> hashMap = new HashMap<>();
         for (int i = 0; i < size; i++) {
-            long mapId = buf.readLong();
+            int mapId = buf.readInt();
             long taskId = buf.readLong();
             hashMap.put(mapId, taskId);
         }
@@ -45,13 +45,13 @@ public class MapTaskCommitStatus {
     }
 
     // Last successful attempt ids for each mapper id
-    private final Map<Long, Long> taskAttemptIds;
+    private final Map<Integer, Long> taskAttemptIds;
 
-    public MapTaskCommitStatus(Map<Long, Long> taskAttemptIds) {
+    public MapTaskCommitStatus(Map<Integer, Long> taskAttemptIds) {
         this.taskAttemptIds = taskAttemptIds;
     }
 
-    public Map<Long, Long> getTaskAttemptIds() {
+    public Map<Integer, Long> getTaskAttemptIds() {
         return taskAttemptIds;
     }
 

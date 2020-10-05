@@ -22,13 +22,13 @@ import io.netty.buffer.ByteBuf;
  */
 public class ShuffleDataWrapper {
     private final AppShuffleId shuffleId;
-    private final long mapId;
+    private final int mapId;
     private final long taskAttemptId;
     private final int partition;
     private final ByteBuf bytes;
 
     public ShuffleDataWrapper(AppShuffleId shuffleId,
-                              long mapId,
+                              int mapId,
                               long taskAttemptId,
                               int partition,
                               ByteBuf bytes) {
@@ -43,7 +43,7 @@ public class ShuffleDataWrapper {
         return shuffleId;
     }
 
-    public long getMapId() {
+    public int getMapId() {
         return mapId;
     }
 

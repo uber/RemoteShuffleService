@@ -157,7 +157,7 @@ class RssShuffleManager(conf: SparkConf) extends ShuffleManager with Logging {
           conf.getAppId,
           rssShuffleHandle.appAttempt,
           handle.shuffleId,
-          mapId,
+          mapId.intValue(), // TODO Spark 3.0 for mapId.intValue()
           context.taskAttemptId()
         )
 

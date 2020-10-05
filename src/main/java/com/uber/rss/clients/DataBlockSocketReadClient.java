@@ -205,14 +205,14 @@ public class DataBlockSocketReadClient extends com.uber.rss.clients.ClientBase {
         if (mapTaskCommitStatus.getTaskAttemptIds().isEmpty()) {
           taskAttemptIdInfo = String.format("0 map ids committed");
         } else {
-          List<Map.Entry<Long, Long>> mapIdAndTaskIds = mapTaskCommitStatus.getTaskAttemptIds().entrySet().stream().sorted(new Comparator<Map.Entry<Long, Long>>() {
+          List<Map.Entry<Integer, Long>> mapIdAndTaskIds = mapTaskCommitStatus.getTaskAttemptIds().entrySet().stream().sorted(new Comparator<Map.Entry<Integer, Long>>() {
             @Override
-            public int compare(Map.Entry<Long, Long> o1, Map.Entry<Long, Long> o2) {
-              return Long.compare(o1.getKey(), o2.getKey());
+            public int compare(Map.Entry<Integer, Long> o1, Map.Entry<Integer, Long> o2) {
+              return Integer.compare(o1.getKey(), o2.getKey());
             }
           }).collect(Collectors.toList());
 
-          List<Long> mapIds = mapIdAndTaskIds.stream().map(t->t.getKey()).collect(Collectors.toList());
+          List<Integer> mapIds = mapIdAndTaskIds.stream().map(t->t.getKey()).collect(Collectors.toList());
           List<Long> taskAttemptIds = mapIdAndTaskIds.stream().map(t->t.getValue()).collect(Collectors.toList());
           Collections.sort(mapIds);
           Collections.sort(taskAttemptIds);
