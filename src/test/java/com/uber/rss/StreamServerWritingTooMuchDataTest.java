@@ -50,7 +50,7 @@ public class StreamServerWritingTooMuchDataTest {
             writeClient.connect();
             writeClient.startUpload(appTaskAttemptId, 1, 20);
 
-            writeClient.sendRecord(1, null, null);
+            writeClient.sendRecord(1, null);
 
             writeClient.finishUpload();
 
@@ -82,7 +82,7 @@ public class StreamServerWritingTooMuchDataTest {
                 writeClient.connect();
                 writeClient.startUpload(appTaskAttemptId, 1, 20);
 
-                writeClient.sendRecord(1, null, null);
+                writeClient.sendRecord(1, null);
 
                 writeClient.finishUpload();
             }
@@ -91,7 +91,7 @@ public class StreamServerWritingTooMuchDataTest {
                 writeClient.connect();
                 writeClient.startUpload(appTaskAttemptId, 1, 20);
 
-                writeClient.sendRecord(1, null, null);
+                writeClient.sendRecord(1, null);
 
                 writeClient.finishUpload();
             }

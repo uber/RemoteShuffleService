@@ -85,14 +85,12 @@ public class ReplicatedWriteClientTest {
             writeClient.connect();
             writeClient.startUpload(appTaskAttemptId, numMaps, 20);
 
-            writeClient.sendRecord(0, null, null);
+            writeClient.sendRecord(0, null);
 
             writeClient.sendRecord(1,
-                    ByteBuffer.wrap(new byte[0]),
-                    ByteBuffer.wrap(new byte[0]));
+                ByteBuffer.wrap(new byte[0]));
             writeClient.sendRecord(1,
-                    ByteBuffer.wrap(new byte[0]),
-                    ByteBuffer.wrap(new byte[0]));
+                ByteBuffer.wrap(new byte[0]));
 
             writeClient.finishUpload();
 
@@ -145,13 +143,11 @@ public class ReplicatedWriteClientTest {
             writeClient.connect();
             writeClient.startUpload(appTaskAttemptId, numMaps, 20);
 
-            writeClient.sendRecord(0, null, null);
+            writeClient.sendRecord(0, null);
 
             writeClient.sendRecord(1,
-                ByteBuffer.wrap(new byte[0]),
                 ByteBuffer.wrap(new byte[0]));
             writeClient.sendRecord(1,
-                ByteBuffer.wrap(new byte[0]),
                 ByteBuffer.wrap(new byte[0]));
 
             writeClient.finishUpload();
@@ -219,13 +215,11 @@ public class ReplicatedWriteClientTest {
       writeClient.connect();
       writeClient.startUpload(appTaskAttemptId, numMaps, 20);
 
-      writeClient.sendRecord(0, null, null);
+      writeClient.sendRecord(0, null);
 
       writeClient.sendRecord(1,
-          ByteBuffer.wrap(new byte[0]),
           ByteBuffer.wrap(new byte[0]));
       writeClient.sendRecord(1,
-          ByteBuffer.wrap(new byte[0]),
           ByteBuffer.wrap(new byte[0]));
 
       writeClient.finishUpload();
@@ -284,13 +278,11 @@ public class ReplicatedWriteClientTest {
 
       writeClient.startUpload(appTaskAttemptId, numMaps, 20);
 
-      writeClient.sendRecord(0, null, null);
+      writeClient.sendRecord(0, null);
 
       writeClient.sendRecord(1,
-          ByteBuffer.wrap(new byte[0]),
           ByteBuffer.wrap(new byte[0]));
       writeClient.sendRecord(1,
-          ByteBuffer.wrap(new byte[0]),
           ByteBuffer.wrap(new byte[0]));
 
       writeClient.finishUpload();
@@ -349,13 +341,11 @@ public class ReplicatedWriteClientTest {
 
       testServer1.shutdown();
 
-      writeClient.sendRecord(0, null, null);
+      writeClient.sendRecord(0, null);
 
       writeClient.sendRecord(1,
-          ByteBuffer.wrap(new byte[0]),
           ByteBuffer.wrap(new byte[0]));
       writeClient.sendRecord(1,
-          ByteBuffer.wrap(new byte[0]),
           ByteBuffer.wrap(new byte[0]));
 
       writeClient.finishUpload();
@@ -412,15 +402,13 @@ public class ReplicatedWriteClientTest {
 
       writeClient.startUpload(appTaskAttemptId, numMaps, 20);
 
-      writeClient.sendRecord(0, null, null);
+      writeClient.sendRecord(0, null);
 
       testServer1.shutdown();
 
       writeClient.sendRecord(1,
-          null,
           ByteBuffer.wrap(new byte[0]));
       writeClient.sendRecord(1,
-          null,
           ByteBuffer.wrap(new byte[0]));
 
       writeClient.finishUpload();
@@ -477,13 +465,11 @@ public class ReplicatedWriteClientTest {
 
       writeClient.startUpload(appTaskAttemptId, numMaps, 20);
 
-      writeClient.sendRecord(0, null, null);
+      writeClient.sendRecord(0, null);
 
       writeClient.sendRecord(1,
-          null,
           ByteBuffer.wrap(new byte[0]));
       writeClient.sendRecord(1,
-          null,
           ByteBuffer.wrap(new byte[0]));
 
       testServer1.shutdown();
@@ -542,13 +528,11 @@ public class ReplicatedWriteClientTest {
 
       writeClient.startUpload(appTaskAttemptId, numMaps, 20);
 
-      writeClient.sendRecord(0, null, null);
+      writeClient.sendRecord(0, null);
 
       writeClient.sendRecord(1,
-          null,
           ByteBuffer.wrap(new byte[0]));
       writeClient.sendRecord(1,
-          null,
           ByteBuffer.wrap(new byte[0]));
 
       writeClient.finishUpload();

@@ -78,26 +78,20 @@ public class ReplicatedReadClientTest {
         writeClient.connect();
         writeClient.startUpload(appTaskAttemptId, numMaps, numPartitions);
 
-        writeClient.sendRecord(1, null, null);
+        writeClient.sendRecord(1, null);
         writeClient.sendRecord(1,
-            null,
             ByteBuffer.wrap(new byte[0]));
         writeClient.sendRecord(1,
-            null,
             ByteBuffer.wrap("".getBytes(StandardCharsets.UTF_8)));
         writeClient.sendRecord(1,
-            null,
             ByteBuffer.wrap("value1".getBytes(StandardCharsets.UTF_8)));
         writeClient.sendRecord(1,
-            null,
             ByteBuffer.wrap("value1".getBytes(StandardCharsets.UTF_8)));
 
         writeClient.sendRecord(2,
-            null,
             ByteBuffer.wrap(new byte[0]));
 
         writeClient.sendRecord(3,
-            null,
             ByteBuffer.wrap("value1".getBytes(StandardCharsets.UTF_8)));
 
         writeClient.finishUpload();
@@ -180,26 +174,20 @@ public class ReplicatedReadClientTest {
         writeClient.connect();
         writeClient.startUpload(appTaskAttemptId, numMaps, numPartitions);
 
-        writeClient.sendRecord(1, null, null);
+        writeClient.sendRecord(1, null);
         writeClient.sendRecord(1,
-            null,
             ByteBuffer.wrap(new byte[0]));
         writeClient.sendRecord(1,
-            null,
             ByteBuffer.wrap("".getBytes(StandardCharsets.UTF_8)));
         writeClient.sendRecord(1,
-            null,
             ByteBuffer.wrap("value1".getBytes(StandardCharsets.UTF_8)));
         writeClient.sendRecord(1,
-            null,
             ByteBuffer.wrap("value1".getBytes(StandardCharsets.UTF_8)));
 
         writeClient.sendRecord(2,
-            null,
             ByteBuffer.wrap(new byte[0]));
 
         writeClient.sendRecord(3,
-            null,
             ByteBuffer.wrap("value1".getBytes(StandardCharsets.UTF_8)));
 
         writeClient.finishUpload();
@@ -283,26 +271,20 @@ public class ReplicatedReadClientTest {
         writeClient.connect();
         writeClient.startUpload(appTaskAttemptId, numMaps, numPartitions);
 
-        writeClient.sendRecord(1, null, null);
+        writeClient.sendRecord(1, null);
         writeClient.sendRecord(1,
-            null,
             ByteBuffer.wrap(new byte[0]));
         writeClient.sendRecord(1,
-            null,
             ByteBuffer.wrap("".getBytes(StandardCharsets.UTF_8)));
         writeClient.sendRecord(1,
-            null,
             ByteBuffer.wrap("value1".getBytes(StandardCharsets.UTF_8)));
         writeClient.sendRecord(1,
-            null,
             ByteBuffer.wrap("value1".getBytes(StandardCharsets.UTF_8)));
 
         writeClient.sendRecord(2,
-            null,
             ByteBuffer.wrap(new byte[0]));
 
         writeClient.sendRecord(3,
-            null,
             ByteBuffer.wrap("value1".getBytes(StandardCharsets.UTF_8)));
 
         writeClient.finishUpload();
@@ -396,16 +378,13 @@ public class ReplicatedReadClientTest {
         // switching to read second server.
         for (int i = 0; i < numRecords; i++) {
           writeClient.sendRecord(1,
-              null,
               ByteBuffer.wrap(("value" + i).getBytes(StandardCharsets.UTF_8)));
         }
 
         writeClient.sendRecord(2,
-            null,
             ByteBuffer.wrap(new byte[0]));
 
         writeClient.sendRecord(3,
-            null,
             ByteBuffer.wrap("p3_value1".getBytes(StandardCharsets.UTF_8)));
 
         writeClient.finishUpload();
@@ -520,16 +499,13 @@ public class ReplicatedReadClientTest {
       // switching to read second server.
       for (int i = 0; i < numLargeAmountRecords; i++) {
         writeClient.sendRecord(1,
-            null,
             ByteBuffer.wrap(("value" + i).getBytes(StandardCharsets.UTF_8)));
       }
 
       writeClient.sendRecord(2,
-          null,
           ByteBuffer.wrap(new byte[0]));
 
       writeClient.sendRecord(3,
-          null,
           ByteBuffer.wrap("value1".getBytes(StandardCharsets.UTF_8)));
 
       writeClient.finishUpload();
@@ -593,7 +569,6 @@ public class ReplicatedReadClientTest {
         // switching to read second server.
         for (int i = 0; i < numLargeAmountRecords; i++) {
           writeClient.sendRecord(1,
-              null,
               ByteBuffer.wrap(("server1_value" + i).getBytes(StandardCharsets.UTF_8)));
         }
 
@@ -619,7 +594,6 @@ public class ReplicatedReadClientTest {
         // switching to read second server.
         for (int i = 0; i < numLargeAmountRecords; i++) {
           writeClient.sendRecord(1,
-              null,
               ByteBuffer.wrap(("server2_value" + i).getBytes(StandardCharsets.UTF_8)));
         }
 

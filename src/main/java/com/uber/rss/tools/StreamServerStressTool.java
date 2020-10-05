@@ -44,7 +44,6 @@ import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -622,7 +621,7 @@ public class StreamServerStressTool {
 
         if (!simulateEmptyData) {
             int partitionId = random.nextInt(numPartitions);
-            writeClient.sendRecord(partitionId, null, null);
+            writeClient.sendRecord(partitionId, null);
 
             totalShuffleWrittenBytes.addAndGet(SHUFFLE_RECORD_EXTRA_BYTES);
             totalShuffleWrittenRecords.incrementAndGet();
@@ -633,7 +632,7 @@ public class StreamServerStressTool {
                 numPartitionRecords.computeIfAbsent(partitionId, k -> new AtomicLong()).incrementAndGet();
             }
 
-            writeClient.sendRecord(partitionId, ByteBuffer.wrap(new byte[0]), ByteBuffer.wrap(new byte[0]));
+            writeClient.sendRecord(partitionId, ByteBuffer.wrap(new byte[0]));
 
             totalShuffleWrittenBytes.addAndGet(SHUFFLE_RECORD_EXTRA_BYTES);
             totalShuffleWrittenRecords.incrementAndGet();
@@ -669,8 +668,7 @@ public class StreamServerStressTool {
                 }
 
                 writeClient.sendRecord(partitionId,
-                        keyData == null ? null : ByteBuffer.wrap(keyData), 
-                        valueData == null ? null : ByteBuffer.wrap(valueData));
+                    valueData == null ? null : ByteBuffer.wrap(valueData));
 
                 if (mapSlowness > 0) {
                     try {

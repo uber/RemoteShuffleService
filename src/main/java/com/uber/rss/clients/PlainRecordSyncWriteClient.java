@@ -33,10 +33,10 @@ public class PlainRecordSyncWriteClient extends RecordSyncWriteClientBase {
   }
 
   @Override
-  public void sendRecord(int partition, ByteBuffer key, ByteBuffer value) {
-    int totalRecordBytes = getRecordSerializedSize(key, value);
+  public void sendRecord(int partition, ByteBuffer value) {
+    int totalRecordBytes = getRecordSerializedSize(value);
     ByteBuf recordSerializedByteBuf = Unpooled.buffer(totalRecordBytes);
-    writeRecordToBuffer(recordSerializedByteBuf, key, value);
+    writeRecordToBuffer(recordSerializedByteBuf, value);
     dataBlockSyncWriteClient.writeData(partition, shuffleMapTaskAttemptId.getTaskAttemptId(), recordSerializedByteBuf);
   }
 

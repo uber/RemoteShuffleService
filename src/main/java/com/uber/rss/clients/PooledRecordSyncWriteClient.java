@@ -87,9 +87,9 @@ public class PooledRecordSyncWriteClient implements RecordSyncWriteClient {
   }
 
   @Override
-  public void sendRecord(int partition, ByteBuffer key, ByteBuffer value) {
+  public void sendRecord(int partition, ByteBuffer value) {
     try {
-      delegate.sendRecord(partition, key, value);
+      delegate.sendRecord(partition, value);
     } catch (Throwable ex) {
       reusable = false;
       throw ex;
