@@ -18,7 +18,6 @@ import com.uber.rss.common.AppTaskAttemptId;
 import com.uber.rss.common.ServerDetail;
 import com.uber.rss.common.ServerReplicationGroup;
 import com.uber.rss.testutil.StreamServerTestUtils;
-import com.uber.rss.testutil.TestConstants;
 import com.uber.rss.testutil.TestStreamServer;
 import com.uber.rss.util.ServerHostAndPort;
 import org.testng.Assert;
@@ -103,7 +102,7 @@ public class MultiServerSyncWriteClientTest {
             writeClient.connect();
             writeClient.startUpload(appTaskAttemptId, numMaps, 20);
 
-            writeClient.sendRecord(0, null, null);
+            writeClient.sendRecord(0, null);
 
             writeClient.finishUpload();
 
@@ -147,19 +146,16 @@ public class MultiServerSyncWriteClientTest {
             writeClient.connect();
             writeClient.startUpload(appTaskAttemptId, numMaps, 20);
 
-            writeClient.sendRecord(0, null, null);
+            writeClient.sendRecord(0, null);
 
             writeClient.sendRecord(1,
-                    ByteBuffer.wrap(new byte[0]),
-                    ByteBuffer.wrap(new byte[0]));
+                ByteBuffer.wrap(new byte[0]));
 
             for (int i = 0; i < 1000; i ++) {
                 writeClient.sendRecord(2,
-                    null,
-                        ByteBuffer.wrap("value2".getBytes(StandardCharsets.UTF_8)));
+                    ByteBuffer.wrap("value2".getBytes(StandardCharsets.UTF_8)));
                 writeClient.sendRecord(3,
-                    null,
-                        ByteBuffer.wrap("value3".getBytes(StandardCharsets.UTF_8)));
+                    ByteBuffer.wrap("value3".getBytes(StandardCharsets.UTF_8)));
             }
 
             writeClient.finishUpload();
@@ -243,13 +239,11 @@ public class MultiServerSyncWriteClientTest {
             writeClient.connect();
             writeClient.startUpload(appTaskAttemptId, numMaps, 20);
 
-            writeClient.sendRecord(0, null, null);
+            writeClient.sendRecord(0, null);
 
             writeClient.sendRecord(1,
-                ByteBuffer.wrap(new byte[0]),
                 ByteBuffer.wrap(new byte[0]));
             writeClient.sendRecord(1,
-                ByteBuffer.wrap(new byte[0]),
                 ByteBuffer.wrap(new byte[0]));
 
             for (int i = 0; i < numRecords; i ++) {
@@ -258,7 +252,6 @@ public class MultiServerSyncWriteClientTest {
                     ("value2_" + i).getBytes(StandardCharsets.UTF_8),
                     appTaskAttemptId.getTaskAttemptId());
                 writeClient.sendRecord(2,
-                    null,
                     ByteBuffer.wrap(partition2Record.getValue()));
                 partition2WriteRecords.add(partition2Record);
 
@@ -267,7 +260,6 @@ public class MultiServerSyncWriteClientTest {
                     ("value33333333333333333333333333333333_" + i).getBytes(StandardCharsets.UTF_8),
                     appTaskAttemptId.getTaskAttemptId());
                 writeClient.sendRecord(3,
-                    null,
                     ByteBuffer.wrap(partition3Record.getValue()));
                 partition3WriteRecords.add(partition3Record);
             }

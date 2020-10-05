@@ -14,9 +14,9 @@
 
 package com.uber.rss;
 
-import com.uber.rss.clients.CompressedRecordSyncWriteClient;
-import com.uber.rss.clients.SingleServerWriteClient;
+import com.uber.rss.clients.DataBlockSyncWriteClient;
 import com.uber.rss.common.AppTaskAttemptId;
+import com.uber.rss.common.ShuffleMapTaskAttemptId;
 import com.uber.rss.execution.LocalFileStateStore;
 import com.uber.rss.metadata.InMemoryServiceRegistry;
 import com.uber.rss.metadata.ServiceRegistry;
@@ -26,10 +26,10 @@ import com.uber.rss.testutil.StreamServerTestUtils;
 import com.uber.rss.testutil.TestConstants;
 import com.uber.rss.testutil.TestStreamServer;
 import com.uber.rss.util.RetryUtils;
+import io.netty.buffer.Unpooled;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
-import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Paths;
 import java.util.Arrays;
@@ -55,21 +55,18 @@ public class StreamServerCleanupTest {
         
         AppTaskAttemptId appTaskAttemptId1 = new AppTaskAttemptId("app1", "exec1", 1, 2, 0L);
 
-        try (SingleServerWriteClient writeClient = new CompressedRecordSyncWriteClient("localhost", testServer.getShufflePort(), TestConstants.NETWORK_TIMEOUT, "user1", appTaskAttemptId1.getAppId(), appTaskAttemptId1.getAppAttempt(), TestConstants.COMPRESSION_BUFFER_SIZE, TestConstants.SHUFFLE_WRITE_CONFIG)) {
+        try (DataBlockSyncWriteClient writeClient = new DataBlockSyncWriteClient("localhost", testServer.getShufflePort(), TestConstants.NETWORK_TIMEOUT, "user1", appTaskAttemptId1.getAppId(), appTaskAttemptId1.getAppAttempt())) {
             writeClient.connect();
-            writeClient.startUpload(appTaskAttemptId1, 1, 20);
+            ShuffleMapTaskAttemptId shuffleMapTaskAttemptId = new ShuffleMapTaskAttemptId(appTaskAttemptId1.getShuffleId(), appTaskAttemptId1.getMapId(), appTaskAttemptId1.getTaskAttemptId());
+            writeClient.startUpload(shuffleMapTaskAttemptId, 1, 20, TestConstants.SHUFFLE_WRITE_CONFIG);
 
-            writeClient.sendRecord(1, null, null);
+            writeClient.writeData(1, appTaskAttemptId1.getTaskAttemptId(), Unpooled.wrappedBuffer(new byte[0]));
 
-            writeClient.sendRecord(2,
-                    ByteBuffer.wrap(new byte[0]),
-                    ByteBuffer.wrap(new byte[0]));
+            writeClient.writeData(2, appTaskAttemptId1.getTaskAttemptId(), Unpooled.wrappedBuffer(new byte[0]));
 
-            writeClient.sendRecord(3,
-                    ByteBuffer.wrap("key1".getBytes(StandardCharsets.UTF_8)),
-                    ByteBuffer.wrap("value1".getBytes(StandardCharsets.UTF_8)));
+            writeClient.writeData(3, appTaskAttemptId1.getTaskAttemptId(), Unpooled.wrappedBuffer("value1".getBytes(StandardCharsets.UTF_8)));
 
-            writeClient.finishUpload();
+            writeClient.finishUpload(appTaskAttemptId1.getTaskAttemptId());
 
             StreamServerTestUtils.waitTillDataAvailable(testServer.getShufflePort(), appTaskAttemptId1.getAppShuffleId(), Arrays.asList(1, 2, 3), Arrays.asList(appTaskAttemptId1.getTaskAttemptId()));
             
@@ -88,9 +85,10 @@ public class StreamServerCleanupTest {
 
             AppTaskAttemptId appTaskAttemptId2 = new AppTaskAttemptId("app2", "exec1", 1, 2, 0L);
 
-            try (SingleServerWriteClient writeClient2 = new CompressedRecordSyncWriteClient("localhost", testServer.getShufflePort(), TestConstants.NETWORK_TIMEOUT, "user1", appTaskAttemptId2.getAppId(), appTaskAttemptId2.getAppAttempt(), TestConstants.COMPRESSION_BUFFER_SIZE, TestConstants.SHUFFLE_WRITE_CONFIG)) {
+            try (DataBlockSyncWriteClient writeClient2 = new DataBlockSyncWriteClient("localhost", testServer.getShufflePort(), TestConstants.NETWORK_TIMEOUT, "user1", appTaskAttemptId2.getAppId(), appTaskAttemptId2.getAppAttempt())) {
                 writeClient2.connect();
-                writeClient2.startUpload(appTaskAttemptId2, 1, 20);
+                ShuffleMapTaskAttemptId shuffleMapTaskAttemptId2 = new ShuffleMapTaskAttemptId(appTaskAttemptId2.getShuffleId(), appTaskAttemptId2.getMapId(), appTaskAttemptId2.getTaskAttemptId());
+                writeClient2.startUpload(shuffleMapTaskAttemptId2, 1, 20, TestConstants.SHUFFLE_WRITE_CONFIG);
             }
             // Check there should no files
             boolean hasNoAppDir = RetryUtils.retryUntilTrue(

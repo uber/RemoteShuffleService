@@ -69,8 +69,8 @@ public class ServerIdAwareSyncWriteClient implements SingleServerWriteClient {
 
     // key/value could be null
     @Override
-    public void sendRecord(int partition, ByteBuffer key, ByteBuffer value) {
-        writeClient.sendRecord(partition, key, value);
+    public void sendRecord(int partition, ByteBuffer value) {
+        writeClient.sendRecord(partition, value);
     }
     
     @Override

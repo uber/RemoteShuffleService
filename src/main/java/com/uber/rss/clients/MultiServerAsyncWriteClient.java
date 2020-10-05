@@ -156,7 +156,7 @@ public class MultiServerAsyncWriteClient implements MultiServerWriteClient {
                             }
                             ReplicatedWriteClient writeClient = clients[record.clientIndex];
                             startTime = System.nanoTime();
-                            writeClient.sendRecord(record.partition, record.key, record.value);
+                            writeClient.sendRecord(record.partition, record.value);
                             socketTime.addAndGet(System.nanoTime() - startTime);
                         } else {
                             logger.info("Record queue {} has no record after waiting {} millis", threadIndex, pollMaxWait);
@@ -186,7 +186,7 @@ public class MultiServerAsyncWriteClient implements MultiServerWriteClient {
     }
 
     @Override
-    public void sendRecord(int partition, ByteBuffer key, ByteBuffer value) {
+    public void sendRecord(int partition, ByteBuffer value) {
         if (!threadStarted) {
             for (Thread thread: threads) {
                 thread.start();
@@ -207,7 +207,7 @@ public class MultiServerAsyncWriteClient implements MultiServerWriteClient {
         BlockingQueue<Record> recordQueue = recordQueues[threadIndex];
         try {
             long startTime = System.nanoTime();
-            boolean inserted = recordQueue.offer(createUploadRecord(partition, key, value, clientIndex), networkTimeoutMillis, TimeUnit.MILLISECONDS);
+            boolean inserted = recordQueue.offer(createUploadRecord(partition, value, clientIndex), networkTimeoutMillis, TimeUnit.MILLISECONDS);
             queueInsertTime.addAndGet(System.nanoTime() - startTime);
             if (!inserted) {
                 throw new RssQueueNotReadyException(String.format("sendRecord: Record queue has no space available after waiting %s millis", networkTimeoutMillis));
@@ -357,8 +357,8 @@ public class MultiServerAsyncWriteClient implements MultiServerWriteClient {
         threadStarted = false;
     }
 
-    private Record createUploadRecord(int partition, ByteBuffer key, ByteBuffer value, int clientIndex) {
-        return new Record(partition, key, value, clientIndex);
+    private Record createUploadRecord(int partition, ByteBuffer value, int clientIndex) {
+        return new Record(partition, value, clientIndex);
     }
 
     private Record createStopMarkerRecord() {
@@ -396,14 +396,12 @@ public class MultiServerAsyncWriteClient implements MultiServerWriteClient {
         private boolean isStopMarker = false;
 
         private int partition;
-        private ByteBuffer key;
         private ByteBuffer value;
 
         private int clientIndex;
 
-        public Record(int partition, ByteBuffer key, ByteBuffer value, int clientIndex) {
+        public Record(int partition, ByteBuffer value, int clientIndex) {
             this.partition = partition;
-            this.key = key;
             this.value = value;
             this.clientIndex = clientIndex;
         }

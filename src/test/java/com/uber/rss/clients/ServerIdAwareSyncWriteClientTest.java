@@ -19,7 +19,6 @@ import com.uber.rss.exceptions.RssInvalidServerIdException;
 import com.uber.rss.exceptions.RssInvalidServerVersionException;
 import com.uber.rss.common.ServerDetail;
 import com.uber.rss.testutil.StreamServerTestUtils;
-import com.uber.rss.testutil.TestConstants;
 import com.uber.rss.testutil.TestStreamServer;
 import org.testng.Assert;
 import org.testng.annotations.DataProvider;
@@ -64,7 +63,7 @@ public class ServerIdAwareSyncWriteClientTest {
             writeClient.connect();
             writeClient.startUpload(appTaskAttemptId, numMaps, 20);
 
-            writeClient.sendRecord(0, null, null);
+            writeClient.sendRecord(0, null);
 
             writeClient.finishUpload();
 
@@ -107,7 +106,7 @@ public class ServerIdAwareSyncWriteClientTest {
             writeClient.connect();
             writeClient.startUpload(appTaskAttemptId, numMaps, 20);
 
-            writeClient.sendRecord(0, null, null);
+            writeClient.sendRecord(0, null);
 
             writeClient.finishUpload();
 
@@ -146,14 +145,12 @@ public class ServerIdAwareSyncWriteClientTest {
             writeClient.connect();
             writeClient.startUpload(appTaskAttemptId, numMaps, 20);
 
-            writeClient.sendRecord(0, null, null);
+            writeClient.sendRecord(0, null);
 
             writeClient.sendRecord(1,
-                    ByteBuffer.wrap(new byte[0]),
-                    ByteBuffer.wrap(new byte[0]));
+                ByteBuffer.wrap(new byte[0]));
             writeClient.sendRecord(1,
-                    ByteBuffer.wrap(new byte[0]),
-                    ByteBuffer.wrap(new byte[0]));
+                ByteBuffer.wrap(new byte[0]));
 
             writeClient.finishUpload();
 
@@ -196,14 +193,12 @@ public class ServerIdAwareSyncWriteClientTest {
             writeClient.connect();
             writeClient.startUpload(appTaskAttemptId, numMaps, 20);
 
-            writeClient.sendRecord(0, null, null);
+            writeClient.sendRecord(0, null);
 
             writeClient.sendRecord(1,
-                    ByteBuffer.wrap(new byte[0]),
-                    ByteBuffer.wrap(new byte[0]));
+                ByteBuffer.wrap(new byte[0]));
             writeClient.sendRecord(1,
-                    ByteBuffer.wrap(new byte[0]),
-                    ByteBuffer.wrap(new byte[0]));
+                ByteBuffer.wrap(new byte[0]));
 
             writeClient.finishUpload();
 

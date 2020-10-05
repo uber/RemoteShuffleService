@@ -71,26 +71,20 @@ public class MultiServerSocketReadClientTest {
         writeClient.connect();
         writeClient.startUpload(appTaskAttemptId, numMaps, numPartitions);
 
-        writeClient.sendRecord(1, null, null);
+        writeClient.sendRecord(1, null);
         writeClient.sendRecord(1,
-            null,
             ByteBuffer.wrap(new byte[0]));
         writeClient.sendRecord(1,
-            null,
             ByteBuffer.wrap("".getBytes(StandardCharsets.UTF_8)));
         writeClient.sendRecord(1,
-            null,
             ByteBuffer.wrap("value1".getBytes(StandardCharsets.UTF_8)));
         writeClient.sendRecord(1,
-            null,
             ByteBuffer.wrap("value1".getBytes(StandardCharsets.UTF_8)));
 
         writeClient.sendRecord(2,
-            null,
             ByteBuffer.wrap(new byte[0]));
 
         writeClient.sendRecord(3,
-            null,
             ByteBuffer.wrap("value1".getBytes(StandardCharsets.UTF_8)));
 
         writeClient.finishUpload();
@@ -192,26 +186,20 @@ public class MultiServerSocketReadClientTest {
         writeClient.connect();
         writeClient.startUpload(appTaskAttemptId, numMaps, numPartitions);
 
-        writeClient.sendRecord(1, null, null);
+        writeClient.sendRecord(1, null);
         writeClient.sendRecord(1,
-            null,
             ByteBuffer.wrap(new byte[0]));
         writeClient.sendRecord(1,
-            null,
             ByteBuffer.wrap("".getBytes(StandardCharsets.UTF_8)));
         writeClient.sendRecord(1,
-            null,
             ByteBuffer.wrap("value1".getBytes(StandardCharsets.UTF_8)));
         writeClient.sendRecord(1,
-            null,
             ByteBuffer.wrap("value1".getBytes(StandardCharsets.UTF_8)));
 
         writeClient.sendRecord(2,
-            null,
             ByteBuffer.wrap(new byte[0]));
 
         writeClient.sendRecord(3,
-            null,
             ByteBuffer.wrap("value1".getBytes(StandardCharsets.UTF_8)));
 
         writeClient.finishUpload();
@@ -361,26 +349,20 @@ public class MultiServerSocketReadClientTest {
         writeClient.connect();
         writeClient.startUpload(appTaskAttemptId, numMaps, numPartitions);
 
-        writeClient.sendRecord(1, null, null);
+        writeClient.sendRecord(1, null);
         writeClient.sendRecord(1,
-            null,
             ByteBuffer.wrap(new byte[0]));
         writeClient.sendRecord(1,
-            null,
             ByteBuffer.wrap("".getBytes(StandardCharsets.UTF_8)));
         writeClient.sendRecord(1,
-            null,
             ByteBuffer.wrap("value1".getBytes(StandardCharsets.UTF_8)));
         writeClient.sendRecord(1,
-            null,
             ByteBuffer.wrap("value1".getBytes(StandardCharsets.UTF_8)));
 
         writeClient.sendRecord(2,
-            null,
             ByteBuffer.wrap(new byte[0]));
 
         writeClient.sendRecord(3,
-            null,
             ByteBuffer.wrap("value1".getBytes(StandardCharsets.UTF_8)));
 
         writeClient.finishUpload();
@@ -400,11 +382,9 @@ public class MultiServerSocketReadClientTest {
         writeClient.startUpload(appTaskAttemptId, numMaps, numPartitions);
 
         writeClient.sendRecord(1,
-            null,
             ByteBuffer.wrap("value2".getBytes(StandardCharsets.UTF_8)));
 
         writeClient.sendRecord(1,
-            null,
             ByteBuffer.wrap("value3".getBytes(StandardCharsets.UTF_8)));
 
         writeClient.finishUpload();
@@ -626,26 +606,20 @@ public class MultiServerSocketReadClientTest {
         writeClient.connect();
         writeClient.startUpload(appTaskAttemptId, numMaps, numPartitions);
 
-        writeClient.sendRecord(1, null, null);
+        writeClient.sendRecord(1, null);
         writeClient.sendRecord(1,
-            null,
             ByteBuffer.wrap(new byte[0]));
         writeClient.sendRecord(1,
-            null,
             ByteBuffer.wrap("".getBytes(StandardCharsets.UTF_8)));
         writeClient.sendRecord(1,
-            null,
             ByteBuffer.wrap("value1".getBytes(StandardCharsets.UTF_8)));
         writeClient.sendRecord(1,
-            null,
             ByteBuffer.wrap("value1".getBytes(StandardCharsets.UTF_8)));
 
         writeClient.sendRecord(2,
-            null,
             ByteBuffer.wrap(new byte[0]));
 
         writeClient.sendRecord(3,
-            null,
             ByteBuffer.wrap("value1".getBytes(StandardCharsets.UTF_8)));
 
         writeClient.finishUpload();
@@ -705,26 +679,20 @@ public class MultiServerSocketReadClientTest {
         writeClient.connect();
         writeClient.startUpload(appTaskAttemptId, numMaps, numPartitions);
 
-        writeClient.sendRecord(1, null, null);
+        writeClient.sendRecord(1, null);
         writeClient.sendRecord(1,
-            null,
             ByteBuffer.wrap(new byte[0]));
         writeClient.sendRecord(1,
-            null,
             ByteBuffer.wrap("".getBytes(StandardCharsets.UTF_8)));
         writeClient.sendRecord(1,
-            null,
             ByteBuffer.wrap("value1".getBytes(StandardCharsets.UTF_8)));
         writeClient.sendRecord(1,
-            null,
             ByteBuffer.wrap("value1".getBytes(StandardCharsets.UTF_8)));
 
         writeClient.sendRecord(2,
-            null,
             ByteBuffer.wrap(new byte[0]));
 
         writeClient.sendRecord(3,
-            null,
             ByteBuffer.wrap("value1".getBytes(StandardCharsets.UTF_8)));
 
         writeClient.finishUpload();

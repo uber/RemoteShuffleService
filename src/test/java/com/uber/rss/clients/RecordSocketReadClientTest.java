@@ -56,26 +56,20 @@ public class RecordSocketReadClientTest {
         writeClient.connect();
         writeClient.startUpload(appTaskAttemptId, numMaps, numPartitions);
 
-        writeClient.sendRecord(1, null, null);
+        writeClient.sendRecord(1, null);
         writeClient.sendRecord(1,
-            null,
             ByteBuffer.wrap(new byte[0]));
         writeClient.sendRecord(1,
-            null,
             ByteBuffer.wrap("".getBytes(StandardCharsets.UTF_8)));
         writeClient.sendRecord(1,
-            null,
             ByteBuffer.wrap("value1".getBytes(StandardCharsets.UTF_8)));
         writeClient.sendRecord(1,
-            null,
             ByteBuffer.wrap("value1".getBytes(StandardCharsets.UTF_8)));
 
         writeClient.sendRecord(2,
-            null,
             ByteBuffer.wrap(new byte[0]));
 
         writeClient.sendRecord(3,
-            null,
             ByteBuffer.wrap("value1".getBytes(StandardCharsets.UTF_8)));
 
         writeClient.finishUpload();
@@ -230,26 +224,20 @@ public class RecordSocketReadClientTest {
       writeClient.connect();
       writeClient.startUpload(appTaskAttemptId, numMaps, numPartitions);
 
-      writeClient.sendRecord(1, null, null);
+      writeClient.sendRecord(1, null);
       writeClient.sendRecord(1,
-          null,
           ByteBuffer.wrap(new byte[0]));
       writeClient.sendRecord(1,
-          null,
           ByteBuffer.wrap("".getBytes(StandardCharsets.UTF_8)));
       writeClient.sendRecord(1,
-          null,
           ByteBuffer.wrap("value1".getBytes(StandardCharsets.UTF_8)));
       writeClient.sendRecord(1,
-          null,
           ByteBuffer.wrap("value1".getBytes(StandardCharsets.UTF_8)));
 
       writeClient.sendRecord(2,
-          null,
           ByteBuffer.wrap(new byte[0]));
 
       writeClient.sendRecord(3,
-          null,
           ByteBuffer.wrap("value1".getBytes(StandardCharsets.UTF_8)));
 
       writeClient.finishUpload();
@@ -363,7 +351,6 @@ public class RecordSocketReadClientTest {
       writeClient.startUpload(map1TaskAttemptId, numMaps, numPartitions);
       for (int i = 0; i < numRecords; i++) {
         writeClient.sendRecord(1,
-            null,
             ByteBuffer.wrap("map1Key_map1Value".getBytes(StandardCharsets.UTF_8)));
       }
       writeClient.finishUpload();
@@ -374,7 +361,6 @@ public class RecordSocketReadClientTest {
       writeClient.startUpload(map2TaskAttemptId1, numMaps, numPartitions);
       for (int i = 0; i < numRecords; i++) {
         writeClient.sendRecord(1,
-            ByteBuffer.wrap("key1".getBytes(StandardCharsets.UTF_8)),
             ByteBuffer.wrap("value1".getBytes(StandardCharsets.UTF_8)));
       }
       writeClient.finishUpload();
@@ -400,7 +386,6 @@ public class RecordSocketReadClientTest {
       writeClient.startUpload(map2TaskAttemptId2, numMaps, numPartitions);
       for (int i = 0; i < numRecords; i++) {
         writeClient.sendRecord(1,
-            null,
             ByteBuffer.wrap("value2".getBytes(StandardCharsets.UTF_8)));
       }
       writeClient.finishUpload();
@@ -442,7 +427,6 @@ public class RecordSocketReadClientTest {
       writeClient.startUpload(map2TaskAttemptId3, numMaps, numPartitions);
       for (int i = 0; i < numRecords; i++) {
         writeClient.sendRecord(1,
-            null,
             ByteBuffer.wrap("value3".getBytes(StandardCharsets.UTF_8)));
       }
     }
@@ -457,7 +441,6 @@ public class RecordSocketReadClientTest {
       writeClient.startUpload(map2TaskAttemptId4, numMaps, numPartitions);
       for (int i = 0; i < numRecords; i++) {
         writeClient.sendRecord(1,
-            null,
             ByteBuffer.wrap("value4".getBytes(StandardCharsets.UTF_8)));
       }
       writeClient.finishUpload();

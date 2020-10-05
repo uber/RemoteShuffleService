@@ -64,7 +64,7 @@ public class ClientTestUtils {
     for (Integer partition : mapTaskData.keySet()) {
       List<Pair<String, String>> records = mapTaskData.get(partition);
       for (Pair<String, String> record : records) {
-        writeClient.sendRecord(partition, null, ByteBuffer.wrap(record.getValue().getBytes(StandardCharsets.UTF_8)));
+        writeClient.sendRecord(partition, ByteBuffer.wrap(record.getValue().getBytes(StandardCharsets.UTF_8)));
       }
     }
     writeClient.finishUpload();

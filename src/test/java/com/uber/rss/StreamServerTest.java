@@ -18,8 +18,6 @@ import com.uber.rss.clients.RecordKeyValuePair;
 import com.uber.rss.clients.SingleServerWriteClient;
 import com.uber.rss.common.AppShuffleId;
 import com.uber.rss.common.AppTaskAttemptId;
-import com.uber.rss.exceptions.RssMissingShuffleWriteConfigException;
-import com.uber.rss.exceptions.RssShuffleCorruptedException;
 import com.uber.rss.exceptions.RssShuffleStageNotStartedException;
 import com.uber.rss.testutil.ClientTestUtils;
 import com.uber.rss.testutil.StreamServerTestUtils;
@@ -55,7 +53,7 @@ public class StreamServerTest {
         try (SingleServerWriteClient writeclient = ClientTestUtils.getOrCreateWriteClient(testServer.getShufflePort(), appTaskAttemptId.getAppId(), appTaskAttemptId.getAppAttempt())) {
             writeclient.connect();
             writeclient.startUpload(appTaskAttemptId, numMaps, 20);
-            writeclient.sendRecord(1, null, null);
+            writeclient.sendRecord(1, null);
             writeclient.finishUpload();
 
             List<RecordKeyValuePair> records = StreamServerTestUtils.readAllRecords2(testServer.getShufflePort(), appTaskAttemptId.getAppShuffleId(), 1, Arrays.asList(appTaskAttemptId.getTaskAttemptId()));
@@ -102,15 +100,13 @@ public class StreamServerTest {
             writeclient.connect();
             writeclient.startUpload(appTaskAttemptId, numMaps, 20);
 
-            writeclient.sendRecord(1, null, null);
+            writeclient.sendRecord(1, null);
 
             writeclient.sendRecord(2,
-                null,
-                    ByteBuffer.wrap(new byte[0]));
+                ByteBuffer.wrap(new byte[0]));
 
             writeclient.sendRecord(3,
-                    null,
-                    ByteBuffer.wrap("value1".getBytes(StandardCharsets.UTF_8)));
+                ByteBuffer.wrap("value1".getBytes(StandardCharsets.UTF_8)));
 
             writeclient.finishUpload();
 

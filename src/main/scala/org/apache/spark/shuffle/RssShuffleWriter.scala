@@ -138,7 +138,7 @@ class RssShuffleWriter[K, V, C](
       val bytes = t._2
       if (bytes != null && bytes.length > 0) {
         val dataBlock = createDataBlock(bytes)
-        writeClient.sendRecord(partitionId, null, dataBlock)
+        writeClient.sendRecord(partitionId, dataBlock)
       }
     })
   }

@@ -152,7 +152,7 @@ public class MultiServerAsyncWriteClientTest {
             writeClient.connect();
             writeClient.startUpload(appTaskAttemptId, numMaps, 20);
 
-            writeClient.sendRecord(0, null, null);
+            writeClient.sendRecord(0, null);
 
             writeClient.finishUpload();
 
@@ -195,24 +195,19 @@ public class MultiServerAsyncWriteClientTest {
             writeClient.connect();
             writeClient.startUpload(appTaskAttemptId, numMaps, 20);
 
-            writeClient.sendRecord(0, null, null);
+            writeClient.sendRecord(0, null);
 
             writeClient.sendRecord(1,
-                    ByteBuffer.wrap(new byte[0]),
-                    ByteBuffer.wrap(new byte[0]));
+                ByteBuffer.wrap(new byte[0]));
             writeClient.sendRecord(1,
-                    ByteBuffer.wrap(new byte[0]),
-                    ByteBuffer.wrap(new byte[0]));
+                ByteBuffer.wrap(new byte[0]));
 
             writeClient.sendRecord(2,
-                    null,
-                    ByteBuffer.wrap("value1".getBytes(StandardCharsets.UTF_8)));
+                ByteBuffer.wrap("value1".getBytes(StandardCharsets.UTF_8)));
             writeClient.sendRecord(2,
-                null,
-                    ByteBuffer.wrap("value2".getBytes(StandardCharsets.UTF_8)));
+                ByteBuffer.wrap("value2".getBytes(StandardCharsets.UTF_8)));
             writeClient.sendRecord(2,
-                null,
-                    ByteBuffer.wrap("value3".getBytes(StandardCharsets.UTF_8)));
+                ByteBuffer.wrap("value3".getBytes(StandardCharsets.UTF_8)));
 
             writeClient.finishUpload();
 
@@ -291,21 +286,17 @@ public class MultiServerAsyncWriteClientTest {
             writeClient.connect();
             writeClient.startUpload(appTaskAttemptId, numMaps, 20);
 
-            writeClient.sendRecord(0, null, null);
+            writeClient.sendRecord(0, null);
 
             writeClient.sendRecord(1,
-                null,
                 ByteBuffer.wrap(new byte[0]));
             writeClient.sendRecord(1,
-                null,
                 ByteBuffer.wrap(new byte[0]));
 
             for (int i = 0; i < numRecords; i ++) {
                 writeClient.sendRecord(2,
-                    null,
                     ByteBuffer.wrap(("value2_" + i).getBytes(StandardCharsets.UTF_8)));
                 writeClient.sendRecord(3,
-                    null,
                     ByteBuffer.wrap(("value3_" + i).getBytes(StandardCharsets.UTF_8)));
             }
 
@@ -407,13 +398,11 @@ public class MultiServerAsyncWriteClientTest {
             writeClient.connect();
             writeClient.startUpload(appTaskAttemptId, numMaps, 20);
 
-            writeClient.sendRecord(0, null, null);
+            writeClient.sendRecord(0, null);
 
             writeClient.sendRecord(1,
-                ByteBuffer.wrap(new byte[0]),
                 ByteBuffer.wrap(new byte[0]));
             writeClient.sendRecord(1,
-                ByteBuffer.wrap(new byte[0]),
                 ByteBuffer.wrap(new byte[0]));
 
             for (int i = 0; i < numRecords; i ++) {
@@ -422,7 +411,6 @@ public class MultiServerAsyncWriteClientTest {
                     ("value2_" + i).getBytes(StandardCharsets.UTF_8),
                     appTaskAttemptId.getTaskAttemptId());
                 writeClient.sendRecord(2,
-                    null,
                     ByteBuffer.wrap(partition2Record.getValue()));
                 partition2WriteRecords.add(partition2Record);
 
@@ -431,7 +419,6 @@ public class MultiServerAsyncWriteClientTest {
                     ("value33333333333333333333333333333333_" + i).getBytes(StandardCharsets.UTF_8),
                     appTaskAttemptId.getTaskAttemptId());
                 writeClient.sendRecord(3,
-                    null,
                     ByteBuffer.wrap(partition3Record.getValue()));
                 partition3WriteRecords.add(partition3Record);
             }
