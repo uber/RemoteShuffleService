@@ -82,7 +82,7 @@ public abstract class RecordSyncWriteClientBase implements RecordSyncWriteClient
   }
 
   @Override
-  abstract public void sendRecord(int partition, ByteBuffer key, ByteBuffer value);
+  abstract public void sendRecord(int partition, ByteBuffer value);
 
   @Override
   public void finishUpload() {
@@ -112,16 +112,12 @@ public abstract class RecordSyncWriteClientBase implements RecordSyncWriteClient
         '}';
   }
 
-  protected int getRecordSerializedSize(ByteBuffer key, ByteBuffer value) {
-    int numKeyBytes = key == null ? 0 : key.remaining();
+  protected int getRecordSerializedSize(ByteBuffer value) {
     int numValueBytes = value == null ? 0 : value.remaining();
-    return numKeyBytes + numValueBytes;
+    return numValueBytes;
   }
 
-  protected void writeRecordToBuffer(ByteBuf buffer, ByteBuffer key, ByteBuffer value) {
-    if (key != null) {
-      buffer.writeBytes(key);
-    }
+  protected void writeRecordToBuffer(ByteBuf buffer, ByteBuffer value) {
     if (value != null) {
       buffer.writeBytes(value);
     }

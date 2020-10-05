@@ -14,7 +14,6 @@
 
 package com.uber.rss;
 
-import com.uber.rss.clients.SingleServerReadClient;
 import com.uber.rss.clients.RecordKeyValuePair;
 import com.uber.rss.clients.SingleServerWriteClient;
 import com.uber.rss.common.AppTaskAttemptId;
@@ -22,7 +21,6 @@ import com.uber.rss.testutil.ClientTestUtils;
 import com.uber.rss.testutil.StreamServerTestUtils;
 import com.uber.rss.testutil.TestConstants;
 import com.uber.rss.testutil.TestStreamServer;
-import com.uber.rss.util.ThreadUtils;
 import org.testng.Assert;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
@@ -57,15 +55,13 @@ public class StreamServerMultiAttemptTest {
 
                 writeClient.startUpload(appTaskAttemptId1, numMaps, 20);
 
-                writeClient.sendRecord(1, null, null);
+                writeClient.sendRecord(1, null);
 
                 writeClient.sendRecord(2,
-                        null,
-                        ByteBuffer.wrap(new byte[0]));
+                    ByteBuffer.wrap(new byte[0]));
 
                 writeClient.sendRecord(3,
-                    null,
-                        ByteBuffer.wrap("value1".getBytes(StandardCharsets.UTF_8)));
+                    ByteBuffer.wrap("value1".getBytes(StandardCharsets.UTF_8)));
 
                 writeClient.finishUpload();
             }
@@ -86,11 +82,10 @@ public class StreamServerMultiAttemptTest {
 
                 writeClient.startUpload(appTaskAttemptId2, numMaps, 20);
 
-                writeClient.sendRecord(2, null, null);
+                writeClient.sendRecord(2, null);
 
                 writeClient.sendRecord(9,
-                    null,
-                        ByteBuffer.wrap("value9".getBytes(StandardCharsets.UTF_8)));
+                    ByteBuffer.wrap("value9".getBytes(StandardCharsets.UTF_8)));
 
                 writeClient.finishUpload();
             }
@@ -135,15 +130,13 @@ public class StreamServerMultiAttemptTest {
 
                 writeClient.startUpload(appTaskAttemptId1, 1, 20);
 
-                writeClient.sendRecord(1, null, null);
+                writeClient.sendRecord(1, null);
 
                 writeClient.sendRecord(2,
-                        null,
-                        ByteBuffer.wrap(new byte[0]));
+                    ByteBuffer.wrap(new byte[0]));
 
                 writeClient.sendRecord(3,
-                        null,
-                        ByteBuffer.wrap("value1".getBytes(StandardCharsets.UTF_8)));
+                    ByteBuffer.wrap("value1".getBytes(StandardCharsets.UTF_8)));
 
                 writeClient.finishUpload();
             }
@@ -156,8 +149,7 @@ public class StreamServerMultiAttemptTest {
                 writeClient.startUpload(appTaskAttemptId2, 1, 20);
 
                 writeClient.sendRecord(3,
-                        null,
-                        ByteBuffer.wrap("value3_1".getBytes(StandardCharsets.UTF_8)));
+                    ByteBuffer.wrap("value3_1".getBytes(StandardCharsets.UTF_8)));
 
                 writeClient.finishUpload();
             }
@@ -196,15 +188,13 @@ public class StreamServerMultiAttemptTest {
 
                 writeClient.startUpload(appTaskAttemptId1, 1, 20);
 
-                writeClient.sendRecord(1, null, null);
+                writeClient.sendRecord(1, null);
 
                 writeClient.sendRecord(2,
-                        null,
-                        ByteBuffer.wrap(new byte[0]));
+                    ByteBuffer.wrap(new byte[0]));
 
                 writeClient.sendRecord(3,
-                        null,
-                        ByteBuffer.wrap("value1".getBytes(StandardCharsets.UTF_8)));
+                    ByteBuffer.wrap("value1".getBytes(StandardCharsets.UTF_8)));
             }
 
             // Write with taskAttemptId=1
@@ -216,8 +206,7 @@ public class StreamServerMultiAttemptTest {
                 writeClient.startUpload(appTaskAttemptId2, 1, 20);
 
                 writeClient.sendRecord(3,
-                        null,
-                        ByteBuffer.wrap("value3_1".getBytes(StandardCharsets.UTF_8)));
+                    ByteBuffer.wrap("value3_1".getBytes(StandardCharsets.UTF_8)));
 
                 writeClient.finishUpload();
 
@@ -257,15 +246,13 @@ public class StreamServerMultiAttemptTest {
 
             writeClient1.startUpload(appTaskAttemptId1, 1, 20);
 
-            writeClient1.sendRecord(1, null, null);
+            writeClient1.sendRecord(1, null);
 
             writeClient1.sendRecord(2,
-                    ByteBuffer.wrap(new byte[0]),
-                    ByteBuffer.wrap(new byte[0]));
+                ByteBuffer.wrap(new byte[0]));
 
             writeClient1.sendRecord(3,
-                    ByteBuffer.wrap("key1".getBytes(StandardCharsets.UTF_8)),
-                    ByteBuffer.wrap("value1".getBytes(StandardCharsets.UTF_8)));
+                ByteBuffer.wrap("value1".getBytes(StandardCharsets.UTF_8)));
 
             // Write with taskAttemptId=1
             AppTaskAttemptId appTaskAttemptId2 = new AppTaskAttemptId(appTaskAttemptId1.getAppMapId(), 1L);
@@ -275,8 +262,7 @@ public class StreamServerMultiAttemptTest {
             writeClient2.startUpload(appTaskAttemptId2, 1, 20);
 
             writeClient2.sendRecord(3,
-                    null,
-                    ByteBuffer.wrap("value3_1".getBytes(StandardCharsets.UTF_8)));
+                ByteBuffer.wrap("value3_1".getBytes(StandardCharsets.UTF_8)));
 
             writeClient2.finishUpload();
 
@@ -284,8 +270,7 @@ public class StreamServerMultiAttemptTest {
 
             // Write with taskAttemptId=0 again
             writeClient1.sendRecord(3,
-                    null,
-                    ByteBuffer.wrap("value1".getBytes(StandardCharsets.UTF_8)));
+                ByteBuffer.wrap("value1".getBytes(StandardCharsets.UTF_8)));
             try {
                 writeClient1.close();
             } catch (Exception e) {
@@ -324,8 +309,7 @@ public class StreamServerMultiAttemptTest {
                 writeClient.startUpload(appTaskAttemptId, numMaps, 20);
 
                 writeClient.sendRecord(9,
-                        null,
-                        ByteBuffer.wrap("value9".getBytes(StandardCharsets.UTF_8)));
+                    ByteBuffer.wrap("value9".getBytes(StandardCharsets.UTF_8)));
 
                 writeClient.finishUpload();
 
@@ -336,15 +320,13 @@ public class StreamServerMultiAttemptTest {
             try (SingleServerWriteClient writeClient = ClientTestUtils.getOrCreateWriteClient(testServer.getShufflePort(), appTaskAttemptId.getAppId(), appTaskAttemptId.getAppAttempt())) {
                 writeClient.startUpload(new AppTaskAttemptId(appTaskAttemptId.getAppMapId(), 0L), numMaps, 20);
 
-                writeClient.sendRecord(1, null, null);
+                writeClient.sendRecord(1, null);
 
                 writeClient.sendRecord(2,
-                        null,
-                        ByteBuffer.wrap(new byte[0]));
+                    ByteBuffer.wrap(new byte[0]));
 
                 writeClient.sendRecord(3,
-                        null,
-                        ByteBuffer.wrap("value1".getBytes(StandardCharsets.UTF_8)));
+                    ByteBuffer.wrap("value1".getBytes(StandardCharsets.UTF_8)));
 
                 writeClient.finishUpload();
             }

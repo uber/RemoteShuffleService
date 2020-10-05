@@ -25,7 +25,7 @@ public interface RecordWriter extends AutoCloseable {
 
   void startUpload(AppTaskAttemptId appTaskAttemptId, int numMaps, int numPartitions);
 
-  void sendRecord(int partition, ByteBuffer key, ByteBuffer value);
+  void sendRecord(int partition, ByteBuffer value);
 
   void finishUpload();
 

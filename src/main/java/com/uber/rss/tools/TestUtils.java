@@ -14,8 +14,7 @@
 
 package com.uber.rss.tools;
 
-import com.uber.rss.clients.CompressedRecordSyncWriteClient;
-import com.uber.rss.clients.ShuffleWriteConfig;
+import com.uber.rss.clients.DataBlockSyncWriteClient;
 import com.uber.rss.common.ServerDetail;
 import com.uber.rss.messages.ConnectUploadResponse;
 import com.uber.rss.util.StreamUtils;
@@ -63,19 +62,15 @@ public class TestUtils {
 
     public static ServerDetail getServerDetail(String host, int port) {
         int networkTimeoutMillis = 60000;
-        int compressBufferSize = 64000;
-        short numSplits = 1;
         boolean finishUploadAck = true;
-        try (CompressedRecordSyncWriteClient writeClient = new CompressedRecordSyncWriteClient(
+        try (DataBlockSyncWriteClient writeClient = new DataBlockSyncWriteClient(
             host,
             port,
             networkTimeoutMillis,
             finishUploadAck,
             "user1",
             "app1",
-            "appAttempt1",
-            compressBufferSize,
-            new ShuffleWriteConfig("lz4", numSplits)
+            "appAttempt1"
         )) {
             ConnectUploadResponse connectUploadResponse = writeClient.connect();
             return new ServerDetail(connectUploadResponse.getServerId(), connectUploadResponse.getRunningVersion(), String.format("%s:%s", host, port));
