@@ -18,7 +18,7 @@ import com.uber.rss.clients.ClientRetryOptions;
 import com.uber.rss.clients.MultiServerReadClient;
 import com.uber.rss.clients.MultiServerSocketReadClient;
 import com.uber.rss.clients.ReadClientDataOptions;
-import com.uber.rss.clients.RecordKeyValuePair;
+import com.uber.rss.clients.TaskByteArrayDataBlock;
 import com.uber.rss.clients.ServerReplicationGroupUtil;
 import com.uber.rss.common.AppShuffleId;
 import com.uber.rss.common.AppShufflePartitionId;
@@ -132,7 +132,7 @@ public class StreamReadClientVerify {
             readClient.connect();
             try {
                 long numReadPartitionRecords = 0;
-                RecordKeyValuePair record = readClient.readRecord();
+                TaskByteArrayDataBlock record = readClient.readRecord();
                 while (record != null) {
                     numReadPartitionRecords++;
                     long totalReadRecordsValue = totalReadRecords.incrementAndGet();
@@ -144,11 +144,6 @@ public class StreamReadClientVerify {
                         }
                     }
 
-                    if (record.getKey() != null && record.getKey().length > maxValueLen) {
-                        throw new RuntimeException(String.format(
-                                "Read wrong key len %s after reading %s records for %s from server %s",
-                                record.getKey(), numReadPartitionRecords, appShufflePartitionId, serverReplicationGroups));
-                    }
                     if (record.getValue() != null && record.getValue().length > maxValueLen) {
                         throw new RuntimeException(String.format(
                                 "Read wrong value len %s after reading %s records for %s from server %s",

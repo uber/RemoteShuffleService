@@ -14,7 +14,7 @@
 
 package com.uber.rss;
 
-import com.uber.rss.clients.RecordKeyValuePair;
+import com.uber.rss.clients.TaskByteArrayDataBlock;
 import com.uber.rss.clients.SingleServerWriteClient;
 import com.uber.rss.common.AppShuffleId;
 import com.uber.rss.common.AppTaskAttemptId;
@@ -56,7 +56,7 @@ public class StreamServerTest {
             writeclient.sendRecord(1, null);
             writeclient.finishUpload();
 
-            List<RecordKeyValuePair> records = StreamServerTestUtils.readAllRecords2(testServer.getShufflePort(), appTaskAttemptId.getAppShuffleId(), 1, Arrays.asList(appTaskAttemptId.getTaskAttemptId()));
+            List<TaskByteArrayDataBlock> records = StreamServerTestUtils.readAllRecords2(testServer.getShufflePort(), appTaskAttemptId.getAppShuffleId(), 1, Arrays.asList(appTaskAttemptId.getTaskAttemptId()));
             Assert.assertEquals(records.size(), 1);
 
             int dataAvailableWaitTime = 500;
@@ -113,25 +113,22 @@ public class StreamServerTest {
             // Verify read client able to read data from stream server.
             // We pass readQueueSize parameter to helper method readAllRecords, so it will use async read client.
 
-            List<RecordKeyValuePair> records = StreamServerTestUtils.readAllRecords2(testServer.getShufflePort(), appTaskAttemptId.getAppShuffleId(), 1, Arrays.asList(appTaskAttemptId.getTaskAttemptId()));
+            List<TaskByteArrayDataBlock> records = StreamServerTestUtils.readAllRecords2(testServer.getShufflePort(), appTaskAttemptId.getAppShuffleId(), 1, Arrays.asList(appTaskAttemptId.getTaskAttemptId()));
             Assert.assertEquals(records.size(), 1);
 
-            RecordKeyValuePair record = records.get(0);
-            Assert.assertNull(record.getKey());
+            TaskByteArrayDataBlock record = records.get(0);
             Assert.assertEquals(record.getValue(), new byte[0]);
 
             records = StreamServerTestUtils.readAllRecords2(testServer.getShufflePort(), appTaskAttemptId.getAppShuffleId(), 2, Arrays.asList(appTaskAttemptId.getTaskAttemptId()));
             Assert.assertEquals(records.size(), 1);
 
             record = records.get(0);
-            Assert.assertEquals(record.getKey(), null);
             Assert.assertEquals(record.getValue(), new byte[0]);
 
             records = StreamServerTestUtils.readAllRecords2(testServer.getShufflePort(), appTaskAttemptId.getAppShuffleId(), 3, Arrays.asList(appTaskAttemptId.getTaskAttemptId()));
             Assert.assertEquals(records.size(), 1);
 
             record = records.get(0);
-            Assert.assertEquals(record.getKey(), null);
             Assert.assertEquals(new String(record.getValue(), StandardCharsets.UTF_8), "value1");
 
             records = StreamServerTestUtils.readAllRecords2(testServer.getShufflePort(), appTaskAttemptId.getAppShuffleId(), 4, Arrays.asList(appTaskAttemptId.getTaskAttemptId()));

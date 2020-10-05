@@ -73,9 +73,7 @@ public class StreamServerStressToolLongRun {
             tool.setMaxWait(3600000L);
             tool.setNumServers(numServers);
             tool.setWorkDir(workDir);
-            tool.setCompressCodec(compressCodec);
             tool.setNumServerThreads(1 + random.nextInt(100));
-            tool.setBufferSize(bufferSize);
             tool.setWriteClientQueueSize(writeClientQueueSize);
             tool.setWriteClientThreads(writeClientThreads);
             tool.setNumBytes((long)(random.nextFloat() * maxNumBytes));
@@ -86,7 +84,6 @@ public class StreamServerStressToolLongRun {
             tool.setNumSplits(1 + random.nextInt(maxNumSplits));
             tool.setNumReplicas(numReplicas);
             tool.setPartitionFanout(partitionFanout);
-            tool.setCompressCodec(compressCodecValues[random.nextInt(compressCodecValues.length)]);
             tool.setUseConnectionPool(useConnectionPool);
             tool.setFsyncEnabled(fsyncEnabled);
             

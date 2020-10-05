@@ -46,7 +46,6 @@ public class StageInfoStateItem extends BaseMessage {
         buf.writeInt(appShuffleId.getShuffleId());
         buf.writeInt(numPartitions);
         buf.writeInt(fileStartIndex);
-        ByteBufUtils.writeLengthAndString(buf, writeConfig.getFileCompressionCodec());
         buf.writeShort(writeConfig.getNumSplits());
         buf.writeByte(fileStatus);
     }
@@ -57,13 +56,12 @@ public class StageInfoStateItem extends BaseMessage {
         int shuffleId = buf.readInt();
         int numPartitions = buf.readInt();
         int fileStartIndex = buf.readInt();
-        String codec = ByteBufUtils.readLengthAndString(buf);
         short numSplits = buf.readShort();
         byte fileStatus = buf.readByte();
         return new StageInfoStateItem(new AppShuffleId(appId, appAttempt, shuffleId),
             numPartitions,
             fileStartIndex,
-            new ShuffleWriteConfig(codec, numSplits),
+            new ShuffleWriteConfig(numSplits),
             fileStatus);
     }
 

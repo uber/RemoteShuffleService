@@ -99,8 +99,8 @@ public class MultiServerSocketReadClient implements MultiServerReadClient {
   }
 
   @Override
-  public synchronized RecordKeyValuePair readRecord() {
-    RecordKeyValuePair record = currentClient.readRecord();
+  public synchronized TaskByteArrayDataBlock readRecord() {
+    TaskByteArrayDataBlock record = currentClient.readRecord();
 
     while (record == null) {
       shuffleReadBytesOfFinishedClients += currentClient.getShuffleReadBytes();

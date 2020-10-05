@@ -65,6 +65,7 @@ public class M3DummyScope implements Scope {
     };
   }
 
+  @SuppressWarnings({"rawtypes", "unchecked"})
   @Override
   public Histogram histogram(String s, Buckets buckets) {
     return new Histogram() {

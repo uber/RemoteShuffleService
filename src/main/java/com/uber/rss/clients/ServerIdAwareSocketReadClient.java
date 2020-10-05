@@ -75,7 +75,7 @@ public class ServerIdAwareSocketReadClient implements SingleServerReadClient {
     }
 
     @Override
-    public RecordKeyValuePair readRecord() {
+    public TaskByteArrayDataBlock readRecord() {
         return readClient.readRecord();
     }
 

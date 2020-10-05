@@ -14,7 +14,7 @@
 
 package com.uber.rss.testutil;
 
-import com.uber.rss.clients.RecordKeyValuePair;
+import com.uber.rss.clients.TaskByteArrayDataBlock;
 import com.uber.rss.clients.RecordSocketReadClient;
 import com.uber.rss.clients.ShuffleWriteConfig;
 import com.uber.rss.clients.SingleServerWriteClient;
@@ -70,10 +70,10 @@ public class ClientTestUtils {
     writeClient.finishUpload();
   }
 
-  public static List<RecordKeyValuePair> readData(AppShufflePartitionId appShufflePartitionId, RecordSocketReadClient readClient) {
+  public static List<TaskByteArrayDataBlock> readData(AppShufflePartitionId appShufflePartitionId, RecordSocketReadClient readClient) {
     readClient.connect();
-    List<RecordKeyValuePair> readRecords = new ArrayList<>();
-    RecordKeyValuePair record = readClient.readRecord();
+    List<TaskByteArrayDataBlock> readRecords = new ArrayList<>();
+    TaskByteArrayDataBlock record = readClient.readRecord();
     while (record != null) {
       readRecords.add(record);
       record = readClient.readRecord();
@@ -86,7 +86,7 @@ public class ClientTestUtils {
   }
 
   public static SingleServerWriteClient getOrCreateWriteClient(int port, String appId, String appAttempt, boolean finishUploadAck) {
-    ShuffleWriteConfig shuffleWriteConfig = new ShuffleWriteConfig("", (short)3);
+    ShuffleWriteConfig shuffleWriteConfig = new ShuffleWriteConfig((short)3);
     return PooledWriteClientFactory.getInstance().getOrCreateClient("localhost", port, TestConstants.NETWORK_TIMEOUT, finishUploadAck, "user1", appId, appAttempt, shuffleWriteConfig);
   }
 }

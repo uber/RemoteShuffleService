@@ -78,29 +78,29 @@ public class RecordSocketReadClientTest {
       AppShufflePartitionId appShufflePartitionId = new AppShufflePartitionId(appId, appAttempt, shuffleId, 1);
       try (RecordSocketReadClient readClient = new PlainRecordSocketReadClient("localhost", testServer1.getShufflePort(), TestConstants.NETWORK_TIMEOUT, "user1", appShufflePartitionId, Arrays.asList(appTaskAttemptId.getTaskAttemptId()), TestConstants.DATA_AVAILABLE_POLL_INTERVAL, TestConstants.DATA_AVAILABLE_TIMEOUT)) {
         readClient.connect();
-        RecordKeyValuePair record = readClient.readRecord();
+        TaskByteArrayDataBlock record = readClient.readRecord();
         Assert.assertNotNull(record);
-        Assert.assertNull(record.getKey());
+
         Assert.assertEquals(record.getValue(), new byte[0]);
 
         record = readClient.readRecord();
         Assert.assertNotNull(record);
-        Assert.assertEquals(record.getKey(), null);
+
         Assert.assertEquals(record.getValue(), new byte[0]);
 
         record = readClient.readRecord();
         Assert.assertNotNull(record);
-        Assert.assertEquals(record.getKey(), null);
+
         Assert.assertEquals(new String(record.getValue(), StandardCharsets.UTF_8), "");
 
         record = readClient.readRecord();
         Assert.assertNotNull(record);
-        Assert.assertEquals(record.getKey(), null);
+
         Assert.assertEquals(new String(record.getValue(), StandardCharsets.UTF_8), "value1");
 
         record = readClient.readRecord();
         Assert.assertNotNull(record);
-        Assert.assertEquals(record.getKey(), null);
+
         Assert.assertEquals(new String(record.getValue(), StandardCharsets.UTF_8), "value1");
 
         record = readClient.readRecord();
@@ -110,9 +110,9 @@ public class RecordSocketReadClientTest {
       appShufflePartitionId = new AppShufflePartitionId(appId, appAttempt, shuffleId, 2);
       try (RecordSocketReadClient readClient = new PlainRecordSocketReadClient("localhost", testServer1.getShufflePort(), TestConstants.NETWORK_TIMEOUT, "user1", appShufflePartitionId, Arrays.asList(appTaskAttemptId.getTaskAttemptId()), TestConstants.DATA_AVAILABLE_POLL_INTERVAL, TestConstants.DATA_AVAILABLE_TIMEOUT)) {
         readClient.connect();
-        RecordKeyValuePair record = readClient.readRecord();
+        TaskByteArrayDataBlock record = readClient.readRecord();
         Assert.assertNotNull(record);
-        Assert.assertEquals(record.getKey(), null);
+
         Assert.assertEquals(record.getValue(), new byte[0]);
 
         record = readClient.readRecord();
@@ -122,9 +122,9 @@ public class RecordSocketReadClientTest {
       appShufflePartitionId = new AppShufflePartitionId(appId, appAttempt, shuffleId, 3);
       try (RecordSocketReadClient readClient = new PlainRecordSocketReadClient("localhost", testServer1.getShufflePort(), TestConstants.NETWORK_TIMEOUT, "user1", appShufflePartitionId, Arrays.asList(appTaskAttemptId.getTaskAttemptId()), TestConstants.DATA_AVAILABLE_POLL_INTERVAL, TestConstants.DATA_AVAILABLE_TIMEOUT)) {
         readClient.connect();
-        RecordKeyValuePair record = readClient.readRecord();
+        TaskByteArrayDataBlock record = readClient.readRecord();
         Assert.assertNotNull(record);
-        Assert.assertEquals(record.getKey(), null);
+
         Assert.assertEquals(new String(record.getValue(), StandardCharsets.UTF_8), "value1");
 
         record = readClient.readRecord();
@@ -135,7 +135,7 @@ public class RecordSocketReadClientTest {
       appShufflePartitionId = new AppShufflePartitionId(appId, appAttempt, shuffleId, 999);
       try (RecordSocketReadClient readClient = new PlainRecordSocketReadClient("localhost", testServer1.getShufflePort(), TestConstants.NETWORK_TIMEOUT, "user1", appShufflePartitionId, Arrays.asList(appTaskAttemptId.getTaskAttemptId()), TestConstants.DATA_AVAILABLE_POLL_INTERVAL, TestConstants.DATA_AVAILABLE_TIMEOUT)) {
         readClient.connect();
-        RecordKeyValuePair record = readClient.readRecord();
+        TaskByteArrayDataBlock record = readClient.readRecord();
         Assert.assertNull(record);
       }
     } finally {
@@ -187,15 +187,13 @@ public class RecordSocketReadClientTest {
       for (Integer partition: mapTaskData1.keySet()) {
         AppShufflePartitionId appShufflePartitionId = new AppShufflePartitionId(appId, appAttempt, shuffleId, partition);
         try (RecordSocketReadClient readClient = new PlainRecordSocketReadClient("localhost", testServer1.getShufflePort(), TestConstants.NETWORK_TIMEOUT, "user1", appShufflePartitionId, Arrays.asList(appTaskAttemptId1.getTaskAttemptId(), appTaskAttemptId2.getTaskAttemptId()), TestConstants.DATA_AVAILABLE_POLL_INTERVAL, TestConstants.DATA_AVAILABLE_TIMEOUT)) {
-          List<RecordKeyValuePair> readRecords = ClientTestUtils.readData(appShufflePartitionId, readClient);
+          List<TaskByteArrayDataBlock> readRecords = ClientTestUtils.readData(appShufflePartitionId, readClient);
           Assert.assertTrue(readRecords.size() > 0);
           Assert.assertEquals(readRecords.size(), mapTaskData1.get(partition).size() + mapTaskData2.get(partition).size());
           for (int i = 0; i < mapTaskData1.get(partition).size(); i++) {
-            Assert.assertEquals(readRecords.get(i).getKey(), null);
             Assert.assertEquals(new String(readRecords.get(i).getValue(), StandardCharsets.UTF_8), mapTaskData1.get(partition).get(i).getValue());
           }
           for (int i = 0; i < mapTaskData2.get(partition).size(); i++) {
-            Assert.assertEquals(readRecords.get(mapTaskData1.get(partition).size() + i).getKey(), null);
             Assert.assertEquals(new String(readRecords.get(mapTaskData1.get(partition).size() + i).getValue(), StandardCharsets.UTF_8), mapTaskData2.get(partition).get(i).getValue());
           }
         }
@@ -246,7 +244,7 @@ public class RecordSocketReadClientTest {
     AppShufflePartitionId appShufflePartitionId = new AppShufflePartitionId(appId, appAttempt, shuffleId, 1);
     try (RecordSocketReadClient readClient = new PlainRecordSocketReadClient("localhost", testServer1.getShufflePort(), TestConstants.NETWORK_TIMEOUT, "user1", appShufflePartitionId, Arrays.asList(appTaskAttemptId.getTaskAttemptId()), TestConstants.DATA_AVAILABLE_POLL_INTERVAL, TestConstants.DATA_AVAILABLE_TIMEOUT)) {
       readClient.connect();
-      RecordKeyValuePair record = readClient.readRecord();
+      TaskByteArrayDataBlock record = readClient.readRecord();
       Assert.assertNotNull(record);
     }
 
@@ -256,29 +254,29 @@ public class RecordSocketReadClientTest {
 
     try (RecordSocketReadClient readClient = new PlainRecordSocketReadClient("localhost", testServer2.getShufflePort(), TestConstants.NETWORK_TIMEOUT, "user1", appShufflePartitionId, Arrays.asList(appTaskAttemptId.getTaskAttemptId()), TestConstants.DATA_AVAILABLE_POLL_INTERVAL, TestConstants.DATA_AVAILABLE_TIMEOUT)) {
       readClient.connect();
-      RecordKeyValuePair record = readClient.readRecord();
+      TaskByteArrayDataBlock record = readClient.readRecord();
       Assert.assertNotNull(record);
-      Assert.assertNull(record.getKey());
+
       Assert.assertEquals(record.getValue(), new byte[0]);
 
       record = readClient.readRecord();
       Assert.assertNotNull(record);
-      Assert.assertEquals(record.getKey(), null);
+
       Assert.assertEquals(record.getValue(), new byte[0]);
 
       record = readClient.readRecord();
       Assert.assertNotNull(record);
-      Assert.assertEquals(record.getKey(), null);
+
       Assert.assertEquals(new String(record.getValue(), StandardCharsets.UTF_8), "");
 
       record = readClient.readRecord();
       Assert.assertNotNull(record);
-      Assert.assertEquals(record.getKey(), null);
+
       Assert.assertEquals(new String(record.getValue(), StandardCharsets.UTF_8), "value1");
 
       record = readClient.readRecord();
       Assert.assertNotNull(record);
-      Assert.assertEquals(record.getKey(), null);
+
       Assert.assertEquals(new String(record.getValue(), StandardCharsets.UTF_8), "value1");
 
       record = readClient.readRecord();
@@ -288,9 +286,9 @@ public class RecordSocketReadClientTest {
     appShufflePartitionId = new AppShufflePartitionId(appId, appAttempt, shuffleId, 2);
     try (RecordSocketReadClient readClient = new PlainRecordSocketReadClient("localhost", testServer2.getShufflePort(), TestConstants.NETWORK_TIMEOUT, "user1", appShufflePartitionId, Arrays.asList(appTaskAttemptId.getTaskAttemptId()), TestConstants.DATA_AVAILABLE_POLL_INTERVAL, TestConstants.DATA_AVAILABLE_TIMEOUT)) {
       readClient.connect();
-      RecordKeyValuePair record = readClient.readRecord();
+      TaskByteArrayDataBlock record = readClient.readRecord();
       Assert.assertNotNull(record);
-      Assert.assertEquals(record.getKey(), null);
+
       Assert.assertEquals(record.getValue(), new byte[0]);
 
       record = readClient.readRecord();
@@ -300,9 +298,9 @@ public class RecordSocketReadClientTest {
     appShufflePartitionId = new AppShufflePartitionId(appId, appAttempt, shuffleId, 3);
     try (RecordSocketReadClient readClient = new PlainRecordSocketReadClient("localhost", testServer2.getShufflePort(), TestConstants.NETWORK_TIMEOUT, "user1", appShufflePartitionId, Arrays.asList(appTaskAttemptId.getTaskAttemptId()), TestConstants.DATA_AVAILABLE_POLL_INTERVAL, TestConstants.DATA_AVAILABLE_TIMEOUT)) {
       readClient.connect();
-      RecordKeyValuePair record = readClient.readRecord();
+      TaskByteArrayDataBlock record = readClient.readRecord();
       Assert.assertNotNull(record);
-      Assert.assertEquals(record.getKey(), null);
+
       Assert.assertEquals(new String(record.getValue(), StandardCharsets.UTF_8), "value1");
 
       record = readClient.readRecord();
@@ -313,7 +311,7 @@ public class RecordSocketReadClientTest {
     appShufflePartitionId = new AppShufflePartitionId(appId, appAttempt, shuffleId, 999);
     try (RecordSocketReadClient readClient = new PlainRecordSocketReadClient("localhost", testServer2.getShufflePort(), TestConstants.NETWORK_TIMEOUT, "user1", appShufflePartitionId, Arrays.asList(appTaskAttemptId.getTaskAttemptId()), TestConstants.DATA_AVAILABLE_POLL_INTERVAL, TestConstants.DATA_AVAILABLE_TIMEOUT)) {
       readClient.connect();
-      RecordKeyValuePair record = readClient.readRecord();
+      TaskByteArrayDataBlock record = readClient.readRecord();
       Assert.assertNull(record);
     }
 
@@ -325,7 +323,7 @@ public class RecordSocketReadClientTest {
     String rootDir = Files.createTempDirectory("StreamServer_").toString();
 
     short numSplits = 3;
-    ShuffleWriteConfig shuffleWriteConfig = new ShuffleWriteConfig("", numSplits);
+    ShuffleWriteConfig shuffleWriteConfig = new ShuffleWriteConfig(numSplits);
 
     Consumer<StreamServerConfig> configModifier = config -> {
       config.setRootDirectory(rootDir);
@@ -372,7 +370,7 @@ public class RecordSocketReadClientTest {
         Arrays.asList(map1TaskAttemptId.getTaskAttemptId(), map2TaskAttemptId1.getTaskAttemptId()),
         TestConstants.DATA_AVAILABLE_POLL_INTERVAL, TestConstants.DATA_AVAILABLE_TIMEOUT)) {
       readClient.connect();
-      RecordKeyValuePair record = readClient.readRecord();
+      TaskByteArrayDataBlock record = readClient.readRecord();
       Assert.assertNotNull(record);
     }
 
@@ -399,11 +397,11 @@ public class RecordSocketReadClientTest {
       readClient.connect();
       List<Pair<String, String>> allRecords = new ArrayList<>();
       for (int i = 0; i < numRecords * 2; i++) {
-        RecordKeyValuePair record = readClient.readRecord();
+        TaskByteArrayDataBlock record = readClient.readRecord();
         Assert.assertNotNull(record);
         allRecords.add(Pair.of(null, new String(record.getValue(), StandardCharsets.UTF_8)));
       }
-      RecordKeyValuePair record = readClient.readRecord();
+      TaskByteArrayDataBlock record = readClient.readRecord();
       Assert.assertNull(record);
 
       List<Pair<String, String>> map1Records = allRecords.stream().filter(t->t.getValue().startsWith("map1Key")).collect(Collectors.toList());
@@ -454,11 +452,11 @@ public class RecordSocketReadClientTest {
       readClient.connect();
       List<Pair<String, String>> allRecords = new ArrayList<>();
       for (int i = 0; i < numRecords * 2; i++) {
-        RecordKeyValuePair record = readClient.readRecord();
+        TaskByteArrayDataBlock record = readClient.readRecord();
         Assert.assertNotNull(record);
         allRecords.add(Pair.of(null, new String(record.getValue(), StandardCharsets.UTF_8)));
       }
-      RecordKeyValuePair record = readClient.readRecord();
+      TaskByteArrayDataBlock record = readClient.readRecord();
       Assert.assertNull(record);
 
       List<Pair<String, String>> map1Records = allRecords.stream().filter(t->t.getValue().startsWith("map1Key")).collect(Collectors.toList());

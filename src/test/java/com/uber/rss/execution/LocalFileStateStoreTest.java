@@ -117,8 +117,8 @@ public class LocalFileStateStoreTest {
 
     AppShuffleId appShuffleId1 = new AppShuffleId("app1", "1", 2);
     AppShuffleId appShuffleId2 = new AppShuffleId("app1", "1", 20);
-    ShuffleWriteConfig shuffleWriteConfig1 = new ShuffleWriteConfig("gzip", (short)6);
-    ShuffleWriteConfig shuffleWriteConfig2 = new ShuffleWriteConfig("snappy", (short)60);
+    ShuffleWriteConfig shuffleWriteConfig1 = new ShuffleWriteConfig((short)6);
+    ShuffleWriteConfig shuffleWriteConfig2 = new ShuffleWriteConfig((short)60);
     StagePersistentInfo stageInfo1 = new StagePersistentInfo(20, 30, shuffleWriteConfig1, ShuffleStageStatus.FILE_STATUS_OK);
     StagePersistentInfo stageInfo2 = new StagePersistentInfo(200, 300, shuffleWriteConfig2, ShuffleStageStatus.FILE_STATUS_CORRUPTED);
 

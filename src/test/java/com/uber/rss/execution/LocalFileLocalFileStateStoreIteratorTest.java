@@ -197,7 +197,7 @@ public class LocalFileLocalFileStateStoreIteratorTest {
     tempPath.toFile().deleteOnExit();
 
     AppShuffleId appShuffleId1 = new AppShuffleId("app1", "1", 2);
-    ShuffleWriteConfig shuffleWriteConfig1 = new ShuffleWriteConfig("gzip", (short)6);
+    ShuffleWriteConfig shuffleWriteConfig1 = new ShuffleWriteConfig((short)6);
     StageInfoStateItem stageInfoStateItem1 = new StageInfoStateItem(appShuffleId1,
         4, 5, shuffleWriteConfig1, ShuffleStageStatus.FILE_STATUS_OK);
     ByteBuf stageInfoStateItemBuf1 = Unpooled.buffer();
@@ -206,7 +206,7 @@ public class LocalFileLocalFileStateStoreIteratorTest {
     stageInfoStateItemBytes1 = ByteBufUtils.readBytes(stageInfoStateItemBuf1);
     stageInfoStateItemBuf1.release();
 
-    ShuffleWriteConfig shuffleWriteConfig2 = new ShuffleWriteConfig("gzip", (short)60);
+    ShuffleWriteConfig shuffleWriteConfig2 = new ShuffleWriteConfig((short)60);
     AppShuffleId appShuffleId2 = new AppShuffleId("app10", "10", 20);
     StageInfoStateItem stageInfoStateItem2 = new StageInfoStateItem(appShuffleId2,
         40, 50, shuffleWriteConfig2, ShuffleStageStatus.FILE_STATUS_OK);
@@ -326,7 +326,7 @@ public class LocalFileLocalFileStateStoreIteratorTest {
 
     AppShuffleId appShuffleId1 = new AppShuffleId("app1", "1", 2);
     AppTaskAttemptId appTaskAttemptId1 = new AppTaskAttemptId(appShuffleId1, 1, 99L);
-    ShuffleWriteConfig shuffleWriteConfig1 = new ShuffleWriteConfig("gzip", (short) 6);
+    ShuffleWriteConfig shuffleWriteConfig1 = new ShuffleWriteConfig((short) 6);
     PartitionFilePathAndLength partitionFilePathAndLength1 = new PartitionFilePathAndLength(1, "file1", 123);
 
     LocalFileStateStore store = new LocalFileStateStore(tempPath.toString());

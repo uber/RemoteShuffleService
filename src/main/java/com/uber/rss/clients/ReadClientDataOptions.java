@@ -24,7 +24,7 @@ public class ReadClientDataOptions {
   private final long dataAvailableWaitTime;
 
   public ReadClientDataOptions(Collection<Long> latestTaskAttemptIds, long dataAvailablePollInterval, long dataAvailableWaitTime) {
-    this.latestTaskAttemptIds = Collections.unmodifiableCollection(new ArrayList(latestTaskAttemptIds));
+    this.latestTaskAttemptIds = Collections.unmodifiableCollection(new ArrayList<>(latestTaskAttemptIds));
     this.dataAvailablePollInterval = dataAvailablePollInterval;
     this.dataAvailableWaitTime = dataAvailableWaitTime;
   }

@@ -112,7 +112,7 @@ public class DataBlockSyncWriteClient extends com.uber.rss.clients.ClientBase {
         shuffleMapTaskAttemptId.getTaskAttemptId(),
         numMaps,
         numPartitions,
-        shuffleWriteConfig.getFileCompressionCodec(),
+        "",
         shuffleWriteConfig.getNumSplits());
 
     writeControlMessageNotWaitResponseStatus(startUploadMessage);

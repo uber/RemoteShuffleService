@@ -91,7 +91,7 @@ public class RetriableSocketReadClient implements SingleServerReadClient {
   }
 
   @Override
-  public RecordKeyValuePair readRecord() {
+  public TaskByteArrayDataBlock readRecord() {
     return delegate.readRecord();
   }
 
