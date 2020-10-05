@@ -50,6 +50,7 @@ public class M3DummyScopeBuilder extends RootScopeBuilder {
     return this;
   }
 
+  @SuppressWarnings({"rawtypes", "unchecked"})
   @Override
   public ScopeBuilder defaultBuckets(Buckets defaultBuckets) {
     return this;

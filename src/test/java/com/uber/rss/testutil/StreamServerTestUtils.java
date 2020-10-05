@@ -18,7 +18,7 @@ import com.uber.rss.clients.PlainRecordSocketReadClient;
 import com.uber.rss.common.AppShuffleId;
 import com.uber.rss.common.AppShufflePartitionId;
 import com.uber.rss.clients.SingleServerReadClient;
-import com.uber.rss.clients.RecordKeyValuePair;
+import com.uber.rss.clients.TaskByteArrayDataBlock;
 import com.uber.rss.exceptions.RssException;
 
 import java.io.IOException;
@@ -41,11 +41,11 @@ public class StreamServerTestUtils {
         return dirs;
     }
 
-    public static List<RecordKeyValuePair> readAllRecords2(int port, AppShuffleId appShuffleId, int partitionId, Collection<Long> latestTaskAttemptIds) {
+    public static List<TaskByteArrayDataBlock> readAllRecords2(int port, AppShuffleId appShuffleId, int partitionId, Collection<Long> latestTaskAttemptIds) {
         return readAllRecords2(port, appShuffleId, partitionId, latestTaskAttemptIds, TestConstants.DATA_AVAILABLE_TIMEOUT);
     }
 
-    public static List<RecordKeyValuePair> readAllRecords(int port, AppShuffleId appShuffleId, int partitionId, Collection<Long> latestTaskAttemptIds, int dataAvailableWaitTime) {
+    public static List<TaskByteArrayDataBlock> readAllRecords(int port, AppShuffleId appShuffleId, int partitionId, Collection<Long> latestTaskAttemptIds, int dataAvailableWaitTime) {
         SingleServerReadClient readClient = new PlainRecordSocketReadClient("localhost", port, TestConstants.NETWORK_TIMEOUT, "user1", new AppShufflePartitionId(appShuffleId, partitionId), latestTaskAttemptIds, TestConstants.DATA_AVAILABLE_POLL_INTERVAL, dataAvailableWaitTime);
 
         try {
@@ -54,9 +54,9 @@ public class StreamServerTestUtils {
 
             readClient.connect();
 
-            List<RecordKeyValuePair> result = new ArrayList<>();
+            List<TaskByteArrayDataBlock> result = new ArrayList<>();
 
-            RecordKeyValuePair record = readClient.readRecord();
+            TaskByteArrayDataBlock record = readClient.readRecord();
             while (record != null) {
                 result.add(record);
                 record = readClient.readRecord();
@@ -67,7 +67,7 @@ public class StreamServerTestUtils {
         }
     }
 
-    public static List<RecordKeyValuePair> readAllRecords2(int port, AppShuffleId appShuffleId, int partitionId, Collection<Long> latestTaskAttemptIds, int dataAvailableWaitTime) {
+    public static List<TaskByteArrayDataBlock> readAllRecords2(int port, AppShuffleId appShuffleId, int partitionId, Collection<Long> latestTaskAttemptIds, int dataAvailableWaitTime) {
         SingleServerReadClient readClient = null;
         readClient = new PlainRecordSocketReadClient("localhost", port, TestConstants.NETWORK_TIMEOUT, "user1", new AppShufflePartitionId(appShuffleId, partitionId), latestTaskAttemptIds, TestConstants.DATA_AVAILABLE_POLL_INTERVAL, dataAvailableWaitTime);
 
@@ -77,9 +77,9 @@ public class StreamServerTestUtils {
 
             readClient.connect();
 
-            List<RecordKeyValuePair> result = new ArrayList<>();
+            List<TaskByteArrayDataBlock> result = new ArrayList<>();
 
-            RecordKeyValuePair record = readClient.readRecord();
+            TaskByteArrayDataBlock record = readClient.readRecord();
             while (record != null) {
                 result.add(record);
                 record = readClient.readRecord();

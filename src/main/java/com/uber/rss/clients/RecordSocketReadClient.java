@@ -67,13 +67,13 @@ public abstract class RecordSocketReadClient implements AutoCloseable, SingleSer
   }
 
   @Override
-  public RecordKeyValuePair readRecord() {
+  public TaskByteArrayDataBlock readRecord() {
     DataBlock dataBlock = dataBlockSocketReadClient.readDataBlock();
     if (dataBlock == null) {
       return null;
     }
     shuffleReadBytes += DataBlockHeader.NUM_BYTES + dataBlock.getPayload().length;
-    return new RecordKeyValuePair(null, dataBlock.getPayload(), dataBlock.getHeader().getTaskAttemptId());
+    return new TaskByteArrayDataBlock(dataBlock.getPayload(), dataBlock.getHeader().getTaskAttemptId());
   }
 
   @Override

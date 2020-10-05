@@ -37,15 +37,8 @@ public class ShuffleFileStorage implements ShuffleStorage {
 
     // default not using buffer, which means we depend on operation system level file cache.
     public static final int DEFAULT_BUFFER_SIZE = 0;
-    
-    private final int bufferSize;
 
     public ShuffleFileStorage() {
-        this(DEFAULT_BUFFER_SIZE);
-    }
-    
-    public ShuffleFileStorage(int bufferSize) {
-        this.bufferSize = bufferSize;
     }
 
     @Override
@@ -103,18 +96,14 @@ public class ShuffleFileStorage implements ShuffleStorage {
 
     @Override
     public ShuffleOutputStream createWriterStream(String path, String compressionCodec) {
-        return new ShuffleFileOutputStream(new File(path), bufferSize, compressionCodec);
+        // TODO remove compressionCodec from storage API
+        return new ShuffleFileOutputStream(new File(path));
     }
 
     @Override
     public InputStream createReaderStream(String path) {
         try {
-            if (bufferSize == 0) {
-                return new FileInputStream(path);
-            } else {
-                logger.debug(String.format("Creating BufferedInputStream for %s", path));
-                return new BufferedInputStream(new FileInputStream(path), bufferSize);
-            }
+            return new FileInputStream(path);
         } catch (Throwable e) {
             throw new RssException("Failed to open file: " + path, e);
         }
@@ -122,8 +111,6 @@ public class ShuffleFileStorage implements ShuffleStorage {
 
     @Override
     public String toString() {
-        return "ShuffleFileStorage{" +
-                "bufferSize=" + bufferSize +
-                '}';
+        return "ShuffleFileStorage{}";
     }
 }

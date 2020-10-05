@@ -133,9 +133,9 @@ public class DownloadChannelInboundHandler extends ChannelInboundHandlerAdapter 
 
                 downloadServerHandler.initialize(connectRequest);
 
-                String fileCompressionCodec = config.getFileCompressionCodec();
                 MapTaskCommitStatus mapTaskCommitStatus = shuffleStageStatus.getMapTaskCommitStatus();
                 boolean dataAvailable = mapTaskCommitStatus != null && mapTaskCommitStatus.isPartitionDataAvailable(knownLatestTaskAttemptIds);
+                String fileCompressionCodec = ""; // TODO delete this
                 ConnectDownloadResponse connectResponse = new ConnectDownloadResponse(serverId, RssBuildInfo.Version, runningVersion, fileCompressionCodec, mapTaskCommitStatus, dataAvailable);
                 sendResponseAndFiles2(ctx, dataAvailable, shuffleStageStatus, connectResponse);
             } else if (msg instanceof GetDataAvailability2Request) {

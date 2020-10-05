@@ -14,8 +14,8 @@
 
 package com.uber.rss.clients;
 
-public class EofRecordKeyValuePair extends RecordKeyValuePair {
+public class EofRecordKeyValuePair extends TaskByteArrayDataBlock {
     public EofRecordKeyValuePair() {
-        super(null, null, 0L);
+        super(null, 0L);
     }
 }

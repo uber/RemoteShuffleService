@@ -34,7 +34,7 @@ public class BlockingQueueReadClient implements SingleServerReadClient {
     
     private final SingleServerReadClient delegate;
     
-    private final BlockingQueue<RecordKeyValuePair> recordQueue;
+    private final BlockingQueue<TaskByteArrayDataBlock> recordQueue;
     private final long maxBlockingMillis;
 
     private volatile boolean stopped = false;
@@ -57,7 +57,7 @@ public class BlockingQueueReadClient implements SingleServerReadClient {
         Thread thread = new Thread(() -> {
             logger.info("Started reading record in background thread");
             try {
-                RecordKeyValuePair record = delegate.readRecord();
+                TaskByteArrayDataBlock record = delegate.readRecord();
                 while (!stopped && record != null) {
                     recordQueue.put(record);
                     record = delegate.readRecord();
@@ -79,8 +79,8 @@ public class BlockingQueueReadClient implements SingleServerReadClient {
     }
     
     @Override
-    public RecordKeyValuePair readRecord() {
-        RecordKeyValuePair record;
+    public TaskByteArrayDataBlock readRecord() {
+        TaskByteArrayDataBlock record;
         try {
             record = recordQueue.poll(maxBlockingMillis, TimeUnit.MILLISECONDS);
         } catch (InterruptedException e) {

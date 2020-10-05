@@ -37,7 +37,7 @@ object RssOpts {
     ConfigBuilder("spark.shuffle.rss.writer.queueSize")
       .doc("writer queue size for shuffle writer to store shuffle records and send them to shuffle server in background threads.")
       .intConf
-      .createWithDefault(100)
+      .createWithDefault(0)
   val writerMaxThreads: ConfigEntry[Int] =
     ConfigBuilder("spark.shuffle.rss.writer.maxThreads")
       .doc("max number of threads for shuffle writer to store shuffle records and send them to shuffle server in background threads.")
@@ -133,16 +133,6 @@ object RssOpts {
   val serviceRegistryServer: ConfigEntry[String] =
     ConfigBuilder("spark.shuffle.rss.serviceRegistry.server")
       .doc("Registry server host:port addresses.")
-      .stringConf
-      .createWithDefault("")
-  val compressionBufferSize: ConfigEntry[Int] =
-    ConfigBuilder("spark.shuffle.rss.compressionBufferSize")
-      .doc("compression buffer size if using compressed clients.")
-      .intConf
-      .createWithDefault(MessageConstants.DEFAULT_SHUFFLE_DATA_MESSAGE_SIZE)
-  val fileCompressionCodec: ConfigEntry[String] =
-    ConfigBuilder("spark.shuffle.rss.fileCompressionCodec")
-      .doc("shuffle file compression codec.")
       .stringConf
       .createWithDefault("")
   val minSplits: ConfigEntry[Int] =

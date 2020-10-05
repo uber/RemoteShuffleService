@@ -61,7 +61,7 @@ public class LocalFileStateStoreStressTest {
 
     AppShuffleId appShuffleId = new AppShuffleId("app1", "1", 2);
     AppTaskAttemptId appTaskAttemptId = new AppTaskAttemptId(appShuffleId, 1, 99L);
-    ShuffleWriteConfig shuffleWriteConfig = new ShuffleWriteConfig("gzip", (short) 6);
+    ShuffleWriteConfig shuffleWriteConfig = new ShuffleWriteConfig((short) 6);
     PartitionFilePathAndLength partitionFilePathAndLength = new PartitionFilePathAndLength(1, "file1", 123);
 
     ConcurrentLinkedQueue<Throwable> exceptions = new ConcurrentLinkedQueue<>();

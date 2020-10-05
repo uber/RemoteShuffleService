@@ -51,7 +51,7 @@ public class PooledWriteClientFactoryTest {
         long taskAttemptId = taskAttemptIdTestValue++;
         AppTaskAttemptId appTaskAttemptId = new AppTaskAttemptId(appId, appAttempt, shuffleId, mapId, taskAttemptId);
 
-        try (RecordSyncWriteClient writeClient = writeClientFactory.getOrCreateClient("localhost", testServer1.getShufflePort(), TestConstants.NETWORK_TIMEOUT, true, "user1", appId, appAttempt, new ShuffleWriteConfig("", numSplits))) {
+        try (RecordSyncWriteClient writeClient = writeClientFactory.getOrCreateClient("localhost", testServer1.getShufflePort(), TestConstants.NETWORK_TIMEOUT, true, "user1", appId, appAttempt, new ShuffleWriteConfig(numSplits))) {
           writeClient.startUpload(appTaskAttemptId, numMaps, numPartitions);
 
           writeClient.sendRecord(1, null);
@@ -76,29 +76,29 @@ public class PooledWriteClientFactoryTest {
         AppShufflePartitionId appShufflePartitionId = new AppShufflePartitionId(appId, appAttempt, shuffleId, 1);
         try (PlainRecordSocketReadClient readClient = new PlainRecordSocketReadClient("localhost", testServer1.getShufflePort(), TestConstants.NETWORK_TIMEOUT, "user1", appShufflePartitionId, Arrays.asList(appTaskAttemptId.getTaskAttemptId()), TestConstants.DATA_AVAILABLE_POLL_INTERVAL, TestConstants.DATA_AVAILABLE_TIMEOUT)) {
           readClient.connect();
-          RecordKeyValuePair record = readClient.readRecord();
+          TaskByteArrayDataBlock record = readClient.readRecord();
           Assert.assertNotNull(record);
-          Assert.assertNull(record.getKey());
+
           Assert.assertEquals(record.getValue(), new byte[0]);
 
           record = readClient.readRecord();
           Assert.assertNotNull(record);
-          Assert.assertEquals(record.getKey(), null);
+
           Assert.assertEquals(record.getValue(), new byte[0]);
 
           record = readClient.readRecord();
           Assert.assertNotNull(record);
-          Assert.assertEquals(record.getKey(), null);
+
           Assert.assertEquals(new String(record.getValue(), StandardCharsets.UTF_8), "");
 
           record = readClient.readRecord();
           Assert.assertNotNull(record);
-          Assert.assertEquals(record.getKey(), null);
+
           Assert.assertEquals(new String(record.getValue(), StandardCharsets.UTF_8), "value1");
 
           record = readClient.readRecord();
           Assert.assertNotNull(record);
-          Assert.assertEquals(record.getKey(), null);
+
           Assert.assertEquals(new String(record.getValue(), StandardCharsets.UTF_8), "value1");
 
           record = readClient.readRecord();
@@ -108,9 +108,9 @@ public class PooledWriteClientFactoryTest {
         appShufflePartitionId = new AppShufflePartitionId(appId, appAttempt, shuffleId, 2);
         try (PlainRecordSocketReadClient readClient = new PlainRecordSocketReadClient("localhost", testServer1.getShufflePort(), TestConstants.NETWORK_TIMEOUT, "user1", appShufflePartitionId, Arrays.asList(appTaskAttemptId.getTaskAttemptId()), TestConstants.DATA_AVAILABLE_POLL_INTERVAL, TestConstants.DATA_AVAILABLE_TIMEOUT)) {
           readClient.connect();
-          RecordKeyValuePair record = readClient.readRecord();
+          TaskByteArrayDataBlock record = readClient.readRecord();
           Assert.assertNotNull(record);
-          Assert.assertEquals(record.getKey(), null);
+
           Assert.assertEquals(record.getValue(), new byte[0]);
 
           record = readClient.readRecord();
@@ -120,9 +120,9 @@ public class PooledWriteClientFactoryTest {
         appShufflePartitionId = new AppShufflePartitionId(appId, appAttempt, shuffleId, 3);
         try (PlainRecordSocketReadClient readClient = new PlainRecordSocketReadClient("localhost", testServer1.getShufflePort(), TestConstants.NETWORK_TIMEOUT, "user1", appShufflePartitionId, Arrays.asList(appTaskAttemptId.getTaskAttemptId()), TestConstants.DATA_AVAILABLE_POLL_INTERVAL, TestConstants.DATA_AVAILABLE_TIMEOUT)) {
           readClient.connect();
-          RecordKeyValuePair record = readClient.readRecord();
+          TaskByteArrayDataBlock record = readClient.readRecord();
           Assert.assertNotNull(record);
-          Assert.assertEquals(record.getKey(), null);
+
           Assert.assertEquals(new String(record.getValue(), StandardCharsets.UTF_8), "value1");
 
           record = readClient.readRecord();
@@ -190,29 +190,29 @@ public class PooledWriteClientFactoryTest {
         AppShufflePartitionId appShufflePartitionId = new AppShufflePartitionId(appId, appAttempt, shuffleId, 1);
         try (PlainRecordSocketReadClient readClient = new PlainRecordSocketReadClient("localhost", testServer1.getShufflePort(), TestConstants.NETWORK_TIMEOUT, "user1", appShufflePartitionId, Arrays.asList(appTaskAttemptId.getTaskAttemptId()), TestConstants.DATA_AVAILABLE_POLL_INTERVAL, TestConstants.DATA_AVAILABLE_TIMEOUT)) {
           readClient.connect();
-          RecordKeyValuePair record = readClient.readRecord();
+          TaskByteArrayDataBlock record = readClient.readRecord();
           Assert.assertNotNull(record);
-          Assert.assertNull(record.getKey());
+
           Assert.assertEquals(record.getValue(), new byte[0]);
 
           record = readClient.readRecord();
           Assert.assertNotNull(record);
-          Assert.assertEquals(record.getKey(), null);
+
           Assert.assertEquals(record.getValue(), new byte[0]);
 
           record = readClient.readRecord();
           Assert.assertNotNull(record);
-          Assert.assertEquals(record.getKey(), null);
+
           Assert.assertEquals(new String(record.getValue(), StandardCharsets.UTF_8), "");
 
           record = readClient.readRecord();
           Assert.assertNotNull(record);
-          Assert.assertEquals(record.getKey(), null);
+
           Assert.assertEquals(new String(record.getValue(), StandardCharsets.UTF_8), "value1");
 
           record = readClient.readRecord();
           Assert.assertNotNull(record);
-          Assert.assertEquals(record.getKey(), null);
+
           Assert.assertEquals(new String(record.getValue(), StandardCharsets.UTF_8), "value1");
 
           record = readClient.readRecord();
@@ -222,9 +222,9 @@ public class PooledWriteClientFactoryTest {
         appShufflePartitionId = new AppShufflePartitionId(appId, appAttempt, shuffleId, 2);
         try (PlainRecordSocketReadClient readClient = new PlainRecordSocketReadClient("localhost", testServer1.getShufflePort(), TestConstants.NETWORK_TIMEOUT, "user1", appShufflePartitionId, Arrays.asList(appTaskAttemptId.getTaskAttemptId()), TestConstants.DATA_AVAILABLE_POLL_INTERVAL, TestConstants.DATA_AVAILABLE_TIMEOUT)) {
           readClient.connect();
-          RecordKeyValuePair record = readClient.readRecord();
+          TaskByteArrayDataBlock record = readClient.readRecord();
           Assert.assertNotNull(record);
-          Assert.assertEquals(record.getKey(), null);
+
           Assert.assertEquals(record.getValue(), new byte[0]);
 
           record = readClient.readRecord();
@@ -234,9 +234,9 @@ public class PooledWriteClientFactoryTest {
         appShufflePartitionId = new AppShufflePartitionId(appId, appAttempt, shuffleId, 3);
         try (PlainRecordSocketReadClient readClient = new PlainRecordSocketReadClient("localhost", testServer1.getShufflePort(), TestConstants.NETWORK_TIMEOUT, "user1", appShufflePartitionId, Arrays.asList(appTaskAttemptId.getTaskAttemptId()), TestConstants.DATA_AVAILABLE_POLL_INTERVAL, TestConstants.DATA_AVAILABLE_TIMEOUT)) {
           readClient.connect();
-          RecordKeyValuePair record = readClient.readRecord();
+          TaskByteArrayDataBlock record = readClient.readRecord();
           Assert.assertNotNull(record);
-          Assert.assertEquals(record.getKey(), null);
+
           Assert.assertEquals(new String(record.getValue(), StandardCharsets.UTF_8), "value1");
 
           record = readClient.readRecord();

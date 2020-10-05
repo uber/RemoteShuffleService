@@ -197,7 +197,7 @@ public class ExecutorShuffleStageState {
                     rootDir, appShuffleId, partition);
             ShufflePartitionWriter streamer
                     = new ShufflePartitionWriter(appShufflePartitionId,
-                    path, fileStartIndex, appConfig.getFileCompressionCodec(), storage, fsyncEnabled, appConfig.getNumSplits());
+                    path, fileStartIndex, storage, fsyncEnabled, appConfig.getNumSplits());
             return streamer;
         });
     }

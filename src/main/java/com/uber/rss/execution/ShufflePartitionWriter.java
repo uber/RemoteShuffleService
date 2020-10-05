@@ -51,7 +51,6 @@ public class ShufflePartitionWriter {
     private final AppShufflePartitionId shufflePartitionId;
     private final String filePathBase;
     private final int fileStartIndex;
-    private final String compressionCodec;
     private final ShuffleStorage storage;
     private final boolean fsync;
     
@@ -67,14 +66,12 @@ public class ShufflePartitionWriter {
             AppShufflePartitionId shufflePartitionId,
             String filePathBase,
             int fileStartIndex,
-            String compressionCodec,
             ShuffleStorage storage,
             boolean fsync,
             int numSplits) {
         this.shufflePartitionId = shufflePartitionId;
         this.filePathBase = filePathBase;
         this.fileStartIndex = fileStartIndex;
-        this.compressionCodec = compressionCodec;
         this.storage = storage;
         this.fsync = fsync;
         this.outputStreams = new ShuffleOutputStream[numSplits];
@@ -232,7 +229,7 @@ public class ShufflePartitionWriter {
             int fileIndex = i + fileStartIndex;
             String actualFile = filePathBase + "." + fileIndex;
             logger.info("Opening shuffle file: {}", actualFile);
-            outputStreams[i] = storage.createWriterStream(actualFile, compressionCodec);
+            outputStreams[i] = storage.createWriterStream(actualFile, "");
         }
         closed = false;
         int numConcurrentFilesValue = numConcurrentWriteFilesAtomicInteger.addAndGet(outputStreams.length);

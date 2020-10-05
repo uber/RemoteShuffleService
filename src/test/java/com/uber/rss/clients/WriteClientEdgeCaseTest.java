@@ -93,7 +93,7 @@ public class WriteClientEdgeCaseTest {
         client.sendRecord(1, null);
         client.finishUpload();
 
-        List<RecordKeyValuePair> records = StreamServerTestUtils.readAllRecords2(testServer.getShufflePort(), appTaskAttemptId.getAppShuffleId(), 1, Arrays.asList(appTaskAttemptId.getTaskAttemptId()));
+        List<TaskByteArrayDataBlock> records = StreamServerTestUtils.readAllRecords2(testServer.getShufflePort(), appTaskAttemptId.getAppShuffleId(), 1, Arrays.asList(appTaskAttemptId.getTaskAttemptId()));
         Assert.assertEquals(records.size(), 1);
 
         // Shutdown server first
@@ -141,9 +141,8 @@ public class WriteClientEdgeCaseTest {
         client.finishUpload();
       }
 
-      List<RecordKeyValuePair> readRecords = StreamServerTestUtils.readAllRecords2(testServer.getShufflePort(), appTaskAttemptId.getAppShuffleId(), 1, Arrays.asList(appTaskAttemptId.getTaskAttemptId()));
+      List<TaskByteArrayDataBlock> readRecords = StreamServerTestUtils.readAllRecords2(testServer.getShufflePort(), appTaskAttemptId.getAppShuffleId(), 1, Arrays.asList(appTaskAttemptId.getTaskAttemptId()));
       Assert.assertEquals(readRecords.size(), 1);
-      Assert.assertNull(readRecords.get(0).getKey());
       Assert.assertNull(readRecords.get(0).getValue());
     }
     finally {
@@ -181,9 +180,8 @@ public class WriteClientEdgeCaseTest {
         // task 1 finishes upload
         client1.finishUpload();
 
-        List<RecordKeyValuePair> readRecords = StreamServerTestUtils.readAllRecords2(testServer.getShufflePort(), appTaskAttemptId1.getAppShuffleId(), 1, Arrays.asList(appTaskAttemptId2.getTaskAttemptId()));
+        List<TaskByteArrayDataBlock> readRecords = StreamServerTestUtils.readAllRecords2(testServer.getShufflePort(), appTaskAttemptId1.getAppShuffleId(), 1, Arrays.asList(appTaskAttemptId2.getTaskAttemptId()));
         Assert.assertEquals(readRecords.size(), 1);
-        Assert.assertEquals(readRecords.get(0).getKey(), null);
         Assert.assertEquals(new String(readRecords.get(0).getValue(), StandardCharsets.UTF_8), "value2");
       }
     }
@@ -203,7 +201,7 @@ public class WriteClientEdgeCaseTest {
         client.finishUpload();
       }
 
-      List<RecordKeyValuePair> records = StreamServerTestUtils.readAllRecords2(testServer.getShufflePort(), appTaskAttemptId.getAppShuffleId(), 0, Arrays.asList(appTaskAttemptId.getTaskAttemptId()));
+      List<TaskByteArrayDataBlock> records = StreamServerTestUtils.readAllRecords2(testServer.getShufflePort(), appTaskAttemptId.getAppShuffleId(), 0, Arrays.asList(appTaskAttemptId.getTaskAttemptId()));
       Assert.assertEquals(records.size(), 0);
     }
     finally {

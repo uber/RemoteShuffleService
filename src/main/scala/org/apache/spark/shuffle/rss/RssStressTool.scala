@@ -46,7 +46,7 @@ class RssStressTool extends Logging {
   private val serverDetails = new util.ArrayList[ServerDetail]
 
   private val random = new Random
-  private val storage = new ShuffleFileStorage(0)
+  private val storage = new ShuffleFileStorage()
 
   // Successfully written records (by last mapper task attempt) in shuffle files
   private val successShuffleWrittenRecords = new AtomicLong
@@ -301,7 +301,7 @@ class RssStressTool extends Logging {
       Thread.sleep(delayMillis)
     }
 
-    val shuffleWriteConfig = new ShuffleWriteConfig("", numSplits.toShort)
+    val shuffleWriteConfig = new ShuffleWriteConfig(numSplits.toShort)
 
     var writeClient: RecordWriter = null
     val networkTimeoutMillis = 120 * 1000
