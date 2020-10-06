@@ -157,7 +157,7 @@ public class DataBlockSocketReadClient extends com.uber.rss.clients.ClientBase {
 
       // TODO delete knownTaskAttemptIds and following later
       if (!this.latestTaskAttemptIds.isEmpty()) {
-        if (!new HashSet<>(this.latestTaskAttemptIds).equals(this.knownTaskAttemptIds)) {
+        if (!this.knownTaskAttemptIds.containsAll(latestTaskAttemptIds)) {
           throw new RssInvalidDataException(String.format("Task attempt ids not matched"));
         }
       }
@@ -250,7 +250,7 @@ public class DataBlockSocketReadClient extends com.uber.rss.clients.ClientBase {
       while (dataBlock != null) {
         totalReadDataBlocks++;
 
-        if (!knownTaskAttemptIds.contains(dataBlock.getHeader().getTaskAttemptId())) {
+        if (!latestTaskAttemptIds.contains(dataBlock.getHeader().getTaskAttemptId())) {
           // ignore the previous record and read next record
           dataBlock = readDataBlockNoCheckTaskAttemptId();
           metrics.getNumIgnoredBlocks().inc(1);

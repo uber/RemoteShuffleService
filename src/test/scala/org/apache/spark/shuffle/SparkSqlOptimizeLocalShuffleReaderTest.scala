@@ -25,7 +25,7 @@ import org.testng.annotations._
 case class LeftKV(key: Int, value: Int)
 case class RightKV(key: Int, value: Int)
 
-class ShuffleWithSparkSqlJoinTest {
+class SparkSqlOptimizeLocalShuffleReaderTest {
 
   var appId: String = null
   val numRssServers = 2
@@ -65,7 +65,7 @@ class ShuffleWithSparkSqlJoinTest {
     runWithConf(conf)
   }
 
-  // @Test TODO support Spark 3.0
+  @Test
   def runWithRssShuffle(): Unit = {
     val conf = TestUtil.newSparkConfWithStandAloneRegistryServer(appId, rssTestCluster.getRegistryServerConnection)
 

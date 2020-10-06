@@ -19,6 +19,7 @@ import org.apache.commons.lang3.StringUtils;
 
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -61,8 +62,8 @@ public class MapTaskCommitStatus {
         }
 
         // TODO improve performance in following
-        return taskAttemptIds.values().stream().sorted().collect(Collectors.toList())
-            .equals(knownLatestTaskAttemptIds.stream().sorted().collect(Collectors.toList()));
+        return new HashSet<>(taskAttemptIds.values())
+            .containsAll(knownLatestTaskAttemptIds);
     }
 
     public String toShortString() {
