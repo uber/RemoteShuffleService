@@ -36,11 +36,11 @@ public class RetriableSocketReadClientTest {
 
   @DataProvider(name = "data-provider")
   public Object[][] dataProviderMethod() {
-    return new Object[][] { { false, 0 }, { true, 0 }, { true, 10 } };
+    return new Object[][] { { false }, { true } };
   }
 
   @Test(dataProvider = "data-provider")
-  public void readRecords(boolean finishUploadAck, int queueSize) {
+  public void readRecords(boolean finishUploadAck) {
     TestStreamServer testServer1 = TestStreamServer.createRunningServer();
 
     try {
@@ -84,7 +84,7 @@ public class RetriableSocketReadClientTest {
       try (RetriableSocketReadClient readClient = new RetriableSocketReadClient(serverDetail,
           TestConstants.NETWORK_TIMEOUT,
           clientRetryOptions,
-          queueSize,"user1", appShufflePartitionId,
+          "user1", appShufflePartitionId,
           readClientDataOptions)) {
         readClient.connect();
         TaskByteArrayDataBlock record = readClient.readRecord();
@@ -121,7 +121,7 @@ public class RetriableSocketReadClientTest {
   }
 
   @Test(dataProvider = "data-provider")
-  public void serverRestartAndRefreshServerConnection(boolean finishUploadAck, int queueSize) throws IOException {
+  public void serverRestartAndRefreshServerConnection(boolean finishUploadAck) throws IOException {
     String rootDir = Files.createTempDirectory("StreamServer_").toString();
     Consumer<StreamServerConfig> configModifier = config -> config.setRootDirectory(rootDir);
 
@@ -169,7 +169,7 @@ public class RetriableSocketReadClientTest {
       try (RetriableSocketReadClient readClient = new RetriableSocketReadClient(serverDetail,
           TestConstants.NETWORK_TIMEOUT,
           clientRetryOptions,
-          queueSize,"user1", appShufflePartitionId,
+          "user1", appShufflePartitionId,
           readClientDataOptions)) {
         readClient.connect();
         TaskByteArrayDataBlock record = readClient.readRecord();
@@ -186,7 +186,7 @@ public class RetriableSocketReadClientTest {
       try (RetriableSocketReadClient readClient = new RetriableSocketReadClient(serverDetail,
           TestConstants.NETWORK_TIMEOUT,
           clientRetryOptions2,
-          queueSize,"user1", appShufflePartitionId,
+          "user1", appShufflePartitionId,
           readClientDataOptions)) {
         readClient.connect();
         TaskByteArrayDataBlock record = readClient.readRecord();
@@ -234,7 +234,7 @@ public class RetriableSocketReadClientTest {
       try (RetriableSocketReadClient readClient = new RetriableSocketReadClient(serverDetail,
           TestConstants.NETWORK_TIMEOUT,
           clientRetryOptions3,
-          queueSize,"user1", appShufflePartitionId,
+          "user1", appShufflePartitionId,
           readClientDataOptions)) {
         readClient.connect();
         TaskByteArrayDataBlock record = readClient.readRecord();
@@ -276,7 +276,7 @@ public class RetriableSocketReadClientTest {
   }
 
   @Test(dataProvider = "data-provider")
-  public void serverRestartAndRefreshServerConnectionWithUnknownHostFirst(boolean finishUploadAck, int queueSize) throws IOException {
+  public void serverRestartAndRefreshServerConnectionWithUnknownHostFirst(boolean finishUploadAck) throws IOException {
     String rootDir = Files.createTempDirectory("StreamServer_").toString();
     Consumer<StreamServerConfig> configModifier = config -> config.setRootDirectory(rootDir);
 
@@ -324,7 +324,7 @@ public class RetriableSocketReadClientTest {
       try (RetriableSocketReadClient readClient = new RetriableSocketReadClient(serverDetail,
           TestConstants.NETWORK_TIMEOUT,
           clientRetryOptions,
-          queueSize,"user1", appShufflePartitionId,
+          "user1", appShufflePartitionId,
           readClientDataOptions)) {
         readClient.connect();
         TaskByteArrayDataBlock record = readClient.readRecord();
@@ -352,7 +352,7 @@ public class RetriableSocketReadClientTest {
       try (RetriableSocketReadClient readClient = new RetriableSocketReadClient(serverDetail,
           10,
           clientRetryOptions2,
-          queueSize,"user1", appShufflePartitionId,
+          "user1", appShufflePartitionId,
           readClientDataOptions)) {
         readClient.connect();
         TaskByteArrayDataBlock record = readClient.readRecord();
@@ -444,7 +444,7 @@ public class RetriableSocketReadClientTest {
       try (RetriableSocketReadClient readClient = new RetriableSocketReadClient(serverDetail,
           TestConstants.NETWORK_TIMEOUT,
           clientRetryOptions,
-          queueSize,"user1", appShufflePartitionId,
+          "user1", appShufflePartitionId,
           readClientDataOptions)) {
         readClient.connect();
         TaskByteArrayDataBlock record = readClient.readRecord();
@@ -459,7 +459,7 @@ public class RetriableSocketReadClientTest {
       try (RetriableSocketReadClient readClient = new RetriableSocketReadClient(serverDetail,
           TestConstants.NETWORK_TIMEOUT,
           clientRetryOptions,
-          queueSize,"user1", appShufflePartitionId,
+          "user1", appShufflePartitionId,
           readClientDataOptions)) {
         readClient.connect();
       }

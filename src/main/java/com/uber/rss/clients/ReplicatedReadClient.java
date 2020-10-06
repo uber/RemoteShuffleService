@@ -48,10 +48,9 @@ public class ReplicatedReadClient implements MultiServerReadClient {
   private final ServerReplicationGroup serverReplicationGroup;
   private final int timeoutMillis;
   private final ClientRetryOptions clientRetryOptions;
-  private final int readQueueSize;
   private final String user;
   private final AppShufflePartitionId appShufflePartitionId;
-  private final Collection<Long> latestTaskAttemptIds;
+  private final Collection<Long> fetchTaskAttemptIds;
   private final long dataAvailablePollInterval;
   private final long dataAvailableWaitTime;
   private final RetriableSocketReadClient[] clients;
@@ -76,14 +75,12 @@ public class ReplicatedReadClient implements MultiServerReadClient {
 
   public ReplicatedReadClient(ServerReplicationGroup serverReplicationGroup,
                               int timeoutMillis,
-                              int readQueueSize,
                               String user,
                               AppShufflePartitionId appShufflePartitionId,
                               ReadClientDataOptions dataOptions) {
     this(serverReplicationGroup,
         timeoutMillis,
         new ClientRetryOptions(dataOptions.getDataAvailablePollInterval(), timeoutMillis, serverDetail->serverDetail),
-        readQueueSize,
         user,
         appShufflePartitionId,
         dataOptions,
@@ -92,7 +89,6 @@ public class ReplicatedReadClient implements MultiServerReadClient {
 
   public ReplicatedReadClient(ServerReplicationGroup serverReplicationGroup,
                               int timeoutMillis,
-                              int readQueueSize,
                               String user,
                               AppShufflePartitionId appShufflePartitionId,
                               ReadClientDataOptions dataOptions,
@@ -100,7 +96,6 @@ public class ReplicatedReadClient implements MultiServerReadClient {
     this(serverReplicationGroup,
         timeoutMillis,
         new ClientRetryOptions(dataOptions.getDataAvailablePollInterval(), timeoutMillis, serverDetail->serverDetail),
-        readQueueSize,
         user,
         appShufflePartitionId,
         dataOptions,
@@ -110,7 +105,6 @@ public class ReplicatedReadClient implements MultiServerReadClient {
   public ReplicatedReadClient(ServerReplicationGroup serverReplicationGroup,
                               int timeoutMillis,
                               ClientRetryOptions retryOptions,
-                              int readQueueSize,
                               String user,
                               AppShufflePartitionId appShufflePartitionId,
                               ReadClientDataOptions dataOptions,
@@ -118,10 +112,9 @@ public class ReplicatedReadClient implements MultiServerReadClient {
     this.serverReplicationGroup = serverReplicationGroup;
     this.timeoutMillis = timeoutMillis;
     this.clientRetryOptions = retryOptions;
-    this.readQueueSize = readQueueSize;
     this.user = user;
     this.appShufflePartitionId = appShufflePartitionId;
-    this.latestTaskAttemptIds = dataOptions.getLatestTaskAttemptIds();
+    this.fetchTaskAttemptIds = dataOptions.getFetchTaskAttemptIds();
     this.dataAvailablePollInterval = dataOptions.getDataAvailablePollInterval();
     this.dataAvailableWaitTime = dataOptions.getDataAvailableWaitTime();
     this.checkDataConsistency = checkDataConsistency;
@@ -287,10 +280,9 @@ public class ReplicatedReadClient implements MultiServerReadClient {
       RetriableSocketReadClient client = new RetriableSocketReadClient(serverDetail,
           timeoutMillis,
           clientRetryOptions,
-          readQueueSize,
           user,
           appShufflePartitionId,
-          new ReadClientDataOptions(latestTaskAttemptIds, dataAvailablePollInterval, dataAvailableWaitTime));
+          new ReadClientDataOptions(fetchTaskAttemptIds, dataAvailablePollInterval, dataAvailableWaitTime));
       clients[i] = client;
       clientsInitialized[i] = false;
     }

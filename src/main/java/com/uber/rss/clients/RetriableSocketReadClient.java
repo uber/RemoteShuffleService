@@ -35,7 +35,6 @@ public class RetriableSocketReadClient implements SingleServerReadClient {
   public RetriableSocketReadClient(ServerDetail serverDetail,
                                    int timeoutMillis,
                                    ClientRetryOptions retryOptions,
-                                   int queueSize,
                                    String user,
                                    AppShufflePartitionId appShufflePartitionId,
                                    ReadClientDataOptions dataOptions) {
@@ -43,10 +42,9 @@ public class RetriableSocketReadClient implements SingleServerReadClient {
 
     delegate = new ServerIdAwareSocketReadClient(serverDetail,
         timeoutMillis,
-        queueSize,
         user,
         appShufflePartitionId,
-        dataOptions.getLatestTaskAttemptIds(),
+        dataOptions.getFetchTaskAttemptIds(),
         dataOptions.getDataAvailablePollInterval(),
         dataOptions.getDataAvailableWaitTime());
 
@@ -54,10 +52,9 @@ public class RetriableSocketReadClient implements SingleServerReadClient {
       ServerDetail retryServerDetail = retryOptions.getRetryConnectionResolver().refreshConnection(serverDetail);
       return new ServerIdAwareSocketReadClient(retryServerDetail,
             timeoutMillis,
-            queueSize,
             user,
             appShufflePartitionId,
-          dataOptions.getLatestTaskAttemptIds(),
+          dataOptions.getFetchTaskAttemptIds(),
           dataOptions.getDataAvailablePollInterval(),
           dataOptions.getDataAvailableWaitTime());
     };

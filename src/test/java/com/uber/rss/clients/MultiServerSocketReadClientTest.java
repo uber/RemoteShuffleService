@@ -38,11 +38,11 @@ public class MultiServerSocketReadClientTest {
 
   @DataProvider(name = "data-provider")
   public Object[][] dataProviderMethod() {
-    return new Object[][] { { false,0 }, { true, 0 }, { true, 10 } };
+    return new Object[][] { { false }, { true } };
   }
 
   @Test(dataProvider = "data-provider")
-  public void oneServer(boolean finishUploadAck, int readQueueSize) {
+  public void oneServer(boolean finishUploadAck) {
     TestStreamServer testServer1 = TestStreamServer.createRunningServer();
 
     ServerDetail serverDetail = new ServerDetail(testServer1.getServerId(), testServer1.getRunningVersion(), testServer1.getShuffleConnectionString());
@@ -93,7 +93,6 @@ public class MultiServerSocketReadClientTest {
       AppShufflePartitionId appShufflePartitionId = new AppShufflePartitionId(appId, appAttempt, shuffleId, 1);
       try (MultiServerSocketReadClient readClient = new MultiServerSocketReadClient(Arrays.asList(serverReplicationGroup),
           TestConstants.NETWORK_TIMEOUT,
-          readQueueSize,
           "user1",
           appShufflePartitionId,
           new ReadClientDataOptions(Arrays.asList(appTaskAttemptId.getTaskAttemptId()), TestConstants.DATA_AVAILABLE_POLL_INTERVAL, TestConstants.DATA_AVAILABLE_TIMEOUT),
@@ -140,7 +139,7 @@ public class MultiServerSocketReadClientTest {
   }
 
   @Test(dataProvider = "data-provider")
-  public void fourServers_onlySecondServerHasData(boolean finishUploadAck, int readQueueSize) {
+  public void fourServers_onlySecondServerHasData(boolean finishUploadAck) {
     TestStreamServer testServer1 = TestStreamServer.createRunningServer();
     TestStreamServer testServer2 = TestStreamServer.createRunningServer();
     TestStreamServer testServer3 = TestStreamServer.createRunningServer();
@@ -248,7 +247,6 @@ public class MultiServerSocketReadClientTest {
       AppShufflePartitionId appShufflePartitionId = new AppShufflePartitionId(appId, appAttempt, shuffleId, 1);
       try (MultiServerSocketReadClient readClient = new MultiServerSocketReadClient(Arrays.asList(serverReplicationGroup1, serverReplicationGroup2, serverReplicationGroup3, serverReplicationGroup4),
           TestConstants.NETWORK_TIMEOUT,
-          readQueueSize,
           "user1",
           appShufflePartitionId,
           new ReadClientDataOptions(Arrays.asList(appTaskAttemptId.getTaskAttemptId()), TestConstants.DATA_AVAILABLE_POLL_INTERVAL, TestConstants.DATA_AVAILABLE_TIMEOUT),
@@ -298,7 +296,7 @@ public class MultiServerSocketReadClientTest {
   }
 
   @Test(dataProvider = "data-provider")
-  public void fourServers_twoServersHaveData(boolean finishUploadAck, int readQueueSize) {
+  public void fourServers_twoServersHaveData(boolean finishUploadAck) {
     TestStreamServer testServer1 = TestStreamServer.createRunningServer();
     TestStreamServer testServer2 = TestStreamServer.createRunningServer();
     TestStreamServer testServer3 = TestStreamServer.createRunningServer();
@@ -414,7 +412,6 @@ public class MultiServerSocketReadClientTest {
       AppShufflePartitionId appShufflePartitionId = new AppShufflePartitionId(appId, appAttempt, shuffleId, 1);
       try (MultiServerSocketReadClient readClient = new MultiServerSocketReadClient(Arrays.asList(serverReplicationGroup1, serverReplicationGroup2, serverReplicationGroup3, serverReplicationGroup4),
           TestConstants.NETWORK_TIMEOUT,
-          readQueueSize,
           "user1",
           appShufflePartitionId,
           new ReadClientDataOptions(Arrays.asList(appTaskAttemptId.getTaskAttemptId()), TestConstants.DATA_AVAILABLE_POLL_INTERVAL, TestConstants.DATA_AVAILABLE_TIMEOUT),
@@ -468,7 +465,6 @@ public class MultiServerSocketReadClientTest {
       AppShufflePartitionId appShufflePartitionId2 = new AppShufflePartitionId(appId, appAttempt, shuffleId, 2);
       try (MultiServerSocketReadClient readClient = new MultiServerSocketReadClient(Arrays.asList(serverReplicationGroup1, serverReplicationGroup2, serverReplicationGroup3, serverReplicationGroup4),
           TestConstants.NETWORK_TIMEOUT,
-          readQueueSize,
           "user1",
           appShufflePartitionId2,
           new ReadClientDataOptions(Arrays.asList(appTaskAttemptId.getTaskAttemptId()), TestConstants.DATA_AVAILABLE_POLL_INTERVAL, TestConstants.DATA_AVAILABLE_TIMEOUT),
@@ -498,7 +494,7 @@ public class MultiServerSocketReadClientTest {
       AppShufflePartitionId appShufflePartitionId3 = new AppShufflePartitionId(appId, appAttempt, shuffleId, 3);
       try (MultiServerSocketReadClient readClient = new MultiServerSocketReadClient(Arrays.asList(serverReplicationGroup1, serverReplicationGroup2, serverReplicationGroup3, serverReplicationGroup4),
           TestConstants.NETWORK_TIMEOUT,
-          readQueueSize,"user1",
+          "user1",
           appShufflePartitionId3,
           new ReadClientDataOptions(Arrays.asList(appTaskAttemptId.getTaskAttemptId()), TestConstants.DATA_AVAILABLE_POLL_INTERVAL, TestConstants.DATA_AVAILABLE_TIMEOUT),
           checkShuffleReplicaConsistency)) {
@@ -526,7 +522,6 @@ public class MultiServerSocketReadClientTest {
       AppShufflePartitionId appShufflePartitionId4 = new AppShufflePartitionId(appId, appAttempt, shuffleId, 4);
       try (MultiServerSocketReadClient readClient = new MultiServerSocketReadClient(Arrays.asList(serverReplicationGroup1, serverReplicationGroup2, serverReplicationGroup3, serverReplicationGroup4),
           TestConstants.NETWORK_TIMEOUT,
-          readQueueSize,
           "user1",
           appShufflePartitionId4,
           new ReadClientDataOptions(Arrays.asList(appTaskAttemptId.getTaskAttemptId()), TestConstants.DATA_AVAILABLE_POLL_INTERVAL, TestConstants.DATA_AVAILABLE_TIMEOUT),
@@ -554,7 +549,7 @@ public class MultiServerSocketReadClientTest {
   }
 
   @Test(dataProvider = "data-provider", expectedExceptions = {RssMissingShuffleWriteConfigException.class, RssShuffleStageNotStartedException.class, RssShuffleDataNotAvailableException.class, RssAggregateException.class})
-  public void twoServers_firstServerHasNoUpload(boolean finishUploadAck, int readQueueSize) {
+  public void twoServers_firstServerHasNoUpload(boolean finishUploadAck) {
     TestStreamServer testServer1 = TestStreamServer.createRunningServer();
     TestStreamServer testServer2 = TestStreamServer.createRunningServer();
 
@@ -612,7 +607,6 @@ public class MultiServerSocketReadClientTest {
       AppShufflePartitionId appShufflePartitionId = new AppShufflePartitionId(appId, appAttempt, shuffleId, 1);
       try (MultiServerSocketReadClient readClient = new MultiServerSocketReadClient(Arrays.asList(serverReplicationGroup1, serverReplicationGroup2),
           timeoutMillis,
-          readQueueSize,
           "user1",
           appShufflePartitionId,
           new ReadClientDataOptions(Arrays.asList(appTaskAttemptId.getTaskAttemptId()), TestConstants.DATA_AVAILABLE_POLL_INTERVAL, dataAvailableMaxWaitTime),
@@ -627,7 +621,7 @@ public class MultiServerSocketReadClientTest {
   }
 
   @Test(dataProvider = "data-provider", expectedExceptions = {RssMissingShuffleWriteConfigException.class, RssShuffleStageNotStartedException.class, RssShuffleDataNotAvailableException.class, RssAggregateException.class})
-  public void twoServers_secondServerHasNoUpload(boolean finishUploadAck, int readQueueSize) {
+  public void twoServers_secondServerHasNoUpload(boolean finishUploadAck) {
     TestStreamServer testServer1 = TestStreamServer.createRunningServer();
     TestStreamServer testServer2 = TestStreamServer.createRunningServer();
 
@@ -685,7 +679,6 @@ public class MultiServerSocketReadClientTest {
       AppShufflePartitionId appShufflePartitionId = new AppShufflePartitionId(appId, appAttempt, shuffleId, 1);
       try (MultiServerSocketReadClient readClient = new MultiServerSocketReadClient(Arrays.asList(serverReplicationGroup1, serverReplicationGroup2),
           timeoutMillis,
-          readQueueSize,
           "user1",
           appShufflePartitionId,
           new ReadClientDataOptions(Arrays.asList(appTaskAttemptId.getTaskAttemptId()), TestConstants.DATA_AVAILABLE_POLL_INTERVAL, dataAvailableMaxWaitTime),

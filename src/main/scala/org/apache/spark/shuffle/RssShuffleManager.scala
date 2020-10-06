@@ -309,8 +309,6 @@ class RssShuffleManager(conf: SparkConf) extends ShuffleManager with Logging {
         endPartition)
     }
 
-    val queueSize = conf.get(RssOpts.readerQueueSize)
-
     val serializer = rssShuffleHandle.dependency.serializer
     val rssReplicas = conf.get(RssOpts.replicas)
     val rssCheckReplicaConsistency = conf.get(RssOpts.checkReplicaConsistency)
@@ -334,7 +332,6 @@ class RssShuffleManager(conf: SparkConf) extends ShuffleManager with Logging {
       maxRetryMillis = maxWaitMillis.toInt,
       dataAvailablePollInterval = pollInterval,
       dataAvailableWaitTime = dataAvailableWaitTime,
-      queueSize = queueSize,
       shuffleReplicas = rssReplicas,
       checkShuffleReplicaConsistency = rssCheckReplicaConsistency)
   }

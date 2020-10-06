@@ -795,7 +795,7 @@ public class DataBlockSocketReadClientTest {
 
             int dataAvailableWaitTime = 100;
             AppShufflePartitionId appShufflePartitionId = new AppShufflePartitionId(appId, appAttempt, shuffleId, partitionId);
-            try (DataBlockSocketReadClient readClient = new DataBlockSocketReadClient("localhost", testServer1.getShufflePort(), TestConstants.NETWORK_TIMEOUT, "user1", appShufflePartitionId, Arrays.asList(appTaskAttemptId.getTaskAttemptId()), dataAvailableWaitTime/10, dataAvailableWaitTime)) {
+            try (DataBlockSocketReadClient readClient = new DataBlockSocketReadClient("localhost", testServer1.getShufflePort(), TestConstants.NETWORK_TIMEOUT, "user1", appShufflePartitionId, Arrays.asList(appTaskAttemptId2.getTaskAttemptId()), dataAvailableWaitTime/10, dataAvailableWaitTime)) {
                 readClient.connect();
                 readClient.readDataBlock();
             }

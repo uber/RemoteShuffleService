@@ -32,11 +32,11 @@ public class ServerIdAwareSocketReadClientTest {
 
   @DataProvider(name = "data-provider")
   public Object[][] dataProviderMethod() {
-    return new Object[][] { { false, 0 }, { true, 0 }, { true, 10 } };
+    return new Object[][] { { false }, { true } };
   }
 
   @Test(dataProvider = "data-provider")
-  public void readRecords(boolean finishUploadAck, int queueSize) {
+  public void readRecords(boolean finishUploadAck) {
     TestStreamServer testServer1 = TestStreamServer.createRunningServer();
 
     try {
@@ -75,7 +75,7 @@ public class ServerIdAwareSocketReadClientTest {
 
       AppShufflePartitionId appShufflePartitionId = new AppShufflePartitionId(appId, appAttempt, shuffleId, 1);
       ServerDetail serverDetail = new ServerDetail(testServer1.getServerId(), testServer1.getRunningVersion(), testServer1.getShuffleConnectionString());
-      try (ServerIdAwareSocketReadClient readClient = new ServerIdAwareSocketReadClient(serverDetail, TestConstants.NETWORK_TIMEOUT, queueSize,"user1", appShufflePartitionId, Arrays.asList(appTaskAttemptId.getTaskAttemptId()), TestConstants.DATA_AVAILABLE_POLL_INTERVAL, TestConstants.DATA_AVAILABLE_TIMEOUT)) {
+      try (ServerIdAwareSocketReadClient readClient = new ServerIdAwareSocketReadClient(serverDetail, TestConstants.NETWORK_TIMEOUT,"user1", appShufflePartitionId, Arrays.asList(appTaskAttemptId.getTaskAttemptId()), TestConstants.DATA_AVAILABLE_POLL_INTERVAL, TestConstants.DATA_AVAILABLE_TIMEOUT)) {
         readClient.connect();
         TaskByteArrayDataBlock record = readClient.readRecord();
         Assert.assertNotNull(record);
@@ -134,7 +134,7 @@ public class ServerIdAwareSocketReadClientTest {
 
       AppShufflePartitionId appShufflePartitionId = new AppShufflePartitionId(appId, appAttempt, shuffleId, 1);
       ServerDetail serverDetail = new ServerDetail("invalidServerId", testServer1.getRunningVersion(), testServer1.getShuffleConnectionString());
-      try (ServerIdAwareSocketReadClient readClient = new ServerIdAwareSocketReadClient(serverDetail, TestConstants.NETWORK_TIMEOUT, 0,"user1", appShufflePartitionId, Arrays.asList(appTaskAttemptId.getTaskAttemptId()), TestConstants.DATA_AVAILABLE_POLL_INTERVAL, TestConstants.DATA_AVAILABLE_TIMEOUT)) {
+      try (ServerIdAwareSocketReadClient readClient = new ServerIdAwareSocketReadClient(serverDetail, TestConstants.NETWORK_TIMEOUT, "user1", appShufflePartitionId, Arrays.asList(appTaskAttemptId.getTaskAttemptId()), TestConstants.DATA_AVAILABLE_POLL_INTERVAL, TestConstants.DATA_AVAILABLE_TIMEOUT)) {
         readClient.connect();
       }
     } finally {
@@ -166,7 +166,7 @@ public class ServerIdAwareSocketReadClientTest {
 
       AppShufflePartitionId appShufflePartitionId = new AppShufflePartitionId(appId, appAttempt, shuffleId, 1);
       ServerDetail serverDetail = new ServerDetail(testServer1.getServerId(), "invalidServerVersion", testServer1.getShuffleConnectionString());
-      try (ServerIdAwareSocketReadClient readClient = new ServerIdAwareSocketReadClient(serverDetail, TestConstants.NETWORK_TIMEOUT, 0,"user1", appShufflePartitionId, Arrays.asList(appTaskAttemptId.getTaskAttemptId()), TestConstants.DATA_AVAILABLE_POLL_INTERVAL, TestConstants.DATA_AVAILABLE_TIMEOUT)) {
+      try (ServerIdAwareSocketReadClient readClient = new ServerIdAwareSocketReadClient(serverDetail, TestConstants.NETWORK_TIMEOUT, "user1", appShufflePartitionId, Arrays.asList(appTaskAttemptId.getTaskAttemptId()), TestConstants.DATA_AVAILABLE_POLL_INTERVAL, TestConstants.DATA_AVAILABLE_TIMEOUT)) {
         readClient.connect();
       }
     } finally {
