@@ -41,11 +41,10 @@ class RssShuffleReader[K, C](
                               maxRetryMillis: Int,
                               dataAvailablePollInterval: Long,
                               dataAvailableWaitTime: Long,
-                              queueSize: Int,
                               shuffleReplicas: Int,
                               checkShuffleReplicaConsistency: Boolean) extends ShuffleReader[K, C] with Logging {
 
-  logInfo(s"Using ShuffleReader: ${this.getClass.getSimpleName}, queueSize: $queueSize")
+  logInfo(s"Using ShuffleReader: ${this.getClass.getSimpleName}")
 
   override def read(): Iterator[Product2[K, C]] = {
     logInfo(s"Shuffle read started: $shuffleInfo, partitions: [$startPartition, $endPartition)")
@@ -68,7 +67,6 @@ class RssShuffleReader[K, C](
       maxRetryMillis = maxRetryMillis,
       dataAvailablePollInterval = dataAvailablePollInterval,
       dataAvailableWaitTime = dataAvailableWaitTime,
-      queueSize = queueSize,
       shuffleReplicas = shuffleReplicas,
       checkShuffleReplicaConsistency = checkShuffleReplicaConsistency,
       shuffleReadMetrics = context.taskMetrics().shuffleReadMetrics

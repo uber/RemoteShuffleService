@@ -70,9 +70,9 @@ public class MapTaskCommitStatus {
             && taskAttemptIds.size() == mapperCount;
     }
 
-    public boolean isPartitionDataAvailable(Collection<Long> knownLatestTaskAttemptIds) {
-        // TODO need to verify knownLatestTaskAttemptIds non empty to make code safer
-        if (knownLatestTaskAttemptIds.isEmpty()) {
+    public boolean isPartitionDataAvailable(Collection<Long> fetchTaskAttemptIds) {
+        // TODO need to verify fetchTaskAttemptIds non empty to make code safer
+        if (fetchTaskAttemptIds.isEmpty()) {
             return isPartitionDataAvailable();
         }
 
@@ -84,7 +84,7 @@ public class MapTaskCommitStatus {
 
         // TODO improve performance in following
         return taskAttemptIds.values().stream().sorted().collect(Collectors.toList())
-            .equals(knownLatestTaskAttemptIds.stream().sorted().collect(Collectors.toList()));
+            .equals(fetchTaskAttemptIds.stream().sorted().collect(Collectors.toList()));
     }
 
     public String toShortString() {

@@ -34,7 +34,7 @@ public class ServerIdAwareSocketReadClient implements SingleServerReadClient {
     private final ServerDetail serverDetail;
     private SingleServerReadClient readClient;
 
-    public ServerIdAwareSocketReadClient(ServerDetail serverDetail, int timeoutMillis, int queueSize, String user, AppShufflePartitionId appShufflePartitionId, Collection<Long> latestTaskAttemptIds, long dataAvailablePollInterval, long dataAvailableWaitTime) {
+    public ServerIdAwareSocketReadClient(ServerDetail serverDetail, int timeoutMillis, String user, AppShufflePartitionId appShufflePartitionId, Collection<Long> fetchTaskAttemptIds, long dataAvailablePollInterval, long dataAvailableWaitTime) {
         this.serverDetail = serverDetail;
 
         ServerHostAndPort hostAndPort = ServerHostAndPort.fromString(serverDetail.getConnectionString());
@@ -42,10 +42,7 @@ public class ServerIdAwareSocketReadClient implements SingleServerReadClient {
         int port = hostAndPort.getPort();
 
         SingleServerReadClient client;
-        client = new PlainRecordSocketReadClient(host, port, timeoutMillis, user, appShufflePartitionId, latestTaskAttemptIds, dataAvailablePollInterval, dataAvailableWaitTime);
-        if (queueSize > 0) {
-            client = new BlockingQueueReadClient(client, queueSize, dataAvailableWaitTime);
-        }
+        client = new PlainRecordSocketReadClient(host, port, timeoutMillis, user, appShufflePartitionId, fetchTaskAttemptIds, dataAvailablePollInterval, dataAvailableWaitTime);
         this.readClient = client;
     }
 
