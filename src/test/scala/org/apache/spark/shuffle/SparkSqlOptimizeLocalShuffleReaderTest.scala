@@ -53,7 +53,6 @@ class SparkSqlOptimizeLocalShuffleReaderTest {
   def runWithSparkDefaultShuffle(): Unit = {
     val conf = TestUtil.newSparkConfWithStandAloneRegistryServer(appId, rssTestCluster.getRegistryServerConnection)
 
-    conf.set("spark.sql.autoBroadcastJoinThreshold", "100MB")
     conf.set("spark.sql.adaptive.enabled", "true")
     conf.set("spark.sql.adaptive.coalescePartitions.enabled", "false")
     conf.set("spark.sql.adaptive.localShuffleReader.enabled", "true")
@@ -69,7 +68,6 @@ class SparkSqlOptimizeLocalShuffleReaderTest {
   def runWithRssShuffle(): Unit = {
     val conf = TestUtil.newSparkConfWithStandAloneRegistryServer(appId, rssTestCluster.getRegistryServerConnection)
 
-    conf.set("spark.sql.autoBroadcastJoinThreshold", "100MB")
     conf.set("spark.sql.adaptive.enabled", "true")
     conf.set("spark.sql.adaptive.coalescePartitions.enabled", "false")
     conf.set("spark.sql.adaptive.localShuffleReader.enabled", "true")
