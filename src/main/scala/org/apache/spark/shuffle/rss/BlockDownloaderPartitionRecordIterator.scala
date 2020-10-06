@@ -17,13 +17,15 @@ package org.apache.spark.shuffle.rss
 import java.util.concurrent.TimeUnit
 
 import com.esotericsoftware.kryo.io.Input
-import com.uber.rss.clients.RecordReader
+import com.uber.rss.clients.{RecordReader, TaskByteArrayDataBlock}
 import com.uber.rss.exceptions.{RssInvalidDataException, RssInvalidStateException}
-import com.uber.rss.util.ByteBufUtils
+import com.uber.rss.metrics.M3Stats
+import com.uber.rss.util.{ByteBufUtils, ExceptionUtils}
 import net.jpountz.lz4.{LZ4Factory, LZ4FastDecompressor}
 import org.apache.spark.executor.ShuffleReadMetrics
 import org.apache.spark.internal.Logging
 import org.apache.spark.serializer.{DeserializationStream, Serializer}
+import org.apache.spark.shuffle.FetchFailedException
 
 class BlockDownloaderPartitionRecordIterator[K, C](
     shuffleId: Int,
@@ -122,14 +124,31 @@ class BlockDownloaderPartitionRecordIterator[K, C](
     clearDeserializationStream()
 
     val readRecordStartNanoTime = System.nanoTime()
-    var dataBlock = downloader.readRecord()
-    fetchNanoTime += System.nanoTime() - readRecordStartNanoTime
+    var dataBlock: TaskByteArrayDataBlock = null;
 
-    while (dataBlock != null &&
-      (dataBlock.getValue == null || dataBlock.getValue.size == 0)) {
-      val readRecordStartNanoTime = System.nanoTime()
+    try {
       dataBlock = downloader.readRecord()
       fetchNanoTime += System.nanoTime() - readRecordStartNanoTime
+
+      while (dataBlock != null &&
+        (dataBlock.getValue == null || dataBlock.getValue.size == 0)) {
+        val readRecordStartNanoTime = System.nanoTime()
+        dataBlock = downloader.readRecord()
+        fetchNanoTime += System.nanoTime() - readRecordStartNanoTime
+      }
+    } catch {
+      case ex: Throwable => {
+        downloader.close()
+        M3Stats.addException(ex, this.getClass().getSimpleName())
+        throw new FetchFailedException(
+          RssUtils.createReduceTaskDummyBlockManagerId(shuffleId, partition),
+          shuffleId,
+          -1,
+          -1,
+          partition,
+          s"Failed to read data fro shuffle $shuffleId partition $partition due to ${ExceptionUtils.getSimpleMessage(ex)})",
+          ex)
+      }
     }
 
     numRemoteBytesRead = downloader.getShuffleReadBytes

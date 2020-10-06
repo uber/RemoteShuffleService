@@ -470,7 +470,8 @@ public class ShuffleExecutor {
         while (System.currentTimeMillis() - startTime <= maxWaitMillis) {
             printInternalState();
 
-            finished = getStageState(appTaskAttemptId.getAppShuffleId()).isMapAttemptFinishedUpload(appTaskAttemptId);
+            ExecutorShuffleStageState stageState = getStageState(appTaskAttemptId.getAppShuffleId());
+            finished = stageState.isMapAttemptFinishedUpload(appTaskAttemptId) || stageState.isMapAttemptCommitted(appTaskAttemptId);
             if (finished) {
                 break;
             }
