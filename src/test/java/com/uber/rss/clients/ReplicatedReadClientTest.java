@@ -19,6 +19,7 @@ import com.uber.rss.common.AppTaskAttemptId;
 import com.uber.rss.common.ServerDetail;
 import com.uber.rss.common.ServerReplicationGroup;
 import com.uber.rss.exceptions.RssEndOfStreamException;
+import com.uber.rss.exceptions.RssException;
 import com.uber.rss.exceptions.RssInconsistentReplicaException;
 import com.uber.rss.exceptions.RssAggregateException;
 import com.uber.rss.exceptions.RssStreamReadException;
@@ -463,7 +464,7 @@ public class ReplicatedReadClientTest {
     }
   }
 
-  @Test(dataProvider = "data-provider", expectedExceptions = {RssAggregateException.class, RssEndOfStreamException.class, RssStreamReadException.class})
+  @Test(dataProvider = "data-provider", expectedExceptions = {RssAggregateException.class, RssEndOfStreamException.class, RssStreamReadException.class, RssException.class})
   public void twoServerDown(boolean finishUploadAck, int readQueueSize) {
     TestStreamServer testServer1 = TestStreamServer.createRunningServer();
     TestStreamServer testServer2 = TestStreamServer.createRunningServer();
