@@ -27,7 +27,7 @@ import org.apache.spark.storage.StorageLevel
 import org.apache.spark.util.LongAccumulator
 import org.apache.spark.{SparkConf, TaskContext}
 
-abstract class ShuffleTestAppBaseClass extends Serializable with Logging {
+abstract class ShuffleTestAppBase extends Serializable with Logging {
   var localRun = false
   var tempDir = "/tmp/" + this.getClass().getSimpleName
   var numIterations = 1

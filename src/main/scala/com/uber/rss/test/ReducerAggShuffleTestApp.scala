@@ -28,7 +28,7 @@ object ShuffleTestAppReducerAgg {
 
 }
 
-class ShuffleTestAppReducerAgg extends ShuffleTestAppBaseClass {
+class ShuffleTestAppReducerAgg extends ShuffleTestAppBase {
 
   def processSourceRdd(currentAppAttempId: String, sourceRdd: RDD[(String, String)]): Long = {
     val shuffledRdd: RDD[(String, Iterable[String])] = sourceRdd.groupByKey(numReduces)

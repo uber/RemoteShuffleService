@@ -28,7 +28,7 @@ object MapCombinerShuffleTestApp {
 
 }
 
-class MapCombinerShuffleTestApp extends ShuffleTestAppBaseClass {
+class MapCombinerShuffleTestApp extends ShuffleTestAppBase {
 
   def processSourceRdd(currentAppAttempId: String, sourceRdd: RDD[(String, String)]): Long = {
     val createCombiner = (v: String) => {

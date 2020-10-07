@@ -28,7 +28,7 @@ object RepartitionShuffleTestApp {
 
 }
 
-class RepartitionShuffleTestApp extends ShuffleTestAppBaseClass {
+class RepartitionShuffleTestApp extends ShuffleTestAppBase {
   
   def processSourceRdd(currentAppAttempId: String, sourceRdd: RDD[(String, String)]): Long = {
     val rdd = sourceRdd.mapPartitions((records: Iterator[(String, String)]) => {
