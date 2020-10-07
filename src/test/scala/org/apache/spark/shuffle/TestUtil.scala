@@ -18,6 +18,12 @@ import com.uber.rss.metadata.ServiceRegistry
 import com.uber.rss.testutil.TestConstants
 import org.apache.spark._
 
+case class LeftIntKV(key: Int, value: Int)
+case class RightIntKV(key: Int, value: Int)
+
+case class LeftStringKV(key: String, value: String)
+case class RightStringKV(key: String, value: String)
+
 object TestUtil {
   def newSparkConfWithStandAloneRegistryServer(appId: String, registryServer: String): SparkConf = new SparkConf().setAppName("testApp")
     .setMaster(s"local[2]")

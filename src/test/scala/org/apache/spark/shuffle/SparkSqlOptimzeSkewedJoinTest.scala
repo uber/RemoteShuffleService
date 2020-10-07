@@ -22,7 +22,7 @@ import org.apache.spark.sql.SparkSession
 import org.testng.Assert
 import org.testng.annotations._
 
-class SparkSqlOptimizeLocalShuffleReaderTest {
+class SparkSqlOptimizeSkewedJoinTest {
 
   var appId: String = null
   val numRssServers = 2
@@ -51,9 +51,13 @@ class SparkSqlOptimizeLocalShuffleReaderTest {
     val conf = TestUtil.newSparkConfWithStandAloneRegistryServer(appId, rssTestCluster.getRegistryServerConnection)
 
     conf.set("spark.sql.adaptive.enabled", "true")
+    conf.set("spark.sql.adaptive.skewJoin.enabled", "true")
     conf.set("spark.sql.adaptive.coalescePartitions.enabled", "false")
-    conf.set("spark.sql.adaptive.localShuffleReader.enabled", "true")
-    conf.set("spark.sql.adaptive.nonEmptyPartitionRatioForBroadcastJoin", "0.0001")
+    conf.set("spark.sql.adaptive.localShuffleReader.enabled", "false")
+    conf.set("spark.sql.adaptive.skewJoin.skewedPartitionFactor", "2")
+    conf.set("spark.sql.adaptive.skewJoin.skewedPartitionThresholdInBytes", "1B")
+    conf.set("spark.sql.adaptive.advisoryPartitionSizeInBytes", "40B")
+    conf.set("spark.sql.autoBroadcastJoinThreshold", "1B")
     conf.set("spark.sql.shuffle.partitions", "4")
 
     conf.remove("spark.shuffle.manager")
@@ -66,9 +70,13 @@ class SparkSqlOptimizeLocalShuffleReaderTest {
     val conf = TestUtil.newSparkConfWithStandAloneRegistryServer(appId, rssTestCluster.getRegistryServerConnection)
 
     conf.set("spark.sql.adaptive.enabled", "true")
+    conf.set("spark.sql.adaptive.skewJoin.enabled", "true")
     conf.set("spark.sql.adaptive.coalescePartitions.enabled", "false")
-    conf.set("spark.sql.adaptive.localShuffleReader.enabled", "true")
-    conf.set("spark.sql.adaptive.nonEmptyPartitionRatioForBroadcastJoin", "0.0001")
+    conf.set("spark.sql.adaptive.localShuffleReader.enabled", "false")
+    conf.set("spark.sql.adaptive.skewJoin.skewedPartitionFactor", "2")
+    conf.set("spark.sql.adaptive.skewJoin.skewedPartitionThresholdInBytes", "1B")
+    conf.set("spark.sql.adaptive.advisoryPartitionSizeInBytes", "40B")
+    conf.set("spark.sql.autoBroadcastJoinThreshold", "1B")
     conf.set("spark.sql.shuffle.partitions", "4")
 
     runWithConf(conf)
@@ -84,27 +92,46 @@ class SparkSqlOptimizeLocalShuffleReaderTest {
     val sqlContext = spark.sqlContext
     import sqlContext.implicits._
     val left = spark.sparkContext.parallelize(
-      (1 to 10).map(t => LeftIntKV(t, t)), 2).toDF()
+      (0 to 3).map(t => {
+        val key = t % 2
+        if (key == 0) {
+          LeftStringKV(key.toString, t.toString + t.toString + t.toString + t.toString + t.toString)
+        } else {
+          LeftStringKV(key.toString, t.toString)
+        }}),
+      4).toDF()
     left.createOrReplaceTempView("left")
     val right = spark.sparkContext.parallelize(Seq(
-      RightIntKV(1, 100), RightIntKV(1, 101),
-      RightIntKV(2, 200), RightIntKV(2, 201),
-      RightIntKV(3, 300), RightIntKV(3, 301)
+      RightStringKV("1", "100"), RightStringKV("1", "101"),
+      RightStringKV("2", "200"), RightStringKV("2", "201"),
+      RightStringKV("3", "300"), RightStringKV("3", "301")
     ), 2).toDF()
     right.createOrReplaceTempView("right")
 
-    val df = spark.sql("SELECT right.key, right.value FROM left JOIN right ON left.key = right.key WHERE left.value = 1 order by 1, 2")
+    val df = spark.sql("SELECT left.value, right.key, right.value FROM left JOIN right ON left.key = right.key WHERE left.key = '1' order by 1, 2, 3")
 
     val result = df.collect()
-    Assert.assertEquals(result.length, 2)
+    Assert.assertEquals(result.length, 4)
 
     var row = result(0)
-    Assert.assertEquals(row.get(0), 1)
-    Assert.assertEquals(row.get(1), 100)
+    Assert.assertEquals(row.get(0), "1")
+    Assert.assertEquals(row.get(1), "1")
+    Assert.assertEquals(row.get(2), "100")
 
     row = result(1)
-    Assert.assertEquals(row.get(0), 1)
-    Assert.assertEquals(row.get(1), 101)
+    Assert.assertEquals(row.get(0), "1")
+    Assert.assertEquals(row.get(1), "1")
+    Assert.assertEquals(row.get(2), "101")
+
+    row = result(2)
+    Assert.assertEquals(row.get(0), "3")
+    Assert.assertEquals(row.get(1), "1")
+    Assert.assertEquals(row.get(2), "100")
+
+    row = result(3)
+    Assert.assertEquals(row.get(0), "3")
+    Assert.assertEquals(row.get(1), "1")
+    Assert.assertEquals(row.get(2), "101")
   }
 
 }
