@@ -118,11 +118,11 @@ object RssUtils extends Logging {
       throw new RssInvalidMapStatusException(s"Got invalid number of RSS servers: $numRssServersValues")
     }
     val numRssServers = numRssServersValues.head
-    val latestTaskAttemptIds = mapLatestAttemptRssServers.values
+    val mapTaskAttemptIds = mapLatestAttemptRssServers.values
       .map(_.getTaskAttemptId)
       .toArray
       .distinct
-    Some(MapOutputRssInfo(numMaps, numRssServers, latestTaskAttemptIds))
+    Some(MapOutputRssInfo(numMaps, numRssServers, mapTaskAttemptIds))
   }
 
   /**

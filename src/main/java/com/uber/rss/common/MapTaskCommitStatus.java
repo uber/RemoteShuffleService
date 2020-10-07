@@ -14,6 +14,7 @@
 
 package com.uber.rss.common;
 
+import com.uber.rss.exceptions.RssInvalidDataException;
 import io.netty.buffer.ByteBuf;
 import org.apache.commons.lang3.StringUtils;
 
@@ -56,14 +57,15 @@ public class MapTaskCommitStatus {
         return taskAttemptIds;
     }
 
-    public boolean isPartitionDataAvailable(Collection<Long> knownLatestTaskAttemptIds) {
-        if (knownLatestTaskAttemptIds.isEmpty()) {
-            return false;
+    public boolean isPartitionDataAvailable(Collection<Long> fetchTaskAttemptIds) {
+        // TODO need to verify fetchTaskAttemptIds non empty to make code safer
+        if (fetchTaskAttemptIds.isEmpty()) {
+            throw new RssInvalidDataException("fetchTaskAttemptIds cannot be empty");
         }
 
         // TODO improve performance in following
         return new HashSet<>(taskAttemptIds.values())
-            .containsAll(knownLatestTaskAttemptIds);
+            .containsAll(fetchTaskAttemptIds);
     }
 
     public String toShortString() {

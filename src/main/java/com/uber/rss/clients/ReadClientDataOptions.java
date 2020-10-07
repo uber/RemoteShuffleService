@@ -19,18 +19,18 @@ import java.util.Collection;
 import java.util.Collections;
 
 public class ReadClientDataOptions {
-  private final Collection<Long> latestTaskAttemptIds;
+  private final Collection<Long> fetchTaskAttemptIds;
   private final long dataAvailablePollInterval;
   private final long dataAvailableWaitTime;
 
-  public ReadClientDataOptions(Collection<Long> latestTaskAttemptIds, long dataAvailablePollInterval, long dataAvailableWaitTime) {
-    this.latestTaskAttemptIds = Collections.unmodifiableCollection(new ArrayList<>(latestTaskAttemptIds));
+  public ReadClientDataOptions(Collection<Long> fetchTaskAttemptIds, long dataAvailablePollInterval, long dataAvailableWaitTime) {
+    this.fetchTaskAttemptIds = Collections.unmodifiableCollection(new ArrayList<>(fetchTaskAttemptIds));
     this.dataAvailablePollInterval = dataAvailablePollInterval;
     this.dataAvailableWaitTime = dataAvailableWaitTime;
   }
 
-  public Collection<Long> getLatestTaskAttemptIds() {
-    return latestTaskAttemptIds;
+  public Collection<Long> getFetchTaskAttemptIds() {
+    return fetchTaskAttemptIds;
   }
 
   public long getDataAvailablePollInterval() {
@@ -44,7 +44,7 @@ public class ReadClientDataOptions {
   @Override
   public String toString() {
     return "WriteClientDataOptions{" +
-        "latestTaskAttemptIds=" + latestTaskAttemptIds +
+        "fetchTaskAttemptIds=" + fetchTaskAttemptIds +
         ", dataAvailablePollInterval=" + dataAvailablePollInterval +
         ", dataAvailableWaitTime=" + dataAvailableWaitTime +
         '}';

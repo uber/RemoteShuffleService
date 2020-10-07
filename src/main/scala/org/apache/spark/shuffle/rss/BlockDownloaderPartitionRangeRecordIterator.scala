@@ -49,7 +49,6 @@ class BlockDownloaderPartitionRangeRecordIterator[K, C](
     maxRetryMillis: Int,
     dataAvailablePollInterval: Long,
     dataAvailableWaitTime: Long,
-    queueSize: Int,
     shuffleReplicas: Int,
     checkShuffleReplicaConsistency: Boolean,
     shuffleReadMetrics: ShuffleReadMetrics) extends Iterator[Product2[K, C]] with Logging {
@@ -132,10 +131,9 @@ class BlockDownloaderPartitionRangeRecordIterator[K, C](
           serverReplicationGroups,
           timeoutMillis,
           new ClientRetryOptions(dataAvailablePollInterval, maxRetryMillis, serverConnectionRefresher),
-          queueSize,
           user,
           appShufflePartitionId,
-          new ReadClientDataOptions(JavaConverters.asJavaCollectionConverter(mapOutputRssInfo.latestTaskAttemptIds.map(long2Long)).asJavaCollection,
+          new ReadClientDataOptions(JavaConverters.asJavaCollectionConverter(mapOutputRssInfo.taskAttemptIds.map(long2Long)).asJavaCollection,
             dataAvailablePollInterval,
             dataAvailableWaitTime),
           checkShuffleReplicaConsistency

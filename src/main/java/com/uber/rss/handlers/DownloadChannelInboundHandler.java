@@ -62,7 +62,7 @@ public class DownloadChannelInboundHandler extends ChannelInboundHandlerAdapter 
 
     private String connectionInfo = "";
     private AppShufflePartitionId appShufflePartitionId = null;
-    private List<Long> knownLatestTaskAttemptIds = new ArrayList<>();
+    private List<Long> fetchTaskAttemptIds = new ArrayList<>();
 
     public DownloadChannelInboundHandler(String serverId,
                                          String runningVersion,
@@ -113,7 +113,7 @@ public class DownloadChannelInboundHandler extends ChannelInboundHandlerAdapter 
                     connectRequest.getShuffleId(),
                     connectRequest.getPartitionId()
                 );
-                knownLatestTaskAttemptIds = connectRequest.getTaskAttemptIds();
+                fetchTaskAttemptIds = connectRequest.getTaskAttemptIds();
 
                 ShuffleStageStatus shuffleStageStatus = downloadServerHandler.getShuffleStageStatus(appShufflePartitionId.getAppShuffleId());
                 if (shuffleStageStatus.getFileStatus() == ShuffleStageStatus.FILE_STATUS_SHUFFLE_STAGE_NOT_STARTED) {
@@ -134,7 +134,7 @@ public class DownloadChannelInboundHandler extends ChannelInboundHandlerAdapter 
                 downloadServerHandler.initialize(connectRequest);
 
                 MapTaskCommitStatus mapTaskCommitStatus = shuffleStageStatus.getMapTaskCommitStatus();
-                boolean dataAvailable = mapTaskCommitStatus != null && mapTaskCommitStatus.isPartitionDataAvailable(knownLatestTaskAttemptIds);
+                boolean dataAvailable = mapTaskCommitStatus != null && mapTaskCommitStatus.isPartitionDataAvailable(fetchTaskAttemptIds);
                 String fileCompressionCodec = ""; // TODO delete this
                 ConnectDownloadResponse connectResponse = new ConnectDownloadResponse(serverId, RssBuildInfo.Version, runningVersion, fileCompressionCodec, mapTaskCommitStatus, dataAvailable);
                 sendResponseAndFiles2(ctx, dataAvailable, shuffleStageStatus, connectResponse);
@@ -142,7 +142,7 @@ public class DownloadChannelInboundHandler extends ChannelInboundHandlerAdapter 
                 ShuffleStageStatus shuffleStageStatus = downloadServerHandler.getShuffleStageStatus(appShufflePartitionId.getAppShuffleId());
                 MapTaskCommitStatus mapTaskCommitStatus = shuffleStageStatus.getMapTaskCommitStatus();
                 boolean dataAvailable;
-                dataAvailable = mapTaskCommitStatus != null && mapTaskCommitStatus.isPartitionDataAvailable(knownLatestTaskAttemptIds);
+                dataAvailable = mapTaskCommitStatus != null && mapTaskCommitStatus.isPartitionDataAvailable(fetchTaskAttemptIds);
                 GetDataAvailabilityResponse getDataAvailabilityResponse = new GetDataAvailabilityResponse(mapTaskCommitStatus, dataAvailable);
                 sendResponseAndFiles2(ctx, dataAvailable, shuffleStageStatus, getDataAvailabilityResponse);
             } else {

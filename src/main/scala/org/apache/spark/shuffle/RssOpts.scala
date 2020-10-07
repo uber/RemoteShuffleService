@@ -95,11 +95,6 @@ object RssOpts {
       .doc("max wait time in shuffle reader to wait data ready in the shuffle server.")
       .longConf
       .createWithDefault(6*60*1000L)
-  val readerQueueSize: ConfigEntry[Int] =
-    ConfigBuilder("spark.shuffle.rss.reader.queueSize")
-      .doc("reader queue size to use for shuffle reader to read from shuffle server when using background threads.")
-      .intConf
-      .createWithDefault(0)
   val readerSorterBufferSize: ConfigEntry[String] =
     ConfigBuilder("spark.shuffle.rss.reader.sorterBufferSize")
       .doc("buffer size for the sorter used in shuffle reader")

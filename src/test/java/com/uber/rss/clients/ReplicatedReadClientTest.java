@@ -42,16 +42,16 @@ public class ReplicatedReadClientTest {
 
   @DataProvider(name = "data-provider")
   public Object[][] dataProviderMethod() {
-    return new Object[][] { { false, 0 }, { true, 0 }, { true, 10 } };
+    return new Object[][] { { false }, { true } };
   }
 
   @DataProvider(name = "data-provider-3")
   public Object[][] dataProviderMethod3() {
-    return new Object[][] { { false, 0, 1, true }, { true, 0, 1000, false }, { true, 10, 100000, true }, { false, 10, 500000, true }, { true, 10, 500000, false } };
+    return new Object[][] { { false, 1, true }, { true, 1000, false }, { true, 100000, true }, { false, 500000, true }, { true, 500000, false } };
   }
 
   @Test(dataProvider = "data-provider")
-  public void oneServer(boolean finishUploadAck, int readQueueSize) {
+  public void oneServer(boolean finishUploadAck) {
     TestStreamServer testServer1 = TestStreamServer.createRunningServer();
 
     ServerDetail serverDetail = new ServerDetail(testServer1.getServerId(), testServer1.getRunningVersion(), testServer1.getShuffleConnectionString());
@@ -100,7 +100,7 @@ public class ReplicatedReadClientTest {
       }
 
       AppShufflePartitionId appShufflePartitionId = new AppShufflePartitionId(appId, appAttempt, shuffleId, 1);
-      try (ReplicatedReadClient readClient = new ReplicatedReadClient(serverReplicationGroup, TestConstants.NETWORK_TIMEOUT, readQueueSize,"user1", appShufflePartitionId,
+      try (ReplicatedReadClient readClient = new ReplicatedReadClient(serverReplicationGroup, TestConstants.NETWORK_TIMEOUT,"user1", appShufflePartitionId,
           new ReadClientDataOptions(Arrays.asList(appTaskAttemptId.getTaskAttemptId()), TestConstants.DATA_AVAILABLE_POLL_INTERVAL, TestConstants.DATA_AVAILABLE_TIMEOUT))) {
         readClient.connect();
         TaskByteArrayDataBlock record = readClient.readRecord();
@@ -144,7 +144,7 @@ public class ReplicatedReadClientTest {
   }
 
   @Test(dataProvider = "data-provider")
-  public void twoServers(boolean finishUploadAck, int readQueueSize) {
+  public void twoServers(boolean finishUploadAck) {
     TestStreamServer testServer1 = TestStreamServer.createRunningServer();
     TestStreamServer testServer2 = TestStreamServer.createRunningServer();
 
@@ -195,7 +195,7 @@ public class ReplicatedReadClientTest {
       }
 
       AppShufflePartitionId appShufflePartitionId = new AppShufflePartitionId(appId, appAttempt, shuffleId, 1);
-      try (ReplicatedReadClient readClient = new ReplicatedReadClient(serverReplicationGroup, TestConstants.NETWORK_TIMEOUT, readQueueSize,"user1", appShufflePartitionId,
+      try (ReplicatedReadClient readClient = new ReplicatedReadClient(serverReplicationGroup, TestConstants.NETWORK_TIMEOUT,"user1", appShufflePartitionId,
           new ReadClientDataOptions(Arrays.asList(appTaskAttemptId.getTaskAttemptId()), TestConstants.DATA_AVAILABLE_POLL_INTERVAL, TestConstants.DATA_AVAILABLE_TIMEOUT))) {
         readClient.connect();
         TaskByteArrayDataBlock record = readClient.readRecord();
@@ -241,7 +241,7 @@ public class ReplicatedReadClientTest {
   }
 
   @Test(dataProvider = "data-provider")
-  public void firstServerDownBeforeReadClientInitialize(boolean finishUploadAck, int readQueueSize) {
+  public void firstServerDownBeforeReadClientInitialize(boolean finishUploadAck) {
     TestStreamServer testServer1 = TestStreamServer.createRunningServer();
     TestStreamServer testServer2 = TestStreamServer.createRunningServer();
 
@@ -294,7 +294,7 @@ public class ReplicatedReadClientTest {
       testServer1.shutdown();
 
       AppShufflePartitionId appShufflePartitionId = new AppShufflePartitionId(appId, appAttempt, shuffleId, 1);
-      try (ReplicatedReadClient readClient = new ReplicatedReadClient(serverReplicationGroup, TestConstants.NETWORK_TIMEOUT, readQueueSize,"user1", appShufflePartitionId,
+      try (ReplicatedReadClient readClient = new ReplicatedReadClient(serverReplicationGroup, TestConstants.NETWORK_TIMEOUT,"user1", appShufflePartitionId,
           new ReadClientDataOptions(Arrays.asList(appTaskAttemptId.getTaskAttemptId()), TestConstants.DATA_AVAILABLE_POLL_INTERVAL, TestConstants.DATA_AVAILABLE_TIMEOUT))) {
         readClient.connect();
         TaskByteArrayDataBlock record = readClient.readRecord();
@@ -339,9 +339,7 @@ public class ReplicatedReadClientTest {
   }
 
   @Test(dataProvider = "data-provider-3")
-  public void firstServerDownAfterReadClientInitialize(boolean finishUploadAck, int readQueueSize, int numRecords, boolean checkDataConsistency) {
-    logger.info(String.format("Running test firstServerDownAfterReadClientInitialize, %s", readQueueSize));
-
+  public void firstServerDownAfterReadClientInitialize(boolean finishUploadAck, int numRecords, boolean checkDataConsistency) {
     TestStreamServer testServer1 = TestStreamServer.createRunningServer();
     TestStreamServer testServer2 = TestStreamServer.createRunningServer();
 
@@ -392,7 +390,7 @@ public class ReplicatedReadClientTest {
       }
 
       AppShufflePartitionId appShufflePartitionId = new AppShufflePartitionId(appId, appAttempt, shuffleId, 1);
-      try (ReplicatedReadClient readClient = new ReplicatedReadClient(serverReplicationGroup, TestConstants.NETWORK_TIMEOUT, readQueueSize,"user1", appShufflePartitionId,
+      try (ReplicatedReadClient readClient = new ReplicatedReadClient(serverReplicationGroup, TestConstants.NETWORK_TIMEOUT,"user1", appShufflePartitionId,
           new ReadClientDataOptions(Arrays.asList(appTaskAttemptId.getTaskAttemptId()), TestConstants.DATA_AVAILABLE_POLL_INTERVAL, TestConstants.DATA_AVAILABLE_TIMEOUT), checkDataConsistency)) {
         readClient.connect();
 
@@ -420,7 +418,7 @@ public class ReplicatedReadClientTest {
 
       // read partition 2
       appShufflePartitionId = new AppShufflePartitionId(appId, appAttempt, shuffleId, 2);
-      try (ReplicatedReadClient readClient = new ReplicatedReadClient(serverReplicationGroup, TestConstants.NETWORK_TIMEOUT, readQueueSize,"user1", appShufflePartitionId,
+      try (ReplicatedReadClient readClient = new ReplicatedReadClient(serverReplicationGroup, TestConstants.NETWORK_TIMEOUT,"user1", appShufflePartitionId,
           new ReadClientDataOptions(Arrays.asList(appTaskAttemptId.getTaskAttemptId()), TestConstants.DATA_AVAILABLE_POLL_INTERVAL, TestConstants.DATA_AVAILABLE_TIMEOUT), checkDataConsistency)) {
         readClient.connect();
         TaskByteArrayDataBlock record = readClient.readRecord();
@@ -441,7 +439,7 @@ public class ReplicatedReadClientTest {
 
       // read partition 3
       appShufflePartitionId = new AppShufflePartitionId(appId, appAttempt, shuffleId, 3);
-      try (ReplicatedReadClient readClient = new ReplicatedReadClient(serverReplicationGroup, TestConstants.NETWORK_TIMEOUT, readQueueSize,"user1", appShufflePartitionId,
+      try (ReplicatedReadClient readClient = new ReplicatedReadClient(serverReplicationGroup, TestConstants.NETWORK_TIMEOUT,"user1", appShufflePartitionId,
           new ReadClientDataOptions(Arrays.asList(appTaskAttemptId.getTaskAttemptId()), TestConstants.DATA_AVAILABLE_POLL_INTERVAL, TestConstants.DATA_AVAILABLE_TIMEOUT), checkDataConsistency)) {
         readClient.connect();
         TaskByteArrayDataBlock record = readClient.readRecord();
@@ -464,8 +462,8 @@ public class ReplicatedReadClientTest {
     }
   }
 
-  @Test(dataProvider = "data-provider", expectedExceptions = {RssAggregateException.class, RssEndOfStreamException.class, RssStreamReadException.class, RssException.class})
-  public void twoServerDown(boolean finishUploadAck, int readQueueSize) {
+  @Test(dataProvider = "data-provider", expectedExceptions = {RssAggregateException.class, RssEndOfStreamException.class, RssStreamReadException.class})
+  public void twoServerDown(boolean finishUploadAck) {
     TestStreamServer testServer1 = TestStreamServer.createRunningServer();
     TestStreamServer testServer2 = TestStreamServer.createRunningServer();
 
@@ -516,7 +514,7 @@ public class ReplicatedReadClientTest {
     int timeoutMillis = 200;
 
     AppShufflePartitionId appShufflePartitionId = new AppShufflePartitionId(appId, appAttempt, shuffleId, 1);
-    try (ReplicatedReadClient readClient = new ReplicatedReadClient(serverReplicationGroup, timeoutMillis, readQueueSize,"user1", appShufflePartitionId,
+    try (ReplicatedReadClient readClient = new ReplicatedReadClient(serverReplicationGroup, timeoutMillis,"user1", appShufflePartitionId,
         new ReadClientDataOptions(Arrays.asList(appTaskAttemptId.getTaskAttemptId()), TestConstants.DATA_AVAILABLE_POLL_INTERVAL, TestConstants.DATA_AVAILABLE_TIMEOUT))) {
       readClient.connect();
 
@@ -533,7 +531,7 @@ public class ReplicatedReadClientTest {
   }
 
   @Test(dataProvider = "data-provider", expectedExceptions = RssInconsistentReplicaException.class)
-  public void inconsistentReplicaData(boolean finishUploadAck, int readQueueSize) {
+  public void inconsistentReplicaData(boolean finishUploadAck) {
     TestStreamServer testServer1 = TestStreamServer.createRunningServer();
     TestStreamServer testServer2 = TestStreamServer.createRunningServer();
 
@@ -603,7 +601,7 @@ public class ReplicatedReadClientTest {
 
       // connect to server group, shutdown server 1, read shuffle data, will hit RssInconsistentReplicaException
       AppShufflePartitionId appShufflePartitionId = new AppShufflePartitionId(appId, appAttempt, shuffleId, 1);
-      try (ReplicatedReadClient readClient = new ReplicatedReadClient(serverReplicationGroup, TestConstants.NETWORK_TIMEOUT, readQueueSize,"user1", appShufflePartitionId,
+      try (ReplicatedReadClient readClient = new ReplicatedReadClient(serverReplicationGroup, TestConstants.NETWORK_TIMEOUT,"user1", appShufflePartitionId,
           new ReadClientDataOptions(Arrays.asList(appTaskAttemptId.getTaskAttemptId()), TestConstants.DATA_AVAILABLE_POLL_INTERVAL, TestConstants.DATA_AVAILABLE_TIMEOUT))) {
         readClient.connect();
 

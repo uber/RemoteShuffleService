@@ -24,11 +24,11 @@ import com.uber.rss.util.StringUtils
  *
  * @param numMaps
  * @param numRssServers
- * @param latestTaskAttemptIds
+ * @param taskAttemptIds
  */
-case class MapOutputRssInfo(numMaps: Int, numRssServers: Int, latestTaskAttemptIds: Array[Long]) {
+case class MapOutputRssInfo(numMaps: Int, numRssServers: Int, taskAttemptIds: Array[Long]) {
   override def toString: String = {
-    val latestTaskAttemptIdsStr = StringUtils.toString4SortedIntList[java.lang.Long](latestTaskAttemptIds.sorted.map(long2Long).toList.asJava)
-    s"MapOutputRssInfo(numMaps: $numMaps, numRssServers: $numRssServers, latestTaskAttemptIds: $latestTaskAttemptIdsStr)"
+    val taskAttemptIdsStr = StringUtils.toString4SortedIntList[java.lang.Long](taskAttemptIds.sorted.map(long2Long).toList.asJava)
+    s"MapOutputRssInfo(numMaps: $numMaps, numRssServers: $numRssServers, taskAttemptIds: $taskAttemptIdsStr)"
   }
 }

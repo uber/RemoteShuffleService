@@ -367,7 +367,7 @@ public class StreamServerStressTool {
         
         List<Integer> simulatedNumberOfAttemptsForMappers = new ArrayList<>();
 
-        List<Long> latestTaskAttemptIds = new ArrayList<>();
+        List<Long> fetchTaskAttemptIds = new ArrayList<>();
 
         ConcurrentHashMap<Integer, AtomicLong> numPartitionRecords = new ConcurrentHashMap<>();
 
@@ -392,8 +392,8 @@ public class StreamServerStressTool {
                     boolean simulateEmptyData = mapIdsWritingEmptyData.contains(mapId);
 
                     if (isLastTaskAttempt) {
-                      synchronized (latestTaskAttemptIds) {
-                        latestTaskAttemptIds.add(taskAttemptId);
+                      synchronized (fetchTaskAttemptIds) {
+                          fetchTaskAttemptIds.add(taskAttemptId);
                       }
                     }
 
@@ -477,7 +477,7 @@ public class StreamServerStressTool {
                 });
 
                 logger.info(String.format("Verifying reading from servers: %s", StringUtils.join(serverDetails, ", ")));
-                streamReadClientVerify.verifyRecords(usedPartitionIds.keySet(), latestTaskAttemptIds);
+                streamReadClientVerify.verifyRecords(usedPartitionIds.keySet(), fetchTaskAttemptIds);
                 logger.info(String.format("Verifying reading from servers: %s", StringUtils.join(serverDetails, ", ")));
             } catch (Throwable ex) {
                 M3Stats.addException(ex, M3Stats.TAG_VALUE_STRESS_TOOL);

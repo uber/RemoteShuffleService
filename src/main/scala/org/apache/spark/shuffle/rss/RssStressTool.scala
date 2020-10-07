@@ -187,7 +187,7 @@ class RssStressTool extends Logging {
 
     // Create map task threads to write shuffle data
     val simulatedNumberOfAttemptsForMappers = new util.ArrayList[Integer]
-    val latestTaskAttemptIds = new util.ArrayList[Long]
+    val fetchTaskAttemptIds = new util.ArrayList[Long]
     var i = startMapId
     while (i <= endMapId) {
       val value = random.nextInt(numMapTaskRetries) + 1
@@ -206,8 +206,8 @@ class RssStressTool extends Logging {
             val taskAttemptId = taskAttemptIdSeed.getAndIncrement
             val isLastTaskAttempt = attempt == simulatedNumberOfAttempts
             if (isLastTaskAttempt) {
-              latestTaskAttemptIds.synchronized{
-                latestTaskAttemptIds.add(taskAttemptId)
+              fetchTaskAttemptIds.synchronized{
+                fetchTaskAttemptIds.add(taskAttemptId)
               }
             }
             simulateMapperTask(testValues, appMapId, taskAttemptId, isLastTaskAttempt)
@@ -371,7 +371,6 @@ class RssStressTool extends Logging {
       maxRetryMillis = 60000,
       dataAvailablePollInterval = 1000,
       dataAvailableWaitTime = 30000,
-      queueSize = 0,
       shuffleReplicas = 1,
       checkShuffleReplicaConsistency = true
     )

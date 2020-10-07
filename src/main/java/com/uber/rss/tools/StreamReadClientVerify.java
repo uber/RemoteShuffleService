@@ -95,7 +95,7 @@ public class StreamReadClientVerify {
         this.expectedTotalRecordsForEachPartition = expectedTotalRecordsForEachPartition;
     }
 
-    public void verifyRecords(Collection<Integer> partitionIds, Collection<Long> latestTaskAttemptIds) {
+    public void verifyRecords(Collection<Integer> partitionIds, Collection<Long> fetchTaskAttemptIds) {
         AtomicLong totalReadRecords = new AtomicLong();
 
         if (partitionIds == null) {
@@ -112,7 +112,6 @@ public class StreamReadClientVerify {
             int socketTimeoutMillis = 120 * 1000;
             int dataAvailableWaitTime = socketTimeoutMillis * 3;
             int dataAvailablePollInterval = 10;
-            int readQueueSize = 0;
             boolean checkDataConsistency = true;
             MultiServerReadClient readClient;
             List<ServerReplicationGroup> serverReplicationGroups;
@@ -120,11 +119,10 @@ public class StreamReadClientVerify {
             readClient = new MultiServerSocketReadClient(serverReplicationGroups,
                 socketTimeoutMillis,
                 new ClientRetryOptions(dataAvailablePollInterval, dataAvailableWaitTime, serverDetail->serverDetail),
-                readQueueSize,
                 "user1",
                 appShufflePartitionId,
                 new ReadClientDataOptions(
-                    latestTaskAttemptIds,
+                    fetchTaskAttemptIds,
                     dataAvailablePollInterval,
                     dataAvailableWaitTime),
                 checkDataConsistency);
