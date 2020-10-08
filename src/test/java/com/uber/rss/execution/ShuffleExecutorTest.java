@@ -67,8 +67,6 @@ public class ShuffleExecutorTest {
         executor.addFinishUploadOperation(appTaskAttemptId);
 
         executor.pollAndWaitMapAttemptCommitted(new AppTaskAttemptId(appShuffleId, mapId1, 0L), 10000);
-        
-        executor.pollAndWaitShuffleFilesClosed(appShuffleId, 10000);
 
         executor.stop();
 
@@ -88,7 +86,7 @@ public class ShuffleExecutorTest {
 
         String rootDir = Files.createTempDirectory("ShuffleExecutorTest_").toString();
         ShuffleExecutor executor = new ShuffleExecutor(
-                rootDir, new ShuffleFileStorage(), true, false, 60*1000L, null, ShuffleExecutor.DEFAULT_APP_MAX_WRITE_BYTES, ShuffleExecutor.DEFAULT_STATE_COMMIT_INTERVAL_MILLIS);
+                rootDir, new ShuffleFileStorage(), false, 60*1000L, null, ShuffleExecutor.DEFAULT_APP_MAX_WRITE_BYTES, ShuffleExecutor.DEFAULT_STATE_COMMIT_INTERVAL_MILLIS);
         
         AppShuffleId appShuffleId = new AppShuffleId(String.valueOf(System.nanoTime()), "exec1", 10);
         int numMaps = 3;
@@ -159,8 +157,6 @@ public class ShuffleExecutorTest {
         executor.pollAndWaitMapAttemptCommitted(new AppTaskAttemptId(appShuffleId, mapId1, 0L), 10000);
         executor.pollAndWaitMapAttemptCommitted(new AppTaskAttemptId(appShuffleId, mapId2, 0L), 10000);
         executor.pollAndWaitMapAttemptCommitted(new AppTaskAttemptId(appShuffleId, mapId3, 0L), 10000);
-            
-        executor.pollAndWaitShuffleFilesClosed(appShuffleId, 10000);
 
         Assert.assertEquals(appMapIds.size(), numMaps);
 
@@ -212,8 +208,6 @@ public class ShuffleExecutorTest {
         executor.addFinishUploadOperation(appTaskAttemptId);
 
         executor.pollAndWaitMapAttemptCommitted(new AppTaskAttemptId(appShuffleId, mapId1, taskAttemptId), 10000);
-
-        executor.pollAndWaitShuffleFilesClosed(appShuffleId, 10000);
 
         List<FilePathAndLength> writtenPartitionFiles = executor.getPersistedBytes(appShuffleId, partition);
 

@@ -60,9 +60,6 @@ public class ExecutorShuffleStageState {
 
     private byte fileStatus = ShuffleStageStatus.FILE_STATUS_OK;
 
-    // TODO optimize this
-    private final Set<AppTaskAttemptId> pendingFlushMapAttempts = new HashSet<>();
-
     private final Map<AppMapId, TaskAttemptCollection> taskAttempts = new HashMap<>();
 
     /***
@@ -164,7 +161,7 @@ public class ExecutorShuffleStageState {
         return getTaskState(appTaskAttemptId.getAppMapId(), appTaskAttemptId.getTaskAttemptId()).isCommitted();
     }
 
-    public synchronized ShufflePartitionWriter getOrCreateWriter(int partition, String rootDir, ShuffleStorage storage, boolean fsyncEnabled) {
+    public synchronized ShufflePartitionWriter getOrCreateWriter(int partition, String rootDir, ShuffleStorage storage) {
         if (partition < 0) {
             throw new RssInvalidDataException("Invalid partition: " + partition);
         }
@@ -184,16 +181,9 @@ public class ExecutorShuffleStageState {
                     rootDir, appShuffleId, partition);
             ShufflePartitionWriter streamer
                     = new ShufflePartitionWriter(appShufflePartitionId,
-                    path, fileStartIndex, storage, fsyncEnabled, appConfig.getNumSplits());
+                    path, fileStartIndex, storage, appConfig.getNumSplits());
             return streamer;
         });
-    }
-
-    public synchronized void flushAllPartitions() {
-        List<ShufflePartitionWriter> writersCopy = new ArrayList<>();
-        writersCopy.addAll(writers.values());
-
-        writersCopy.forEach(writer->writer.flush());
     }
 
     public synchronized void closeWriters() {
@@ -300,8 +290,6 @@ public class ExecutorShuffleStageState {
     public synchronized void commitMapTask(int mapId, long taskId) {
         TaskAttemptIdAndState taskState = getTaskState(new AppMapId(appShuffleId, mapId), taskId);
         taskState.markCommitted();
-
-        pendingFlushMapAttempts.remove(new AppTaskAttemptId(appShuffleId, mapId, taskId));
     }
 
     /***
@@ -330,26 +318,6 @@ public class ExecutorShuffleStageState {
 
     public synchronized byte getFileStatus() {
         return fileStatus;
-    }
-
-    // add a task attempt as pending for flush
-    public synchronized void addPendingFlushMapAttempt(AppTaskAttemptId appTaskAttemptId) {
-        pendingFlushMapAttempts.add(appTaskAttemptId);
-    }
-
-    // fetch map task attempts for which we need to flush shuffle files
-    public synchronized Collection<AppTaskAttemptId> fetchFlushMapAttempts() {
-        // TODO hack for spark 3.0, need to improve later
-        int numMaps = 1;
-        if (taskAttempts.size() >= numMaps) {
-            return new ArrayList<>(pendingFlushMapAttempts);
-        } else {
-            return Collections.emptyList();
-        }
-    }
-
-    public synchronized Collection<AppTaskAttemptId> getPendingFlushMapAttempts() {
-      return Collections.unmodifiableCollection(pendingFlushMapAttempts);
     }
 
     @Override

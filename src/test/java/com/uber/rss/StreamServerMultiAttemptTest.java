@@ -69,8 +69,6 @@ public class StreamServerMultiAttemptTest {
             List<TaskByteArrayDataBlock> records;
 
             if (waitShuffleFileClosed) {
-                testServer.pollAndWaitShuffleFilesClosed(appTaskAttemptId1.getAppShuffleId(), TestConstants.DATA_AVAILABLE_TIMEOUT);
-
                 records = StreamServerTestUtils.readAllRecords2(testServer.getShufflePort(), appTaskAttemptId1.getAppShuffleId(), 1, Arrays.asList(appTaskAttemptId1.getTaskAttemptId()));
                 Assert.assertEquals(records.size(), 1);
             }
