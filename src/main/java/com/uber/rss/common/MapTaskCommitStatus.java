@@ -49,6 +49,7 @@ public class MapTaskCommitStatus {
     // Last successful attempt ids for each mapper id
     private final Map<Integer, Long> taskAttemptIds;
 
+    // TODO spark 3.0 remove key in taskAttemptIds map
     public MapTaskCommitStatus(Map<Integer, Long> taskAttemptIds) {
         this.taskAttemptIds = taskAttemptIds;
     }

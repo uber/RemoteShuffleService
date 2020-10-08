@@ -74,10 +74,6 @@ public class ShuffleExecutor {
     // number of applications which are stopped due to writing too much data
     private static final Counter numTruncatedApplications = M3Stats.getDefaultScope().counter("numTruncatedApplications");
 
-    // TODO ideally we should use timer here, but M3 timer causes performance issue, thus use gauge here
-    private static final Gauge mapAttemptFlushDelay = M3Stats.getDefaultScope().gauge("mapAttemptFlushDelay");
-    private static final Gauge mapAttemptFlushTime = M3Stats.getDefaultScope().gauge("mapAttemptFlushTime");
-
     // time to keep application in memory since last time is was accessed by shuffle client
     public static final long DEFAULT_APP_MEMORY_RETENTION_MILLIS = TimeUnit.HOURS.toMillis(6);
 

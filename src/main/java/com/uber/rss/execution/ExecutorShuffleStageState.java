@@ -60,7 +60,7 @@ public class ExecutorShuffleStageState {
 
     private byte fileStatus = ShuffleStageStatus.FILE_STATUS_OK;
 
-    private final Map<AppMapId, TaskAttemptCollection> taskAttempts = new HashMap<>();
+    private final TaskAttemptCollection taskAttempts = new TaskAttemptCollection();
 
     /***
      * Create an stage state instance
@@ -135,30 +135,22 @@ public class ExecutorShuffleStageState {
 
     public synchronized void markMapAttemptStartUpload(AppTaskAttemptId appTaskAttemptId) {
         AppMapId appMapId = appTaskAttemptId.getAppMapId();
-        TaskAttemptIdAndState taskState = getTaskState(appMapId, appTaskAttemptId.getTaskAttemptId());
+        TaskAttemptIdAndState taskState = getTaskState(appTaskAttemptId.getTaskAttemptId());
         taskState.markStartUpload();
     }
 
     public synchronized void markMapAttemptFinishUpload(AppTaskAttemptId appTaskAttemptId) {
         AppMapId appMapId = appTaskAttemptId.getAppMapId();
-        TaskAttemptIdAndState taskState = getTaskState(appMapId, appTaskAttemptId.getTaskAttemptId());
+        TaskAttemptIdAndState taskState = getTaskState(appTaskAttemptId.getTaskAttemptId());
         taskState.markFinishUpload();
-    }
-    
-    public synchronized boolean allLatestTaskAttemptsCommitted() {
-        // TODO support spark.speculation execution later
-        return taskAttempts.values().stream().allMatch(t1->{
-            TaskAttemptIdAndState task = t1.getLatestTaskOrNull();
-            return task == null || task.isCommitted();
-        });
     }
 
     public synchronized boolean isMapAttemptFinishedUpload(AppTaskAttemptId appTaskAttemptId) {
-        return getTaskState(appTaskAttemptId.getAppMapId(), appTaskAttemptId.getTaskAttemptId()).isFinishedUpload();
+        return getTaskState(appTaskAttemptId.getTaskAttemptId()).isFinishedUpload();
     }
 
     public synchronized boolean isMapAttemptCommitted(AppTaskAttemptId appTaskAttemptId) {
-        return getTaskState(appTaskAttemptId.getAppMapId(), appTaskAttemptId.getTaskAttemptId()).isCommitted();
+        return getTaskState(appTaskAttemptId.getTaskAttemptId()).isCommitted();
     }
 
     public synchronized ShufflePartitionWriter getOrCreateWriter(int partition, String rootDir, ShuffleStorage storage) {
@@ -288,7 +280,7 @@ public class ExecutorShuffleStageState {
      * @param taskId
      */
     public synchronized void commitMapTask(int mapId, long taskId) {
-        TaskAttemptIdAndState taskState = getTaskState(new AppMapId(appShuffleId, mapId), taskId);
+        TaskAttemptIdAndState taskState = getTaskState(taskId);
         taskState.markCommitted();
     }
 
@@ -297,18 +289,16 @@ public class ExecutorShuffleStageState {
      * @return
      */
     public synchronized ShuffleStageStatus getShuffleStageStatus() {
-        HashMap<Integer, Long> committedMapTaskIds = new HashMap<>(taskAttempts.size());
-        for (Map.Entry<AppMapId, TaskAttemptCollection> entry: taskAttempts.entrySet()) {
-          int mapId = entry.getKey().getMapId();
-            TaskAttemptCollection taskAttemptCollection = entry.getValue();
-            // TODO support spark.speculation execution later
-            TaskAttemptIdAndState latestTaskAttempt = taskAttemptCollection.getLatestTaskOrNull();
-            if (latestTaskAttempt != null && latestTaskAttempt.isCommitted()) {
-                committedMapTaskIds.put(mapId, latestTaskAttempt.getTaskAttemptId());
-            }
+        List<Long> committedMapTaskIds = taskAttempts.getCommittedTaskIds();
+        // TODO this is for backward compatibility, remove this later
+        Map<Integer, Long> legacyMap = new HashMap<>();
+        for (long entry: committedMapTaskIds) {
+          if (entry > Integer.MAX_VALUE) {
+            throw new RssInvalidDataException("Does not support large task attempt id: " + entry);
+          }
+          legacyMap.put((int)entry, entry);
         }
-
-        MapTaskCommitStatus mapTaskCommitStatus = new MapTaskCommitStatus(committedMapTaskIds);
+        MapTaskCommitStatus mapTaskCommitStatus = new MapTaskCommitStatus(legacyMap);
         return new ShuffleStageStatus(fileStatus, mapTaskCommitStatus);
     }
 
@@ -340,13 +330,8 @@ public class ExecutorShuffleStageState {
         return sb.toString();
     }
 
-    private TaskAttemptIdAndState getTaskState(AppMapId appMapId, Long taskAttemptId) {
-        TaskAttemptCollection taskCollection = taskAttempts.get(appMapId);
-        if (taskCollection == null) {
-            taskCollection = new TaskAttemptCollection(appMapId);
-            taskAttempts.put(appMapId, taskCollection);
-        }
-        return taskCollection.getTask(taskAttemptId);
+    private TaskAttemptIdAndState getTaskState(Long taskAttemptId) {
+      return taskAttempts.getTask(taskAttemptId);
     }
 
     private void checkDuplicateFiles(List<FilePathAndLength> result, int partition) {
