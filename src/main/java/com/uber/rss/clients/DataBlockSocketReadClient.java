@@ -234,8 +234,11 @@ public class DataBlockSocketReadClient extends com.uber.rss.clients.ClientBase {
 
     // TODO delete commitTaskAttemptIds and following later
     if (!this.fetchTaskAttemptIds.isEmpty()) {
-      if (!new HashSet<>(this.fetchTaskAttemptIds).equals(this.commitTaskAttemptIds)) {
-        throw new RssInvalidDataException(String.format("Task attempt ids not matched"));
+      if (!new HashSet<>(this.commitTaskAttemptIds).containsAll(this.fetchTaskAttemptIds)) {
+        throw new RssInvalidDataException(String.format(
+            "Task attempt ids not matched, committed: %s, fetching: %s",
+            this.commitTaskAttemptIds,
+            this.fetchTaskAttemptIds));
       }
     }
 

@@ -120,7 +120,7 @@ public class ShuffleExecutorTest {
             appMapIds.add(appTaskAttemptId.getAppMapId());
         }
         {
-            AppTaskAttemptId appTaskAttemptId = new AppTaskAttemptId(appShuffleId, mapId2, 0L);
+            AppTaskAttemptId appTaskAttemptId = new AppTaskAttemptId(appShuffleId, mapId2, 1L);
             appTaskAttemptIds.add(appTaskAttemptId);
             
             executor.startUpload(appTaskAttemptId);
@@ -137,7 +137,7 @@ public class ShuffleExecutorTest {
             appMapIds.add(appTaskAttemptId.getAppMapId());
         }
         {
-            AppTaskAttemptId appTaskAttemptId = new AppTaskAttemptId(appShuffleId, mapId3, 0L);
+            AppTaskAttemptId appTaskAttemptId = new AppTaskAttemptId(appShuffleId, mapId3, 2L);
             appTaskAttemptIds.add(appTaskAttemptId);
             
             executor.startUpload(appTaskAttemptId);
@@ -217,7 +217,7 @@ public class ShuffleExecutorTest {
         ShuffleStageStatus status = executor.getShuffleStageStatus(appShuffleId);
         Assert.assertEquals(status.getFileStatus(), ShuffleStageStatus.FILE_STATUS_OK);
         Assert.assertEquals(status.getMapTaskCommitStatus().getTaskAttemptIds().size(), 1);
-        Assert.assertEquals(status.getMapTaskCommitStatus().getTaskAttemptIds().get(mapId1), (Long)taskAttemptId);
+        Assert.assertEquals(status.getMapTaskCommitStatus().getTaskAttemptIds().values().stream().findFirst().get(), (Long)taskAttemptId);
 
         List<FilePathAndLength> pathAndLengths = executor.getPersistedBytes(appShuffleId, partition);
         Assert.assertEquals(pathAndLengths, writtenPartitionFiles);
