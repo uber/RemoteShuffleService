@@ -172,7 +172,7 @@ public class UploadChannelInboundHandler extends ChannelInboundHandlerAdapter {
                     startUploadMessage.getAttemptId());
 
                 ShuffleWriteConfig writeConfig = new ShuffleWriteConfig(startUploadMessage.getNumSplits());
-                uploadServerHandler.initializeAppTaskAttempt(appTaskAttemptId, startUploadMessage.getNumMaps(), startUploadMessage.getNumPartitions(), writeConfig, ctx);
+                uploadServerHandler.initializeAppTaskAttempt(appTaskAttemptId, startUploadMessage.getNumPartitions(), writeConfig, ctx);
             } else if (msg instanceof FinishUploadMessage) {
                 logger.info("FinishUploadMessage, {}, {}", msg, connectionInfo);
                 FinishUploadMessage finishUploadMessage = (FinishUploadMessage)msg;

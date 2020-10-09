@@ -70,7 +70,7 @@ class RssShuffleWriter[K, V, C](
     var numRecords = 0
 
     val startUploadStartTime = System.nanoTime()
-    val numMaps = 1 // TODO hack for Spark 3.0, remove this later
+    val numMaps = Integer.MAX_VALUE // TODO hack for Spark 3.0, remove this later
     writeClient.startUpload(mapInfo, numMaps, numPartitions)
     val startUploadTime = System.nanoTime() - startUploadStartTime
 

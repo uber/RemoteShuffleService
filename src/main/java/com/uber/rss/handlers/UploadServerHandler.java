@@ -57,11 +57,11 @@ public class UploadServerHandler {
         channelManager.incNumConnections();
     }
 
-    public void initializeAppTaskAttempt(AppTaskAttemptId appTaskAttemptId, int numMaps, int numPartitions, ShuffleWriteConfig writeConfig, ChannelHandlerContext ctx) {
-        initializeAppTaskAttemptImpl(appTaskAttemptId, numMaps, numPartitions, writeConfig, ctx, null);
+    public void initializeAppTaskAttempt(AppTaskAttemptId appTaskAttemptId, int numPartitions, ShuffleWriteConfig writeConfig, ChannelHandlerContext ctx) {
+        initializeAppTaskAttemptImpl(appTaskAttemptId, numPartitions, writeConfig, ctx, null);
     }
 
-    private void initializeAppTaskAttemptImpl(AppTaskAttemptId appTaskAttemptId, int numMaps, int numPartitions, ShuffleWriteConfig writeConfig, ChannelHandlerContext ctx, String networkCompressionCodecName) {
+    private void initializeAppTaskAttemptImpl(AppTaskAttemptId appTaskAttemptId, int numPartitions, ShuffleWriteConfig writeConfig, ChannelHandlerContext ctx, String networkCompressionCodecName) {
         this.connectionInfo = NettyUtils.getServerConnectionInfo(ctx.channel());
 
         this.numPartitions = numPartitions;
