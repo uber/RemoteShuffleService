@@ -15,7 +15,6 @@
 package com.uber.rss.messages;
 
 import com.uber.rss.common.AppShuffleId;
-import com.uber.rss.common.MapTaskAttemptId;
 import com.uber.rss.common.PartitionFilePathAndLength;
 import com.uber.rss.util.ByteBufUtils;
 import io.netty.buffer.ByteBuf;

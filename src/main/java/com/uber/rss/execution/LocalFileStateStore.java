@@ -15,7 +15,6 @@
 package com.uber.rss.execution;
 
 import com.uber.rss.common.AppShuffleId;
-import com.uber.rss.common.MapTaskAttemptId;
 import com.uber.rss.common.PartitionFilePathAndLength;
 import com.uber.rss.exceptions.RssFileCorruptedException;
 import com.uber.rss.exceptions.RssInvalidStateException;

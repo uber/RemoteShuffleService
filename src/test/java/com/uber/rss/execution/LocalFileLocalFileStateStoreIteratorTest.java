@@ -17,7 +17,6 @@ package com.uber.rss.execution;
 import com.uber.rss.clients.ShuffleWriteConfig;
 import com.uber.rss.common.AppShuffleId;
 import com.uber.rss.common.AppTaskAttemptId;
-import com.uber.rss.common.MapTaskAttemptId;
 import com.uber.rss.common.PartitionFilePathAndLength;
 import com.uber.rss.messages.AppDeletionStateItem;
 import com.uber.rss.messages.BaseMessage;
@@ -358,7 +357,7 @@ public class LocalFileLocalFileStateStoreIteratorTest {
     Assert.assertTrue(dataItem instanceof TaskAttemptCommitStateItem);
     TaskAttemptCommitStateItem taskAttemptCommitStateItem = (TaskAttemptCommitStateItem)dataItem;
     Assert.assertEquals(taskAttemptCommitStateItem.getAppShuffleId(), appTaskAttemptId1.getAppShuffleId());
-    Assert.assertEquals(taskAttemptCommitStateItem.getMapTaskAttemptIds(), Arrays.asList(new MapTaskAttemptId(appTaskAttemptId1.getMapId(), appTaskAttemptId1.getTaskAttemptId())));
+    Assert.assertEquals(taskAttemptCommitStateItem.getMapTaskAttemptIds(), Arrays.asList(appTaskAttemptId1.getTaskAttemptId()));
     Assert.assertEquals(taskAttemptCommitStateItem.getPartitionFilePathAndLengths(), Arrays.asList(partitionFilePathAndLength1));
 
     Assert.assertTrue(iterator.hasNext());

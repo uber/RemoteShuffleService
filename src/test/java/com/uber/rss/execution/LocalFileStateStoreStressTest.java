@@ -17,7 +17,6 @@ package com.uber.rss.execution;
 import com.uber.rss.clients.ShuffleWriteConfig;
 import com.uber.rss.common.AppShuffleId;
 import com.uber.rss.common.AppTaskAttemptId;
-import com.uber.rss.common.MapTaskAttemptId;
 import com.uber.rss.common.PartitionFilePathAndLength;
 import com.uber.rss.messages.ShuffleStageStatus;
 import com.uber.rss.util.FileUtils;
