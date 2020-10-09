@@ -25,9 +25,9 @@ import com.uber.rss.exceptions.RssInvalidDataException;
 import com.uber.rss.exceptions.RssShuffleStageNotStartedException;
 import com.uber.rss.execution.ShuffleExecutor;
 import com.uber.rss.messages.BaseMessage;
-import com.uber.rss.messages.ConnectDownload2Request;
+import com.uber.rss.messages.ConnectDownloadRequest;
 import com.uber.rss.messages.ConnectDownloadResponse;
-import com.uber.rss.messages.GetDataAvailability2Request;
+import com.uber.rss.messages.GetDataAvailabilityRequest;
 import com.uber.rss.messages.GetDataAvailabilityResponse;
 import com.uber.rss.messages.MessageConstants;
 import com.uber.rss.messages.ShuffleStageStatus;
@@ -103,10 +103,10 @@ public class DownloadChannelInboundHandler extends ChannelInboundHandlerAdapter 
             // Process other messages. We assume the header messages are already processed, thus some fields of this
             // class are already populated with proper values, e.g. user field.
 
-            if (msg instanceof ConnectDownload2Request) {
+            if (msg instanceof ConnectDownloadRequest) {
                 logger.info("ConnectDownloadRequest: {}, {}", msg, connectionInfo);
 
-                ConnectDownload2Request connectRequest = (ConnectDownload2Request) msg;
+                ConnectDownloadRequest connectRequest = (ConnectDownloadRequest) msg;
                 appShufflePartitionId = new AppShufflePartitionId(
                     connectRequest.getAppId(),
                     connectRequest.getAppAttempt(),
@@ -138,7 +138,7 @@ public class DownloadChannelInboundHandler extends ChannelInboundHandlerAdapter 
                 String fileCompressionCodec = ""; // TODO delete this
                 ConnectDownloadResponse connectResponse = new ConnectDownloadResponse(serverId, RssBuildInfo.Version, runningVersion, fileCompressionCodec, mapTaskCommitStatus, dataAvailable);
                 sendResponseAndFiles2(ctx, dataAvailable, shuffleStageStatus, connectResponse);
-            } else if (msg instanceof GetDataAvailability2Request) {
+            } else if (msg instanceof GetDataAvailabilityRequest) {
                 ShuffleStageStatus shuffleStageStatus = downloadServerHandler.getShuffleStageStatus(appShufflePartitionId.getAppShuffleId());
                 MapTaskCommitStatus mapTaskCommitStatus = shuffleStageStatus.getMapTaskCommitStatus();
                 boolean dataAvailable;
@@ -162,35 +162,6 @@ public class DownloadChannelInboundHandler extends ChannelInboundHandlerAdapter 
     }
 
     // send response to client, also send files if data is available
-    private void sendResponseAndFiles(ChannelHandlerContext ctx, boolean dataAvailable, ShuffleStageStatus shuffleStageStatus, BaseMessage responseMessage) {
-        byte responseStatus = shuffleStageStatus.transformToMessageResponseStatus();
-        if (dataAvailable) {
-            List<FilePathAndLength> files = downloadServerHandler.getNonEmptyPartitionFiles(connectionInfo);
-            downloadServerHandler.closePartitionFiles(appShufflePartitionId);
-            ChannelFuture channelFuture = HandlerUtil.writeResponseMsg(ctx, responseStatus, responseMessage, true);
-            if (shuffleStageStatus.getFileStatus() == ShuffleStageStatus.FILE_STATUS_CORRUPTED || files.isEmpty()) {
-                logger.warn("Partition file corrupted, partition {}, {}", appShufflePartitionId, connectionInfo);
-                channelFuture.addListener(ChannelFutureListener.CLOSE);
-            } else {
-                ChannelFuture sendFileChannelFuture = downloadServerHandler.sendFiles(ctx, files);
-                if (sendFileChannelFuture == null) {
-                    logger.warn("No file sent out, closing the connection, partition {}, {}", appShufflePartitionId, connectionInfo);
-                    channelFuture.addListener(ChannelFutureListener.CLOSE);
-                } else {
-                    sendFileChannelFuture.addListener(ChannelFutureListener.CLOSE);
-                }
-            }
-        } else {
-            ChannelFuture channelFuture = HandlerUtil.writeResponseMsg(ctx, responseStatus, responseMessage, true);
-            if (shuffleStageStatus.getFileStatus() == ShuffleStageStatus.FILE_STATUS_CORRUPTED) {
-                logger.warn("Partition file corrupted, partition {}, {}", appShufflePartitionId, connectionInfo);
-                channelFuture.addListener(ChannelFutureListener.CLOSE);
-            }
-        }
-    }
-
-    // send response to client, also send files if data is available
-    // TODO delete old sendResponseAndFiles method later
     private void sendResponseAndFiles2(ChannelHandlerContext ctx, boolean dataAvailable, ShuffleStageStatus shuffleStageStatus, BaseMessage responseMessage) {
         byte responseStatus = shuffleStageStatus.transformToMessageResponseStatus();
         if (dataAvailable) {
