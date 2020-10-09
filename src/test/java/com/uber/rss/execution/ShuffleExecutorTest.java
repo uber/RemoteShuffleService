@@ -209,6 +209,8 @@ public class ShuffleExecutorTest {
 
         executor.pollAndWaitMapAttemptCommitted(new AppTaskAttemptId(appShuffleId, mapId1, taskAttemptId), 10000);
 
+        executor.finishShuffleStage(appShuffleId);
+
         List<FilePathAndLength> writtenPartitionFiles = executor.getPersistedBytes(appShuffleId, partition);
 
         // create new executor which should load state from state files
