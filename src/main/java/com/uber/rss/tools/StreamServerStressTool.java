@@ -598,7 +598,7 @@ public class StreamServerStressTool {
 
         if (!simulateEmptyData) {
             int partitionId = random.nextInt(numPartitions);
-            writeClient.sendRecord(partitionId, null);
+            writeClient.writeDataBlock(partitionId, null);
 
             totalShuffleWrittenBytes.addAndGet(SHUFFLE_RECORD_EXTRA_BYTES);
             totalShuffleWrittenRecords.incrementAndGet();
@@ -609,7 +609,7 @@ public class StreamServerStressTool {
                 numPartitionRecords.computeIfAbsent(partitionId, k -> new AtomicLong()).incrementAndGet();
             }
 
-            writeClient.sendRecord(partitionId, ByteBuffer.wrap(new byte[0]));
+            writeClient.writeDataBlock(partitionId, ByteBuffer.wrap(new byte[0]));
 
             totalShuffleWrittenBytes.addAndGet(SHUFFLE_RECORD_EXTRA_BYTES);
             totalShuffleWrittenRecords.incrementAndGet();
@@ -644,7 +644,7 @@ public class StreamServerStressTool {
                     numPartitionRecords.computeIfAbsent(partitionId, k -> new AtomicLong()).incrementAndGet();
                 }
 
-                writeClient.sendRecord(partitionId,
+                writeClient.writeDataBlock(partitionId,
                     valueData == null ? null : ByteBuffer.wrap(valueData));
 
                 if (mapSlowness > 0) {

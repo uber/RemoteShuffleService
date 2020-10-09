@@ -42,7 +42,7 @@ public class ServerIdAwareSocketReadClient implements SingleServerReadClient {
         int port = hostAndPort.getPort();
 
         SingleServerReadClient client;
-        client = new PlainRecordSocketReadClient(host, port, timeoutMillis, user, appShufflePartitionId, fetchTaskAttemptIds, dataAvailablePollInterval, dataAvailableWaitTime);
+        client = new PlainShuffleDataSocketReadClient(host, port, timeoutMillis, user, appShufflePartitionId, fetchTaskAttemptIds, dataAvailablePollInterval, dataAvailableWaitTime);
         this.readClient = client;
     }
 
@@ -72,8 +72,8 @@ public class ServerIdAwareSocketReadClient implements SingleServerReadClient {
     }
 
     @Override
-    public TaskByteArrayDataBlock readRecord() {
-        return readClient.readRecord();
+    public TaskDataBlock readDataBlock() {
+        return readClient.readDataBlock();
     }
 
     @Override

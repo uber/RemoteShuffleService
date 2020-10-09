@@ -25,21 +25,21 @@ import java.util.concurrent.atomic.AtomicLong;
 /**
  * This class is a wrapper on top of another write client, so we could pool (reuse) that client.
  */
-public class PooledRecordSyncWriteClient implements RecordSyncWriteClient {
-  private static final Logger logger = LoggerFactory.getLogger(PooledRecordSyncWriteClient.class);
+public class PooledShuffleDataSyncWriteClient implements ShuffleDataSyncWriteClient {
+  private static final Logger logger = LoggerFactory.getLogger(PooledShuffleDataSyncWriteClient.class);
 
   private final static AtomicLong clientIdGenerator = new AtomicLong();
 
   private final long clientId = clientIdGenerator.getAndIncrement();
 
-  private final RecordSyncWriteClient delegate;
+  private final ShuffleDataSyncWriteClient delegate;
   private final PooledWriteClientFactory writeClientFactory;
 
   private ConnectUploadResponse connectUploadResponse;
 
   private volatile boolean reusable = false;
 
-  public PooledRecordSyncWriteClient(RecordSyncWriteClient delegate, PooledWriteClientFactory writeClientFactory) {
+  public PooledShuffleDataSyncWriteClient(ShuffleDataSyncWriteClient delegate, PooledWriteClientFactory writeClientFactory) {
     this.delegate = delegate;
     this.writeClientFactory = writeClientFactory;
   }
@@ -87,9 +87,9 @@ public class PooledRecordSyncWriteClient implements RecordSyncWriteClient {
   }
 
   @Override
-  public void sendRecord(int partition, ByteBuffer value) {
+  public void writeDataBlock(int partition, ByteBuffer value) {
     try {
-      delegate.sendRecord(partition, value);
+      delegate.writeDataBlock(partition, value);
     } catch (Throwable ex) {
       reusable = false;
       throw ex;

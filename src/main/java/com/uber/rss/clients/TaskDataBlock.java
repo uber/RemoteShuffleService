@@ -22,19 +22,19 @@ import java.util.Objects;
  * This class contains value for a shuffle task data block, and is used only on the client side.
  * value could be null.
  */
-public class TaskByteArrayDataBlock {
-    private final byte[] value;
+public class TaskDataBlock {
+    private final byte[] payload;
     
     private long taskAttemptId;
 
-    public TaskByteArrayDataBlock(byte[] value, long taskAttemptId) {
-        this.value = value;
+    public TaskDataBlock(byte[] payload, long taskAttemptId) {
+        this.payload = payload;
         this.taskAttemptId = taskAttemptId;
     }
 
     @Nullable
-    public byte[] getValue() {
-        return value;
+    public byte[] getPayload() {
+        return payload;
     }
 
     public long getTaskAttemptId() {
@@ -43,8 +43,8 @@ public class TaskByteArrayDataBlock {
 
     public long totalBytes() {
         long bytes = 0L;
-        if (value != null) {
-            bytes += value.length;
+        if (payload != null) {
+            bytes += payload.length;
         }
         return bytes;
     }
@@ -53,24 +53,24 @@ public class TaskByteArrayDataBlock {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        TaskByteArrayDataBlock that = (TaskByteArrayDataBlock) o;
+        TaskDataBlock that = (TaskDataBlock) o;
         return taskAttemptId == that.taskAttemptId &&
-            Arrays.equals(value, that.value);
+            Arrays.equals(payload, that.payload);
     }
 
     @Override
     public int hashCode() {
         int result = Objects.hash(taskAttemptId);
-        result = 31 * result + Arrays.hashCode(value);
+        result = 31 * result + Arrays.hashCode(payload);
         return result;
     }
 
     @Override
     public String toString() {
-        String valueStr = value == null ? "null" : value.length + " bytes";
-        return "RecordKeyValuePair{" +
+        String payloadStr = payload == null ? "null" : payload.length + " bytes";
+        return "TaskDataBlock{" +
                 "taskAttemptId=" + taskAttemptId +
-                ", value=" + valueStr +
+                ", payload=" + payloadStr +
                 '}';
     }
 }

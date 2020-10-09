@@ -17,7 +17,7 @@ package org.apache.spark.shuffle.rss
 import java.util.concurrent.TimeUnit
 
 import com.esotericsoftware.kryo.io.Input
-import com.uber.rss.clients.{RecordReader, TaskByteArrayDataBlock}
+import com.uber.rss.clients.{ShuffleDataReader, TaskDataBlock}
 import com.uber.rss.exceptions.{RssInvalidDataException, RssInvalidStateException}
 import com.uber.rss.metrics.M3Stats
 import com.uber.rss.util.{ByteBufUtils, ExceptionUtils}
@@ -28,11 +28,11 @@ import org.apache.spark.serializer.{DeserializationStream, Serializer}
 import org.apache.spark.shuffle.FetchFailedException
 
 class BlockDownloaderPartitionRecordIterator[K, C](
-    shuffleId: Int,
-    partition: Int,
-    serializer: Serializer,
-    downloader: RecordReader,
-    shuffleReadMetrics: ShuffleReadMetrics) extends Iterator[Product2[K, C]] with Logging {
+                                                    shuffleId: Int,
+                                                    partition: Int,
+                                                    serializer: Serializer,
+                                                    downloader: ShuffleDataReader,
+                                                    shuffleReadMetrics: ShuffleReadMetrics) extends Iterator[Product2[K, C]] with Logging {
 
   private val decompressor: LZ4FastDecompressor = LZ4Factory.fastestInstance.fastDecompressor()
 
@@ -124,16 +124,16 @@ class BlockDownloaderPartitionRecordIterator[K, C](
     clearDeserializationStream()
 
     val readRecordStartNanoTime = System.nanoTime()
-    var dataBlock: TaskByteArrayDataBlock = null;
+    var dataBlock: TaskDataBlock = null;
 
     try {
-      dataBlock = downloader.readRecord()
+      dataBlock = downloader.readDataBlock()
       fetchNanoTime += System.nanoTime() - readRecordStartNanoTime
 
       while (dataBlock != null &&
-        (dataBlock.getValue == null || dataBlock.getValue.size == 0)) {
+        (dataBlock.getPayload == null || dataBlock.getPayload.size == 0)) {
         val readRecordStartNanoTime = System.nanoTime()
-        dataBlock = downloader.readRecord()
+        dataBlock = downloader.readDataBlock()
         fetchNanoTime += System.nanoTime() - readRecordStartNanoTime
       }
     } catch {
@@ -161,7 +161,7 @@ class BlockDownloaderPartitionRecordIterator[K, C](
     }
 
     val decompressStartTime = System.nanoTime()
-    val bytes = dataBlock.getValue
+    val bytes = dataBlock.getPayload
     val compressedLen = ByteBufUtils.readInt(bytes, 0)
     val uncompressedLen = ByteBufUtils.readInt(bytes, Integer.BYTES)
     val uncompressedBytes = new Array[Byte](uncompressedLen)

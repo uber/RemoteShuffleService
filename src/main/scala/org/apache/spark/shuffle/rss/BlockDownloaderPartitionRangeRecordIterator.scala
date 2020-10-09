@@ -95,7 +95,7 @@ class BlockDownloaderPartitionRangeRecordIterator[K, C](
   }
 
   private def createBlockDownloaderPartitionRecordIteratorWithoutRetry(partition: Int): Iterator[Product2[K, C]] = {
-    var downloader: RecordReader = null
+    var downloader: ShuffleDataReader = null
     try {
       val mapOutputRssInfoOptional = getPartitionRssInfo(startMapIndex, endMapIndex, partition)
       if (mapOutputRssInfoOptional.isEmpty) {

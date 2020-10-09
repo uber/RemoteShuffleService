@@ -76,7 +76,7 @@ public class MultiServerAsyncWriteClientTest {
             writeClient.finishUpload();
 
             for (TestStreamServer testServer : testServers) {
-                List<TaskByteArrayDataBlock> records = StreamServerTestUtils.readAllRecords2(testServer.getShufflePort(), appTaskAttemptId.getAppShuffleId(), 0, Arrays.asList(appTaskAttemptId.getTaskAttemptId()));
+                List<TaskDataBlock> records = StreamServerTestUtils.readAllRecords2(testServer.getShufflePort(), appTaskAttemptId.getAppShuffleId(), 0, Arrays.asList(appTaskAttemptId.getTaskAttemptId()));
                 Assert.assertEquals(records.size(), 0);
 
                 records = StreamServerTestUtils.readAllRecords2(testServer.getShufflePort(), appTaskAttemptId.getAppShuffleId(), 1, Arrays.asList(appTaskAttemptId.getTaskAttemptId()));
@@ -152,7 +152,7 @@ public class MultiServerAsyncWriteClientTest {
             writeClient.connect();
             writeClient.startUpload(appTaskAttemptId, numMaps, 20);
 
-            writeClient.sendRecord(0, null);
+            writeClient.writeDataBlock(0, null);
 
             writeClient.finishUpload();
 
@@ -195,41 +195,41 @@ public class MultiServerAsyncWriteClientTest {
             writeClient.connect();
             writeClient.startUpload(appTaskAttemptId, numMaps, 20);
 
-            writeClient.sendRecord(0, null);
+            writeClient.writeDataBlock(0, null);
 
-            writeClient.sendRecord(1,
+            writeClient.writeDataBlock(1,
                 ByteBuffer.wrap(new byte[0]));
-            writeClient.sendRecord(1,
+            writeClient.writeDataBlock(1,
                 ByteBuffer.wrap(new byte[0]));
 
-            writeClient.sendRecord(2,
+            writeClient.writeDataBlock(2,
                 ByteBuffer.wrap("value1".getBytes(StandardCharsets.UTF_8)));
-            writeClient.sendRecord(2,
+            writeClient.writeDataBlock(2,
                 ByteBuffer.wrap("value2".getBytes(StandardCharsets.UTF_8)));
-            writeClient.sendRecord(2,
+            writeClient.writeDataBlock(2,
                 ByteBuffer.wrap("value3".getBytes(StandardCharsets.UTF_8)));
 
             writeClient.finishUpload();
 
             for (TestStreamServer testServer : testServers) {
-                List<TaskByteArrayDataBlock> records = StreamServerTestUtils.readAllRecords2(testServer.getShufflePort(), appTaskAttemptId.getAppShuffleId(), 0, Arrays.asList(appTaskAttemptId.getTaskAttemptId()));
+                List<TaskDataBlock> records = StreamServerTestUtils.readAllRecords2(testServer.getShufflePort(), appTaskAttemptId.getAppShuffleId(), 0, Arrays.asList(appTaskAttemptId.getTaskAttemptId()));
                 Assert.assertEquals(records.size(), 1);
 
-                Assert.assertEquals(records.get(0).getValue(), new byte[0]);
+                Assert.assertEquals(records.get(0).getPayload(), new byte[0]);
 
                 records = StreamServerTestUtils.readAllRecords2(testServer.getShufflePort(), appTaskAttemptId.getAppShuffleId(), 1, Arrays.asList(appTaskAttemptId.getTaskAttemptId()));
                 Assert.assertEquals(records.size(), 2);
 
-                Assert.assertEquals(records.get(0).getValue(), new byte[0]);
+                Assert.assertEquals(records.get(0).getPayload(), new byte[0]);
 
-                Assert.assertEquals(records.get(1).getValue(), new byte[0]);
+                Assert.assertEquals(records.get(1).getPayload(), new byte[0]);
 
                 records = StreamServerTestUtils.readAllRecords2(testServer.getShufflePort(), appTaskAttemptId.getAppShuffleId(), 2, Arrays.asList(appTaskAttemptId.getTaskAttemptId()));
                 Assert.assertEquals(records.size(), 3);
 
-                Assert.assertEquals(records.get(0).getValue(), "value1".getBytes(StandardCharsets.UTF_8));
-                Assert.assertEquals(records.get(1).getValue(), "value2".getBytes(StandardCharsets.UTF_8));
-                Assert.assertEquals(records.get(2).getValue(), "value3".getBytes(StandardCharsets.UTF_8));
+                Assert.assertEquals(records.get(0).getPayload(), "value1".getBytes(StandardCharsets.UTF_8));
+                Assert.assertEquals(records.get(1).getPayload(), "value2".getBytes(StandardCharsets.UTF_8));
+                Assert.assertEquals(records.get(2).getPayload(), "value3".getBytes(StandardCharsets.UTF_8));
             }
         } finally {
             testServers.forEach(t->t.shutdown());
@@ -284,17 +284,17 @@ public class MultiServerAsyncWriteClientTest {
             writeClient.connect();
             writeClient.startUpload(appTaskAttemptId, numMaps, 20);
 
-            writeClient.sendRecord(0, null);
+            writeClient.writeDataBlock(0, null);
 
-            writeClient.sendRecord(1,
+            writeClient.writeDataBlock(1,
                 ByteBuffer.wrap(new byte[0]));
-            writeClient.sendRecord(1,
+            writeClient.writeDataBlock(1,
                 ByteBuffer.wrap(new byte[0]));
 
             for (int i = 0; i < numRecords; i ++) {
-                writeClient.sendRecord(2,
+                writeClient.writeDataBlock(2,
                     ByteBuffer.wrap(("value2_" + i).getBytes(StandardCharsets.UTF_8)));
-                writeClient.sendRecord(3,
+                writeClient.writeDataBlock(3,
                     ByteBuffer.wrap(("value3_" + i).getBytes(StandardCharsets.UTF_8)));
             }
 
@@ -302,39 +302,39 @@ public class MultiServerAsyncWriteClientTest {
 
             // Read from server group 1
             for (ServerDetail serverDetail: group1) {
-                List<TaskByteArrayDataBlock> records;
+                List<TaskDataBlock> records;
                 int port = ServerHostAndPort.fromString(serverDetail.getConnectionString()).getPort();
 
                 records = StreamServerTestUtils.readAllRecords2(port, appTaskAttemptId.getAppShuffleId(), 0, Arrays.asList(appTaskAttemptId.getTaskAttemptId()));
                 Assert.assertEquals(records.size(), 1);
 
-                Assert.assertEquals(records.get(0).getValue(), new byte[0]);
+                Assert.assertEquals(records.get(0).getPayload(), new byte[0]);
 
                 records = StreamServerTestUtils.readAllRecords2(port, appTaskAttemptId.getAppShuffleId(), 2, Arrays.asList(appTaskAttemptId.getTaskAttemptId()));
                 Assert.assertEquals(records.size(), numRecords);
                 for (int i = 0; i < numRecords; i ++) {
 
-                    Assert.assertEquals(new String(records.get(i).getValue(), StandardCharsets.UTF_8), "value2_" + i);
+                    Assert.assertEquals(new String(records.get(i).getPayload(), StandardCharsets.UTF_8), "value2_" + i);
                 }
             }
 
             // Read from server group 2
             for (ServerDetail serverDetail: group2) {
-                List<TaskByteArrayDataBlock> records;
+                List<TaskDataBlock> records;
                 int port = ServerHostAndPort.fromString(serverDetail.getConnectionString()).getPort();
 
                 records = StreamServerTestUtils.readAllRecords2(port, appTaskAttemptId.getAppShuffleId(), 1, Arrays.asList(appTaskAttemptId.getTaskAttemptId()));
                 Assert.assertEquals(records.size(), 2);
 
-                Assert.assertEquals(records.get(0).getValue(), new byte[0]);
+                Assert.assertEquals(records.get(0).getPayload(), new byte[0]);
 
-                Assert.assertEquals(records.get(1).getValue(), new byte[0]);
+                Assert.assertEquals(records.get(1).getPayload(), new byte[0]);
 
                 records = StreamServerTestUtils.readAllRecords2(port, appTaskAttemptId.getAppShuffleId(), 3, Arrays.asList(appTaskAttemptId.getTaskAttemptId()));
                 Assert.assertEquals(records.size(), numRecords);
                 for (int i = 0; i < numRecords; i ++) {
 
-                    Assert.assertEquals(new String(records.get(i).getValue(), StandardCharsets.UTF_8), "value3_" + i);
+                    Assert.assertEquals(new String(records.get(i).getPayload(), StandardCharsets.UTF_8), "value3_" + i);
                 }
             }
         } finally {
@@ -375,8 +375,8 @@ public class MultiServerAsyncWriteClientTest {
         int numServersPerPartition = 2;
         int numRecords = 100000;
 
-        List<TaskByteArrayDataBlock> partition2WriteRecords = new ArrayList<>();
-        List<TaskByteArrayDataBlock> partition3WriteRecords = new ArrayList<>();
+        List<TaskDataBlock> partition2WriteRecords = new ArrayList<>();
+        List<TaskDataBlock> partition3WriteRecords = new ArrayList<>();
 
         try (MultiServerAsyncWriteClient writeClient = new MultiServerAsyncWriteClient(
             Arrays.asList(new ServerReplicationGroup(group1), new ServerReplicationGroup(group2)),
@@ -396,35 +396,35 @@ public class MultiServerAsyncWriteClientTest {
             writeClient.connect();
             writeClient.startUpload(appTaskAttemptId, numMaps, 20);
 
-            writeClient.sendRecord(0, null);
+            writeClient.writeDataBlock(0, null);
 
-            writeClient.sendRecord(1,
+            writeClient.writeDataBlock(1,
                 ByteBuffer.wrap(new byte[0]));
-            writeClient.sendRecord(1,
+            writeClient.writeDataBlock(1,
                 ByteBuffer.wrap(new byte[0]));
 
             for (int i = 0; i < numRecords; i ++) {
-                TaskByteArrayDataBlock partition2Record = new TaskByteArrayDataBlock(
+                TaskDataBlock partition2Record = new TaskDataBlock(
                     ("value2_" + i).getBytes(StandardCharsets.UTF_8),
                     appTaskAttemptId.getTaskAttemptId());
-                writeClient.sendRecord(2,
-                    ByteBuffer.wrap(partition2Record.getValue()));
+                writeClient.writeDataBlock(2,
+                    ByteBuffer.wrap(partition2Record.getPayload()));
                 partition2WriteRecords.add(partition2Record);
 
-                TaskByteArrayDataBlock partition3Record = new TaskByteArrayDataBlock(
+                TaskDataBlock partition3Record = new TaskDataBlock(
                     ("value33333333333333333333333333333333_" + i).getBytes(StandardCharsets.UTF_8),
                     appTaskAttemptId.getTaskAttemptId());
-                writeClient.sendRecord(3,
-                    ByteBuffer.wrap(partition3Record.getValue()));
+                writeClient.writeDataBlock(3,
+                    ByteBuffer.wrap(partition3Record.getPayload()));
                 partition3WriteRecords.add(partition3Record);
             }
 
             writeClient.finishUpload();
 
-            List<TaskByteArrayDataBlock> readRecords = new ArrayList<>();
+            List<TaskDataBlock> readRecords = new ArrayList<>();
 
             // Read partition 0 from first sever in replication group 1
-            List<TaskByteArrayDataBlock> records;
+            List<TaskDataBlock> records;
             int port = ServerHostAndPort.fromString(group1.get(0).getConnectionString()).getPort();
             records = StreamServerTestUtils.readAllRecords2(port, appTaskAttemptId.getAppShuffleId(), 0, Arrays.asList(appTaskAttemptId.getTaskAttemptId()));
             readRecords.addAll(records);
@@ -437,7 +437,7 @@ public class MultiServerAsyncWriteClientTest {
             // Verify records for partition 0
             Assert.assertEquals(readRecords.size(), 1);
 
-            Assert.assertEquals(readRecords.get(0).getValue(), new byte[0]);
+            Assert.assertEquals(readRecords.get(0).getPayload(), new byte[0]);
 
             readRecords = new ArrayList<>();
 
@@ -454,8 +454,8 @@ public class MultiServerAsyncWriteClientTest {
             // Verify records for partition 1
             Assert.assertEquals(readRecords.size(), 2);
 
-            Assert.assertEquals(readRecords.get(0).getValue(), new byte[0]);
-            Assert.assertEquals(readRecords.get(1).getValue(), new byte[0]);
+            Assert.assertEquals(readRecords.get(0).getPayload(), new byte[0]);
+            Assert.assertEquals(readRecords.get(1).getPayload(), new byte[0]);
 
             readRecords = new ArrayList<>();
 

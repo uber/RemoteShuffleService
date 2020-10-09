@@ -17,7 +17,7 @@ package org.apache.spark.shuffle
 import java.nio.ByteBuffer
 import java.util.concurrent.{CompletableFuture, TimeUnit}
 
-import com.uber.rss.clients.RecordWriter
+import com.uber.rss.clients.ShuffleDataWriter
 import com.uber.rss.common.{AppTaskAttemptId, ServerList}
 import com.uber.rss.exceptions.RssInvalidStateException
 import com.uber.rss.metrics.ShuffleClientStageMetrics
@@ -33,7 +33,7 @@ import org.apache.spark.shuffle.rss.{BufferManagerOptions, RssUtils, WriteBuffer
 class RssShuffleWriter[K, V, C](
                                  user: String,
                                  rssServers: ServerList,
-                                 writeClient: RecordWriter,
+                                 writeClient: ShuffleDataWriter,
                                  mapInfo: AppTaskAttemptId,
                                  serializer: Serializer,
                                  bufferOptions: BufferManagerOptions,
@@ -138,7 +138,7 @@ class RssShuffleWriter[K, V, C](
       val bytes = t._2
       if (bytes != null && bytes.length > 0) {
         val dataBlock = createDataBlock(bytes)
-        writeClient.sendRecord(partitionId, dataBlock)
+        writeClient.writeDataBlock(partitionId, dataBlock)
       }
     })
   }

@@ -52,90 +52,90 @@ public class RecordSocketReadClientTest {
       long taskAttemptId = 3;
       AppTaskAttemptId appTaskAttemptId = new AppTaskAttemptId(appId, appAttempt, shuffleId, mapId, taskAttemptId);
 
-      try (RecordSyncWriteClient writeClient = new PlainRecordSyncWriteClient("localhost", testServer1.getShufflePort(), TestConstants.NETWORK_TIMEOUT, true, "user1", "app1", appAttempt, new ShuffleWriteConfig())) {
+      try (ShuffleDataSyncWriteClient writeClient = new PlainShuffleDataSyncWriteClient("localhost", testServer1.getShufflePort(), TestConstants.NETWORK_TIMEOUT, true, "user1", "app1", appAttempt, new ShuffleWriteConfig())) {
         writeClient.connect();
         writeClient.startUpload(appTaskAttemptId, numMaps, numPartitions);
 
-        writeClient.sendRecord(1, null);
-        writeClient.sendRecord(1,
+        writeClient.writeDataBlock(1, null);
+        writeClient.writeDataBlock(1,
             ByteBuffer.wrap(new byte[0]));
-        writeClient.sendRecord(1,
+        writeClient.writeDataBlock(1,
             ByteBuffer.wrap("".getBytes(StandardCharsets.UTF_8)));
-        writeClient.sendRecord(1,
+        writeClient.writeDataBlock(1,
             ByteBuffer.wrap("value1".getBytes(StandardCharsets.UTF_8)));
-        writeClient.sendRecord(1,
+        writeClient.writeDataBlock(1,
             ByteBuffer.wrap("value1".getBytes(StandardCharsets.UTF_8)));
 
-        writeClient.sendRecord(2,
+        writeClient.writeDataBlock(2,
             ByteBuffer.wrap(new byte[0]));
 
-        writeClient.sendRecord(3,
+        writeClient.writeDataBlock(3,
             ByteBuffer.wrap("value1".getBytes(StandardCharsets.UTF_8)));
 
         writeClient.finishUpload();
       }
 
       AppShufflePartitionId appShufflePartitionId = new AppShufflePartitionId(appId, appAttempt, shuffleId, 1);
-      try (RecordSocketReadClient readClient = new PlainRecordSocketReadClient("localhost", testServer1.getShufflePort(), TestConstants.NETWORK_TIMEOUT, "user1", appShufflePartitionId, Arrays.asList(appTaskAttemptId.getTaskAttemptId()), TestConstants.DATA_AVAILABLE_POLL_INTERVAL, TestConstants.DATA_AVAILABLE_TIMEOUT)) {
+      try (ShuffleDataSocketReadClient readClient = new PlainShuffleDataSocketReadClient("localhost", testServer1.getShufflePort(), TestConstants.NETWORK_TIMEOUT, "user1", appShufflePartitionId, Arrays.asList(appTaskAttemptId.getTaskAttemptId()), TestConstants.DATA_AVAILABLE_POLL_INTERVAL, TestConstants.DATA_AVAILABLE_TIMEOUT)) {
         readClient.connect();
-        TaskByteArrayDataBlock record = readClient.readRecord();
+        TaskDataBlock record = readClient.readDataBlock();
         Assert.assertNotNull(record);
 
-        Assert.assertEquals(record.getValue(), new byte[0]);
+        Assert.assertEquals(record.getPayload(), new byte[0]);
 
-        record = readClient.readRecord();
+        record = readClient.readDataBlock();
         Assert.assertNotNull(record);
 
-        Assert.assertEquals(record.getValue(), new byte[0]);
+        Assert.assertEquals(record.getPayload(), new byte[0]);
 
-        record = readClient.readRecord();
+        record = readClient.readDataBlock();
         Assert.assertNotNull(record);
 
-        Assert.assertEquals(new String(record.getValue(), StandardCharsets.UTF_8), "");
+        Assert.assertEquals(new String(record.getPayload(), StandardCharsets.UTF_8), "");
 
-        record = readClient.readRecord();
+        record = readClient.readDataBlock();
         Assert.assertNotNull(record);
 
-        Assert.assertEquals(new String(record.getValue(), StandardCharsets.UTF_8), "value1");
+        Assert.assertEquals(new String(record.getPayload(), StandardCharsets.UTF_8), "value1");
 
-        record = readClient.readRecord();
+        record = readClient.readDataBlock();
         Assert.assertNotNull(record);
 
-        Assert.assertEquals(new String(record.getValue(), StandardCharsets.UTF_8), "value1");
+        Assert.assertEquals(new String(record.getPayload(), StandardCharsets.UTF_8), "value1");
 
-        record = readClient.readRecord();
+        record = readClient.readDataBlock();
         Assert.assertNull(record);
       }
 
       appShufflePartitionId = new AppShufflePartitionId(appId, appAttempt, shuffleId, 2);
-      try (RecordSocketReadClient readClient = new PlainRecordSocketReadClient("localhost", testServer1.getShufflePort(), TestConstants.NETWORK_TIMEOUT, "user1", appShufflePartitionId, Arrays.asList(appTaskAttemptId.getTaskAttemptId()), TestConstants.DATA_AVAILABLE_POLL_INTERVAL, TestConstants.DATA_AVAILABLE_TIMEOUT)) {
+      try (ShuffleDataSocketReadClient readClient = new PlainShuffleDataSocketReadClient("localhost", testServer1.getShufflePort(), TestConstants.NETWORK_TIMEOUT, "user1", appShufflePartitionId, Arrays.asList(appTaskAttemptId.getTaskAttemptId()), TestConstants.DATA_AVAILABLE_POLL_INTERVAL, TestConstants.DATA_AVAILABLE_TIMEOUT)) {
         readClient.connect();
-        TaskByteArrayDataBlock record = readClient.readRecord();
+        TaskDataBlock record = readClient.readDataBlock();
         Assert.assertNotNull(record);
 
-        Assert.assertEquals(record.getValue(), new byte[0]);
+        Assert.assertEquals(record.getPayload(), new byte[0]);
 
-        record = readClient.readRecord();
+        record = readClient.readDataBlock();
         Assert.assertNull(record);
       }
 
       appShufflePartitionId = new AppShufflePartitionId(appId, appAttempt, shuffleId, 3);
-      try (RecordSocketReadClient readClient = new PlainRecordSocketReadClient("localhost", testServer1.getShufflePort(), TestConstants.NETWORK_TIMEOUT, "user1", appShufflePartitionId, Arrays.asList(appTaskAttemptId.getTaskAttemptId()), TestConstants.DATA_AVAILABLE_POLL_INTERVAL, TestConstants.DATA_AVAILABLE_TIMEOUT)) {
+      try (ShuffleDataSocketReadClient readClient = new PlainShuffleDataSocketReadClient("localhost", testServer1.getShufflePort(), TestConstants.NETWORK_TIMEOUT, "user1", appShufflePartitionId, Arrays.asList(appTaskAttemptId.getTaskAttemptId()), TestConstants.DATA_AVAILABLE_POLL_INTERVAL, TestConstants.DATA_AVAILABLE_TIMEOUT)) {
         readClient.connect();
-        TaskByteArrayDataBlock record = readClient.readRecord();
+        TaskDataBlock record = readClient.readDataBlock();
         Assert.assertNotNull(record);
 
-        Assert.assertEquals(new String(record.getValue(), StandardCharsets.UTF_8), "value1");
+        Assert.assertEquals(new String(record.getPayload(), StandardCharsets.UTF_8), "value1");
 
-        record = readClient.readRecord();
+        record = readClient.readDataBlock();
         Assert.assertNull(record);
       }
 
       // read non-existing partition
       appShufflePartitionId = new AppShufflePartitionId(appId, appAttempt, shuffleId, 999);
-      try (RecordSocketReadClient readClient = new PlainRecordSocketReadClient("localhost", testServer1.getShufflePort(), TestConstants.NETWORK_TIMEOUT, "user1", appShufflePartitionId, Arrays.asList(appTaskAttemptId.getTaskAttemptId()), TestConstants.DATA_AVAILABLE_POLL_INTERVAL, TestConstants.DATA_AVAILABLE_TIMEOUT)) {
+      try (ShuffleDataSocketReadClient readClient = new PlainShuffleDataSocketReadClient("localhost", testServer1.getShufflePort(), TestConstants.NETWORK_TIMEOUT, "user1", appShufflePartitionId, Arrays.asList(appTaskAttemptId.getTaskAttemptId()), TestConstants.DATA_AVAILABLE_POLL_INTERVAL, TestConstants.DATA_AVAILABLE_TIMEOUT)) {
         readClient.connect();
-        TaskByteArrayDataBlock record = readClient.readRecord();
+        TaskDataBlock record = readClient.readDataBlock();
         Assert.assertNull(record);
       }
     } finally {
@@ -169,7 +169,7 @@ public class RecordSocketReadClientTest {
       int mapId1 = 2;
       long taskAttemptId1 = 30;
       AppTaskAttemptId appTaskAttemptId1 = new AppTaskAttemptId(appId, appAttempt, shuffleId, mapId1, taskAttemptId1);
-      try (RecordSyncWriteClient writeClient = new PlainRecordSyncWriteClient("localhost", testServer1.getShufflePort(), TestConstants.NETWORK_TIMEOUT, true, "user1", "app1", appAttempt, new ShuffleWriteConfig())) {
+      try (ShuffleDataSyncWriteClient writeClient = new PlainShuffleDataSyncWriteClient("localhost", testServer1.getShufflePort(), TestConstants.NETWORK_TIMEOUT, true, "user1", "app1", appAttempt, new ShuffleWriteConfig())) {
         ClientTestUtils.connectAndWriteData(mapTaskData1, numMaps, numPartitions, appTaskAttemptId1, writeClient);
       }
 
@@ -179,22 +179,22 @@ public class RecordSocketReadClientTest {
       int mapId2 = 3;
       long taskAttemptId2 = 40;
       AppTaskAttemptId appTaskAttemptId2 = new AppTaskAttemptId(appId, appAttempt, shuffleId, mapId2, taskAttemptId2);
-      try (RecordSyncWriteClient writeClient = new PlainRecordSyncWriteClient("localhost", testServer1.getShufflePort(), TestConstants.NETWORK_TIMEOUT, true, "user1", "app1", appAttempt, new ShuffleWriteConfig())) {
+      try (ShuffleDataSyncWriteClient writeClient = new PlainShuffleDataSyncWriteClient("localhost", testServer1.getShufflePort(), TestConstants.NETWORK_TIMEOUT, true, "user1", "app1", appAttempt, new ShuffleWriteConfig())) {
         ClientTestUtils.connectAndWriteData(mapTaskData2, numMaps, numPartitions, appTaskAttemptId2, writeClient);
       }
 
       // read data for each partition
       for (Integer partition: mapTaskData1.keySet()) {
         AppShufflePartitionId appShufflePartitionId = new AppShufflePartitionId(appId, appAttempt, shuffleId, partition);
-        try (RecordSocketReadClient readClient = new PlainRecordSocketReadClient("localhost", testServer1.getShufflePort(), TestConstants.NETWORK_TIMEOUT, "user1", appShufflePartitionId, Arrays.asList(appTaskAttemptId1.getTaskAttemptId(), appTaskAttemptId2.getTaskAttemptId()), TestConstants.DATA_AVAILABLE_POLL_INTERVAL, TestConstants.DATA_AVAILABLE_TIMEOUT)) {
-          List<TaskByteArrayDataBlock> readRecords = ClientTestUtils.readData(appShufflePartitionId, readClient);
+        try (ShuffleDataSocketReadClient readClient = new PlainShuffleDataSocketReadClient("localhost", testServer1.getShufflePort(), TestConstants.NETWORK_TIMEOUT, "user1", appShufflePartitionId, Arrays.asList(appTaskAttemptId1.getTaskAttemptId(), appTaskAttemptId2.getTaskAttemptId()), TestConstants.DATA_AVAILABLE_POLL_INTERVAL, TestConstants.DATA_AVAILABLE_TIMEOUT)) {
+          List<TaskDataBlock> readRecords = ClientTestUtils.readData(appShufflePartitionId, readClient);
           Assert.assertTrue(readRecords.size() > 0);
           Assert.assertEquals(readRecords.size(), mapTaskData1.get(partition).size() + mapTaskData2.get(partition).size());
           for (int i = 0; i < mapTaskData1.get(partition).size(); i++) {
-            Assert.assertEquals(new String(readRecords.get(i).getValue(), StandardCharsets.UTF_8), mapTaskData1.get(partition).get(i).getValue());
+            Assert.assertEquals(new String(readRecords.get(i).getPayload(), StandardCharsets.UTF_8), mapTaskData1.get(partition).get(i).getValue());
           }
           for (int i = 0; i < mapTaskData2.get(partition).size(); i++) {
-            Assert.assertEquals(new String(readRecords.get(mapTaskData1.get(partition).size() + i).getValue(), StandardCharsets.UTF_8), mapTaskData2.get(partition).get(i).getValue());
+            Assert.assertEquals(new String(readRecords.get(mapTaskData1.get(partition).size() + i).getPayload(), StandardCharsets.UTF_8), mapTaskData2.get(partition).get(i).getValue());
           }
         }
       }
@@ -218,33 +218,33 @@ public class RecordSocketReadClientTest {
     long taskAttemptId = 3;
     AppTaskAttemptId appTaskAttemptId = new AppTaskAttemptId(appId, appAttempt, shuffleId, mapId, taskAttemptId);
 
-    try (RecordSyncWriteClient writeClient = new PlainRecordSyncWriteClient("localhost", testServer1.getShufflePort(), TestConstants.NETWORK_TIMEOUT, true, "user1", "app1", appAttempt, new ShuffleWriteConfig())) {
+    try (ShuffleDataSyncWriteClient writeClient = new PlainShuffleDataSyncWriteClient("localhost", testServer1.getShufflePort(), TestConstants.NETWORK_TIMEOUT, true, "user1", "app1", appAttempt, new ShuffleWriteConfig())) {
       writeClient.connect();
       writeClient.startUpload(appTaskAttemptId, numMaps, numPartitions);
 
-      writeClient.sendRecord(1, null);
-      writeClient.sendRecord(1,
+      writeClient.writeDataBlock(1, null);
+      writeClient.writeDataBlock(1,
           ByteBuffer.wrap(new byte[0]));
-      writeClient.sendRecord(1,
+      writeClient.writeDataBlock(1,
           ByteBuffer.wrap("".getBytes(StandardCharsets.UTF_8)));
-      writeClient.sendRecord(1,
+      writeClient.writeDataBlock(1,
           ByteBuffer.wrap("value1".getBytes(StandardCharsets.UTF_8)));
-      writeClient.sendRecord(1,
+      writeClient.writeDataBlock(1,
           ByteBuffer.wrap("value1".getBytes(StandardCharsets.UTF_8)));
 
-      writeClient.sendRecord(2,
+      writeClient.writeDataBlock(2,
           ByteBuffer.wrap(new byte[0]));
 
-      writeClient.sendRecord(3,
+      writeClient.writeDataBlock(3,
           ByteBuffer.wrap("value1".getBytes(StandardCharsets.UTF_8)));
 
       writeClient.finishUpload();
     }
 
     AppShufflePartitionId appShufflePartitionId = new AppShufflePartitionId(appId, appAttempt, shuffleId, 1);
-    try (RecordSocketReadClient readClient = new PlainRecordSocketReadClient("localhost", testServer1.getShufflePort(), TestConstants.NETWORK_TIMEOUT, "user1", appShufflePartitionId, Arrays.asList(appTaskAttemptId.getTaskAttemptId()), TestConstants.DATA_AVAILABLE_POLL_INTERVAL, TestConstants.DATA_AVAILABLE_TIMEOUT)) {
+    try (ShuffleDataSocketReadClient readClient = new PlainShuffleDataSocketReadClient("localhost", testServer1.getShufflePort(), TestConstants.NETWORK_TIMEOUT, "user1", appShufflePartitionId, Arrays.asList(appTaskAttemptId.getTaskAttemptId()), TestConstants.DATA_AVAILABLE_POLL_INTERVAL, TestConstants.DATA_AVAILABLE_TIMEOUT)) {
       readClient.connect();
-      TaskByteArrayDataBlock record = readClient.readRecord();
+      TaskDataBlock record = readClient.readDataBlock();
       Assert.assertNotNull(record);
     }
 
@@ -252,66 +252,66 @@ public class RecordSocketReadClientTest {
     testServer1.shutdown();
     TestStreamServer testServer2 = TestStreamServer.createRunningServer(config -> config.setRootDirectory(rootDir));
 
-    try (RecordSocketReadClient readClient = new PlainRecordSocketReadClient("localhost", testServer2.getShufflePort(), TestConstants.NETWORK_TIMEOUT, "user1", appShufflePartitionId, Arrays.asList(appTaskAttemptId.getTaskAttemptId()), TestConstants.DATA_AVAILABLE_POLL_INTERVAL, TestConstants.DATA_AVAILABLE_TIMEOUT)) {
+    try (ShuffleDataSocketReadClient readClient = new PlainShuffleDataSocketReadClient("localhost", testServer2.getShufflePort(), TestConstants.NETWORK_TIMEOUT, "user1", appShufflePartitionId, Arrays.asList(appTaskAttemptId.getTaskAttemptId()), TestConstants.DATA_AVAILABLE_POLL_INTERVAL, TestConstants.DATA_AVAILABLE_TIMEOUT)) {
       readClient.connect();
-      TaskByteArrayDataBlock record = readClient.readRecord();
+      TaskDataBlock record = readClient.readDataBlock();
       Assert.assertNotNull(record);
 
-      Assert.assertEquals(record.getValue(), new byte[0]);
+      Assert.assertEquals(record.getPayload(), new byte[0]);
 
-      record = readClient.readRecord();
+      record = readClient.readDataBlock();
       Assert.assertNotNull(record);
 
-      Assert.assertEquals(record.getValue(), new byte[0]);
+      Assert.assertEquals(record.getPayload(), new byte[0]);
 
-      record = readClient.readRecord();
+      record = readClient.readDataBlock();
       Assert.assertNotNull(record);
 
-      Assert.assertEquals(new String(record.getValue(), StandardCharsets.UTF_8), "");
+      Assert.assertEquals(new String(record.getPayload(), StandardCharsets.UTF_8), "");
 
-      record = readClient.readRecord();
+      record = readClient.readDataBlock();
       Assert.assertNotNull(record);
 
-      Assert.assertEquals(new String(record.getValue(), StandardCharsets.UTF_8), "value1");
+      Assert.assertEquals(new String(record.getPayload(), StandardCharsets.UTF_8), "value1");
 
-      record = readClient.readRecord();
+      record = readClient.readDataBlock();
       Assert.assertNotNull(record);
 
-      Assert.assertEquals(new String(record.getValue(), StandardCharsets.UTF_8), "value1");
+      Assert.assertEquals(new String(record.getPayload(), StandardCharsets.UTF_8), "value1");
 
-      record = readClient.readRecord();
+      record = readClient.readDataBlock();
       Assert.assertNull(record);
     }
 
     appShufflePartitionId = new AppShufflePartitionId(appId, appAttempt, shuffleId, 2);
-    try (RecordSocketReadClient readClient = new PlainRecordSocketReadClient("localhost", testServer2.getShufflePort(), TestConstants.NETWORK_TIMEOUT, "user1", appShufflePartitionId, Arrays.asList(appTaskAttemptId.getTaskAttemptId()), TestConstants.DATA_AVAILABLE_POLL_INTERVAL, TestConstants.DATA_AVAILABLE_TIMEOUT)) {
+    try (ShuffleDataSocketReadClient readClient = new PlainShuffleDataSocketReadClient("localhost", testServer2.getShufflePort(), TestConstants.NETWORK_TIMEOUT, "user1", appShufflePartitionId, Arrays.asList(appTaskAttemptId.getTaskAttemptId()), TestConstants.DATA_AVAILABLE_POLL_INTERVAL, TestConstants.DATA_AVAILABLE_TIMEOUT)) {
       readClient.connect();
-      TaskByteArrayDataBlock record = readClient.readRecord();
+      TaskDataBlock record = readClient.readDataBlock();
       Assert.assertNotNull(record);
 
-      Assert.assertEquals(record.getValue(), new byte[0]);
+      Assert.assertEquals(record.getPayload(), new byte[0]);
 
-      record = readClient.readRecord();
+      record = readClient.readDataBlock();
       Assert.assertNull(record);
     }
 
     appShufflePartitionId = new AppShufflePartitionId(appId, appAttempt, shuffleId, 3);
-    try (RecordSocketReadClient readClient = new PlainRecordSocketReadClient("localhost", testServer2.getShufflePort(), TestConstants.NETWORK_TIMEOUT, "user1", appShufflePartitionId, Arrays.asList(appTaskAttemptId.getTaskAttemptId()), TestConstants.DATA_AVAILABLE_POLL_INTERVAL, TestConstants.DATA_AVAILABLE_TIMEOUT)) {
+    try (ShuffleDataSocketReadClient readClient = new PlainShuffleDataSocketReadClient("localhost", testServer2.getShufflePort(), TestConstants.NETWORK_TIMEOUT, "user1", appShufflePartitionId, Arrays.asList(appTaskAttemptId.getTaskAttemptId()), TestConstants.DATA_AVAILABLE_POLL_INTERVAL, TestConstants.DATA_AVAILABLE_TIMEOUT)) {
       readClient.connect();
-      TaskByteArrayDataBlock record = readClient.readRecord();
+      TaskDataBlock record = readClient.readDataBlock();
       Assert.assertNotNull(record);
 
-      Assert.assertEquals(new String(record.getValue(), StandardCharsets.UTF_8), "value1");
+      Assert.assertEquals(new String(record.getPayload(), StandardCharsets.UTF_8), "value1");
 
-      record = readClient.readRecord();
+      record = readClient.readDataBlock();
       Assert.assertNull(record);
     }
 
     // read non-existing partition
     appShufflePartitionId = new AppShufflePartitionId(appId, appAttempt, shuffleId, 999);
-    try (RecordSocketReadClient readClient = new PlainRecordSocketReadClient("localhost", testServer2.getShufflePort(), TestConstants.NETWORK_TIMEOUT, "user1", appShufflePartitionId, Arrays.asList(appTaskAttemptId.getTaskAttemptId()), TestConstants.DATA_AVAILABLE_POLL_INTERVAL, TestConstants.DATA_AVAILABLE_TIMEOUT)) {
+    try (ShuffleDataSocketReadClient readClient = new PlainShuffleDataSocketReadClient("localhost", testServer2.getShufflePort(), TestConstants.NETWORK_TIMEOUT, "user1", appShufflePartitionId, Arrays.asList(appTaskAttemptId.getTaskAttemptId()), TestConstants.DATA_AVAILABLE_POLL_INTERVAL, TestConstants.DATA_AVAILABLE_TIMEOUT)) {
       readClient.connect();
-      TaskByteArrayDataBlock record = readClient.readRecord();
+      TaskDataBlock record = readClient.readDataBlock();
       Assert.assertNull(record);
     }
 
@@ -344,33 +344,33 @@ public class RecordSocketReadClientTest {
 
     int numRecords = 1000;
 
-    try (RecordSyncWriteClient writeClient = new PlainRecordSyncWriteClient("localhost", testServer1.getShufflePort(), TestConstants.NETWORK_TIMEOUT, true, "user1", "app1", appAttempt, shuffleWriteConfig)) {
+    try (ShuffleDataSyncWriteClient writeClient = new PlainShuffleDataSyncWriteClient("localhost", testServer1.getShufflePort(), TestConstants.NETWORK_TIMEOUT, true, "user1", "app1", appAttempt, shuffleWriteConfig)) {
       writeClient.connect();
       writeClient.startUpload(map1TaskAttemptId, numMaps, numPartitions);
       for (int i = 0; i < numRecords; i++) {
-        writeClient.sendRecord(1,
+        writeClient.writeDataBlock(1,
             ByteBuffer.wrap("map1Key_map1Value".getBytes(StandardCharsets.UTF_8)));
       }
       writeClient.finishUpload();
     }
 
-    try (RecordSyncWriteClient writeClient = new PlainRecordSyncWriteClient("localhost", testServer1.getShufflePort(), TestConstants.NETWORK_TIMEOUT, true, "user1", "app1", appAttempt, shuffleWriteConfig)) {
+    try (ShuffleDataSyncWriteClient writeClient = new PlainShuffleDataSyncWriteClient("localhost", testServer1.getShufflePort(), TestConstants.NETWORK_TIMEOUT, true, "user1", "app1", appAttempt, shuffleWriteConfig)) {
       writeClient.connect();
       writeClient.startUpload(map2TaskAttemptId1, numMaps, numPartitions);
       for (int i = 0; i < numRecords; i++) {
-        writeClient.sendRecord(1,
+        writeClient.writeDataBlock(1,
             ByteBuffer.wrap("value1".getBytes(StandardCharsets.UTF_8)));
       }
       writeClient.finishUpload();
     }
 
     AppShufflePartitionId appShufflePartitionId = new AppShufflePartitionId(appId, appAttempt, shuffleId, 1);
-    try (RecordSocketReadClient readClient = new PlainRecordSocketReadClient("localhost",
+    try (ShuffleDataSocketReadClient readClient = new PlainShuffleDataSocketReadClient("localhost",
         testServer1.getShufflePort(), TestConstants.NETWORK_TIMEOUT, "user1", appShufflePartitionId,
         Arrays.asList(map1TaskAttemptId.getTaskAttemptId(), map2TaskAttemptId1.getTaskAttemptId()),
         TestConstants.DATA_AVAILABLE_POLL_INTERVAL, TestConstants.DATA_AVAILABLE_TIMEOUT)) {
       readClient.connect();
-      TaskByteArrayDataBlock record = readClient.readRecord();
+      TaskDataBlock record = readClient.readDataBlock();
       Assert.assertNotNull(record);
     }
 
@@ -379,29 +379,29 @@ public class RecordSocketReadClientTest {
     TestStreamServer testServer2 = TestStreamServer.createRunningServer(configModifier);
 
     // write client writes with new task attempt id
-    try (RecordSyncWriteClient writeClient = new PlainRecordSyncWriteClient("localhost", testServer2.getShufflePort(), TestConstants.NETWORK_TIMEOUT, true, "user1", "app1", appAttempt, shuffleWriteConfig)) {
+    try (ShuffleDataSyncWriteClient writeClient = new PlainShuffleDataSyncWriteClient("localhost", testServer2.getShufflePort(), TestConstants.NETWORK_TIMEOUT, true, "user1", "app1", appAttempt, shuffleWriteConfig)) {
       writeClient.connect();
       writeClient.startUpload(map2TaskAttemptId2, numMaps, numPartitions);
       for (int i = 0; i < numRecords; i++) {
-        writeClient.sendRecord(1,
+        writeClient.writeDataBlock(1,
             ByteBuffer.wrap("value2".getBytes(StandardCharsets.UTF_8)));
       }
       writeClient.finishUpload();
     }
 
     // read data
-    try (RecordSocketReadClient readClient = new PlainRecordSocketReadClient("localhost",
+    try (ShuffleDataSocketReadClient readClient = new PlainShuffleDataSocketReadClient("localhost",
         testServer2.getShufflePort(), TestConstants.NETWORK_TIMEOUT, "user1", appShufflePartitionId,
         Arrays.asList(map1TaskAttemptId.getTaskAttemptId(), map2TaskAttemptId2.getTaskAttemptId()),
         TestConstants.DATA_AVAILABLE_POLL_INTERVAL, TestConstants.DATA_AVAILABLE_TIMEOUT)) {
       readClient.connect();
       List<Pair<String, String>> allRecords = new ArrayList<>();
       for (int i = 0; i < numRecords * 2; i++) {
-        TaskByteArrayDataBlock record = readClient.readRecord();
+        TaskDataBlock record = readClient.readDataBlock();
         Assert.assertNotNull(record);
-        allRecords.add(Pair.of(null, new String(record.getValue(), StandardCharsets.UTF_8)));
+        allRecords.add(Pair.of(null, new String(record.getPayload(), StandardCharsets.UTF_8)));
       }
-      TaskByteArrayDataBlock record = readClient.readRecord();
+      TaskDataBlock record = readClient.readDataBlock();
       Assert.assertNull(record);
 
       List<Pair<String, String>> map1Records = allRecords.stream().filter(t->t.getValue().startsWith("map1Key")).collect(Collectors.toList());
@@ -420,11 +420,11 @@ public class RecordSocketReadClientTest {
     }
 
     // write client writes with new task attempt id, but does not finish upload
-    try (RecordSyncWriteClient writeClient = new PlainRecordSyncWriteClient("localhost", testServer2.getShufflePort(), TestConstants.NETWORK_TIMEOUT, true, "user1", "app1", appAttempt, shuffleWriteConfig)) {
+    try (ShuffleDataSyncWriteClient writeClient = new PlainShuffleDataSyncWriteClient("localhost", testServer2.getShufflePort(), TestConstants.NETWORK_TIMEOUT, true, "user1", "app1", appAttempt, shuffleWriteConfig)) {
       writeClient.connect();
       writeClient.startUpload(map2TaskAttemptId3, numMaps, numPartitions);
       for (int i = 0; i < numRecords; i++) {
-        writeClient.sendRecord(1,
+        writeClient.writeDataBlock(1,
             ByteBuffer.wrap("value3".getBytes(StandardCharsets.UTF_8)));
       }
     }
@@ -434,29 +434,29 @@ public class RecordSocketReadClientTest {
     TestStreamServer testServer3 = TestStreamServer.createRunningServer(configModifier);
 
     // write client writes with new task attempt id, and finishes upload
-    try (RecordSyncWriteClient writeClient = new PlainRecordSyncWriteClient("localhost", testServer3.getShufflePort(), TestConstants.NETWORK_TIMEOUT, true, "user1", "app1", appAttempt, shuffleWriteConfig)) {
+    try (ShuffleDataSyncWriteClient writeClient = new PlainShuffleDataSyncWriteClient("localhost", testServer3.getShufflePort(), TestConstants.NETWORK_TIMEOUT, true, "user1", "app1", appAttempt, shuffleWriteConfig)) {
       writeClient.connect();
       writeClient.startUpload(map2TaskAttemptId4, numMaps, numPartitions);
       for (int i = 0; i < numRecords; i++) {
-        writeClient.sendRecord(1,
+        writeClient.writeDataBlock(1,
             ByteBuffer.wrap("value4".getBytes(StandardCharsets.UTF_8)));
       }
       writeClient.finishUpload();
     }
 
     // read data
-    try (RecordSocketReadClient readClient = new PlainRecordSocketReadClient("localhost",
+    try (ShuffleDataSocketReadClient readClient = new PlainShuffleDataSocketReadClient("localhost",
         testServer3.getShufflePort(), TestConstants.NETWORK_TIMEOUT, "user1", appShufflePartitionId,
         Arrays.asList(map1TaskAttemptId.getTaskAttemptId(), map2TaskAttemptId4.getTaskAttemptId()),
         TestConstants.DATA_AVAILABLE_POLL_INTERVAL, TestConstants.DATA_AVAILABLE_TIMEOUT)) {
       readClient.connect();
       List<Pair<String, String>> allRecords = new ArrayList<>();
       for (int i = 0; i < numRecords * 2; i++) {
-        TaskByteArrayDataBlock record = readClient.readRecord();
+        TaskDataBlock record = readClient.readDataBlock();
         Assert.assertNotNull(record);
-        allRecords.add(Pair.of(null, new String(record.getValue(), StandardCharsets.UTF_8)));
+        allRecords.add(Pair.of(null, new String(record.getPayload(), StandardCharsets.UTF_8)));
       }
-      TaskByteArrayDataBlock record = readClient.readRecord();
+      TaskDataBlock record = readClient.readDataBlock();
       Assert.assertNull(record);
 
       List<Pair<String, String>> map1Records = allRecords.stream().filter(t->t.getValue().startsWith("map1Key")).collect(Collectors.toList());

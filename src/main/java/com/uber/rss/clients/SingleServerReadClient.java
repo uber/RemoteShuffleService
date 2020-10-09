@@ -16,6 +16,6 @@ package com.uber.rss.clients;
 
 import com.uber.rss.common.DownloadServerVerboseInfo;
 
-public interface SingleServerReadClient extends RecordReader {
+public interface SingleServerReadClient extends ShuffleDataReader {
     DownloadServerVerboseInfo connect();
 }

@@ -156,7 +156,7 @@ public class MultiServerAsyncWriteClient implements MultiServerWriteClient {
                             }
                             ReplicatedWriteClient writeClient = clients[record.clientIndex];
                             startTime = System.nanoTime();
-                            writeClient.sendRecord(record.partition, record.value);
+                            writeClient.writeDataBlock(record.partition, record.value);
                             socketTime.addAndGet(System.nanoTime() - startTime);
                         } else {
                             logger.info("Record queue {} has no record after waiting {} millis", threadIndex, pollMaxWait);
@@ -186,7 +186,7 @@ public class MultiServerAsyncWriteClient implements MultiServerWriteClient {
     }
 
     @Override
-    public void sendRecord(int partition, ByteBuffer value) {
+    public void writeDataBlock(int partition, ByteBuffer value) {
         if (!threadStarted) {
             for (Thread thread: threads) {
                 thread.start();

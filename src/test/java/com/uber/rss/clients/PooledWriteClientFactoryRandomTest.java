@@ -14,9 +14,6 @@
 
 package com.uber.rss.clients;
 
-import com.uber.rss.clients.PooledRecordSyncWriteClient;
-import com.uber.rss.clients.PooledWriteClientFactory;
-import com.uber.rss.clients.RecordSyncWriteClient;
 import com.uber.rss.exceptions.RssAggregateException;
 import com.uber.rss.testutil.TestConstants;
 import com.uber.rss.testutil.TestStreamServer;
@@ -47,8 +44,8 @@ public class PooledWriteClientFactoryRandomTest {
         Thread thread = new Thread(() -> {
           int numIterationsInsideThread = 1000;
           for (int iterationsInsideThread = 0; iterationsInsideThread < numIterationsInsideThread; iterationsInsideThread++) {
-            try (RecordSyncWriteClient writeClient = writeClientFactory.getOrCreateClient("localhost", testServer1.getShufflePort(), TestConstants.NETWORK_TIMEOUT, true, "user1", appId, appAttempt, TestConstants.SHUFFLE_WRITE_CONFIG)) {
-              PooledRecordSyncWriteClient pooledRecordSyncWriteClient = (PooledRecordSyncWriteClient) writeClient;
+            try (ShuffleDataSyncWriteClient writeClient = writeClientFactory.getOrCreateClient("localhost", testServer1.getShufflePort(), TestConstants.NETWORK_TIMEOUT, true, "user1", appId, appAttempt, TestConstants.SHUFFLE_WRITE_CONFIG)) {
+              PooledShuffleDataSyncWriteClient pooledRecordSyncWriteClient = (PooledShuffleDataSyncWriteClient) writeClient;
               Assert.assertTrue(pooledRecordSyncWriteClient.isReusable());
               writeClient.close();
               Assert.assertTrue(pooledRecordSyncWriteClient.isReusable());

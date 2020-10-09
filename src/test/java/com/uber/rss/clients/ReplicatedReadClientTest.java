@@ -80,20 +80,20 @@ public class ReplicatedReadClientTest {
         writeClient.connect();
         writeClient.startUpload(appTaskAttemptId, numMaps, numPartitions);
 
-        writeClient.sendRecord(1, null);
-        writeClient.sendRecord(1,
+        writeClient.writeDataBlock(1, null);
+        writeClient.writeDataBlock(1,
             ByteBuffer.wrap(new byte[0]));
-        writeClient.sendRecord(1,
+        writeClient.writeDataBlock(1,
             ByteBuffer.wrap("".getBytes(StandardCharsets.UTF_8)));
-        writeClient.sendRecord(1,
+        writeClient.writeDataBlock(1,
             ByteBuffer.wrap("value1".getBytes(StandardCharsets.UTF_8)));
-        writeClient.sendRecord(1,
+        writeClient.writeDataBlock(1,
             ByteBuffer.wrap("value1".getBytes(StandardCharsets.UTF_8)));
 
-        writeClient.sendRecord(2,
+        writeClient.writeDataBlock(2,
             ByteBuffer.wrap(new byte[0]));
 
-        writeClient.sendRecord(3,
+        writeClient.writeDataBlock(3,
             ByteBuffer.wrap("value1".getBytes(StandardCharsets.UTF_8)));
 
         writeClient.finishUpload();
@@ -103,31 +103,31 @@ public class ReplicatedReadClientTest {
       try (ReplicatedReadClient readClient = new ReplicatedReadClient(serverReplicationGroup, TestConstants.NETWORK_TIMEOUT,"user1", appShufflePartitionId,
           new ReadClientDataOptions(Arrays.asList(appTaskAttemptId.getTaskAttemptId()), TestConstants.DATA_AVAILABLE_POLL_INTERVAL, TestConstants.DATA_AVAILABLE_TIMEOUT))) {
         readClient.connect();
-        TaskByteArrayDataBlock record = readClient.readRecord();
+        TaskDataBlock record = readClient.readDataBlock();
         Assert.assertNotNull(record);
-        Assert.assertEquals(record.getValue(), new byte[0]);
+        Assert.assertEquals(record.getPayload(), new byte[0]);
 
-        record = readClient.readRecord();
-        Assert.assertNotNull(record);
-
-        Assert.assertEquals(record.getValue(), new byte[0]);
-
-        record = readClient.readRecord();
+        record = readClient.readDataBlock();
         Assert.assertNotNull(record);
 
-        Assert.assertEquals(new String(record.getValue(), StandardCharsets.UTF_8), "");
+        Assert.assertEquals(record.getPayload(), new byte[0]);
 
-        record = readClient.readRecord();
+        record = readClient.readDataBlock();
         Assert.assertNotNull(record);
 
-        Assert.assertEquals(new String(record.getValue(), StandardCharsets.UTF_8), "value1");
+        Assert.assertEquals(new String(record.getPayload(), StandardCharsets.UTF_8), "");
 
-        record = readClient.readRecord();
+        record = readClient.readDataBlock();
         Assert.assertNotNull(record);
 
-        Assert.assertEquals(new String(record.getValue(), StandardCharsets.UTF_8), "value1");
+        Assert.assertEquals(new String(record.getPayload(), StandardCharsets.UTF_8), "value1");
 
-        record = readClient.readRecord();
+        record = readClient.readDataBlock();
+        Assert.assertNotNull(record);
+
+        Assert.assertEquals(new String(record.getPayload(), StandardCharsets.UTF_8), "value1");
+
+        record = readClient.readDataBlock();
         Assert.assertNull(record);
 
         long shuffleReadBytes = readClient.getShuffleReadBytes();
@@ -175,20 +175,20 @@ public class ReplicatedReadClientTest {
         writeClient.connect();
         writeClient.startUpload(appTaskAttemptId, numMaps, numPartitions);
 
-        writeClient.sendRecord(1, null);
-        writeClient.sendRecord(1,
+        writeClient.writeDataBlock(1, null);
+        writeClient.writeDataBlock(1,
             ByteBuffer.wrap(new byte[0]));
-        writeClient.sendRecord(1,
+        writeClient.writeDataBlock(1,
             ByteBuffer.wrap("".getBytes(StandardCharsets.UTF_8)));
-        writeClient.sendRecord(1,
+        writeClient.writeDataBlock(1,
             ByteBuffer.wrap("value1".getBytes(StandardCharsets.UTF_8)));
-        writeClient.sendRecord(1,
+        writeClient.writeDataBlock(1,
             ByteBuffer.wrap("value1".getBytes(StandardCharsets.UTF_8)));
 
-        writeClient.sendRecord(2,
+        writeClient.writeDataBlock(2,
             ByteBuffer.wrap(new byte[0]));
 
-        writeClient.sendRecord(3,
+        writeClient.writeDataBlock(3,
             ByteBuffer.wrap("value1".getBytes(StandardCharsets.UTF_8)));
 
         writeClient.finishUpload();
@@ -198,32 +198,32 @@ public class ReplicatedReadClientTest {
       try (ReplicatedReadClient readClient = new ReplicatedReadClient(serverReplicationGroup, TestConstants.NETWORK_TIMEOUT,"user1", appShufflePartitionId,
           new ReadClientDataOptions(Arrays.asList(appTaskAttemptId.getTaskAttemptId()), TestConstants.DATA_AVAILABLE_POLL_INTERVAL, TestConstants.DATA_AVAILABLE_TIMEOUT))) {
         readClient.connect();
-        TaskByteArrayDataBlock record = readClient.readRecord();
+        TaskDataBlock record = readClient.readDataBlock();
         Assert.assertNotNull(record);
 
-        Assert.assertEquals(record.getValue(), new byte[0]);
+        Assert.assertEquals(record.getPayload(), new byte[0]);
 
-        record = readClient.readRecord();
+        record = readClient.readDataBlock();
         Assert.assertNotNull(record);
 
-        Assert.assertEquals(record.getValue(), new byte[0]);
+        Assert.assertEquals(record.getPayload(), new byte[0]);
 
-        record = readClient.readRecord();
+        record = readClient.readDataBlock();
         Assert.assertNotNull(record);
 
-        Assert.assertEquals(new String(record.getValue(), StandardCharsets.UTF_8), "");
+        Assert.assertEquals(new String(record.getPayload(), StandardCharsets.UTF_8), "");
 
-        record = readClient.readRecord();
+        record = readClient.readDataBlock();
         Assert.assertNotNull(record);
 
-        Assert.assertEquals(new String(record.getValue(), StandardCharsets.UTF_8), "value1");
+        Assert.assertEquals(new String(record.getPayload(), StandardCharsets.UTF_8), "value1");
 
-        record = readClient.readRecord();
+        record = readClient.readDataBlock();
         Assert.assertNotNull(record);
 
-        Assert.assertEquals(new String(record.getValue(), StandardCharsets.UTF_8), "value1");
+        Assert.assertEquals(new String(record.getPayload(), StandardCharsets.UTF_8), "value1");
 
-        record = readClient.readRecord();
+        record = readClient.readDataBlock();
         Assert.assertNull(record);
 
         long shuffleReadBytes = readClient.getShuffleReadBytes();
@@ -272,20 +272,20 @@ public class ReplicatedReadClientTest {
         writeClient.connect();
         writeClient.startUpload(appTaskAttemptId, numMaps, numPartitions);
 
-        writeClient.sendRecord(1, null);
-        writeClient.sendRecord(1,
+        writeClient.writeDataBlock(1, null);
+        writeClient.writeDataBlock(1,
             ByteBuffer.wrap(new byte[0]));
-        writeClient.sendRecord(1,
+        writeClient.writeDataBlock(1,
             ByteBuffer.wrap("".getBytes(StandardCharsets.UTF_8)));
-        writeClient.sendRecord(1,
+        writeClient.writeDataBlock(1,
             ByteBuffer.wrap("value1".getBytes(StandardCharsets.UTF_8)));
-        writeClient.sendRecord(1,
+        writeClient.writeDataBlock(1,
             ByteBuffer.wrap("value1".getBytes(StandardCharsets.UTF_8)));
 
-        writeClient.sendRecord(2,
+        writeClient.writeDataBlock(2,
             ByteBuffer.wrap(new byte[0]));
 
-        writeClient.sendRecord(3,
+        writeClient.writeDataBlock(3,
             ByteBuffer.wrap("value1".getBytes(StandardCharsets.UTF_8)));
 
         writeClient.finishUpload();
@@ -297,32 +297,32 @@ public class ReplicatedReadClientTest {
       try (ReplicatedReadClient readClient = new ReplicatedReadClient(serverReplicationGroup, TestConstants.NETWORK_TIMEOUT,"user1", appShufflePartitionId,
           new ReadClientDataOptions(Arrays.asList(appTaskAttemptId.getTaskAttemptId()), TestConstants.DATA_AVAILABLE_POLL_INTERVAL, TestConstants.DATA_AVAILABLE_TIMEOUT))) {
         readClient.connect();
-        TaskByteArrayDataBlock record = readClient.readRecord();
+        TaskDataBlock record = readClient.readDataBlock();
         Assert.assertNotNull(record);
 
-        Assert.assertEquals(record.getValue(), new byte[0]);
+        Assert.assertEquals(record.getPayload(), new byte[0]);
 
-        record = readClient.readRecord();
+        record = readClient.readDataBlock();
         Assert.assertNotNull(record);
 
-        Assert.assertEquals(record.getValue(), new byte[0]);
+        Assert.assertEquals(record.getPayload(), new byte[0]);
 
-        record = readClient.readRecord();
+        record = readClient.readDataBlock();
         Assert.assertNotNull(record);
 
-        Assert.assertEquals(new String(record.getValue(), StandardCharsets.UTF_8), "");
+        Assert.assertEquals(new String(record.getPayload(), StandardCharsets.UTF_8), "");
 
-        record = readClient.readRecord();
+        record = readClient.readDataBlock();
         Assert.assertNotNull(record);
 
-        Assert.assertEquals(new String(record.getValue(), StandardCharsets.UTF_8), "value1");
+        Assert.assertEquals(new String(record.getPayload(), StandardCharsets.UTF_8), "value1");
 
-        record = readClient.readRecord();
+        record = readClient.readDataBlock();
         Assert.assertNotNull(record);
 
-        Assert.assertEquals(new String(record.getValue(), StandardCharsets.UTF_8), "value1");
+        Assert.assertEquals(new String(record.getPayload(), StandardCharsets.UTF_8), "value1");
 
-        record = readClient.readRecord();
+        record = readClient.readDataBlock();
         Assert.assertNull(record);
 
         long shuffleReadBytes = readClient.getShuffleReadBytes();
@@ -376,14 +376,14 @@ public class ReplicatedReadClientTest {
         // is to help to trigger error on following readRecord() operation on first server. So we could test the client
         // switching to read second server.
         for (int i = 0; i < numRecords; i++) {
-          writeClient.sendRecord(1,
+          writeClient.writeDataBlock(1,
               ByteBuffer.wrap(("value" + i).getBytes(StandardCharsets.UTF_8)));
         }
 
-        writeClient.sendRecord(2,
+        writeClient.writeDataBlock(2,
             ByteBuffer.wrap(new byte[0]));
 
-        writeClient.sendRecord(3,
+        writeClient.writeDataBlock(3,
             ByteBuffer.wrap("p3_value1".getBytes(StandardCharsets.UTF_8)));
 
         writeClient.finishUpload();
@@ -399,13 +399,13 @@ public class ReplicatedReadClientTest {
             testServer1.shutdown();
           }
 
-          TaskByteArrayDataBlock record = readClient.readRecord();
+          TaskDataBlock record = readClient.readDataBlock();
           Assert.assertNotNull(record);
 
-          Assert.assertEquals(new String(record.getValue(), StandardCharsets.UTF_8), "value" + i);
+          Assert.assertEquals(new String(record.getPayload(), StandardCharsets.UTF_8), "value" + i);
         }
 
-        Assert.assertNull(readClient.readRecord());
+        Assert.assertNull(readClient.readDataBlock());
 
         long shuffleReadBytes = readClient.getShuffleReadBytes();
         Assert.assertTrue(shuffleReadBytes > 0);
@@ -421,12 +421,12 @@ public class ReplicatedReadClientTest {
       try (ReplicatedReadClient readClient = new ReplicatedReadClient(serverReplicationGroup, TestConstants.NETWORK_TIMEOUT,"user1", appShufflePartitionId,
           new ReadClientDataOptions(Arrays.asList(appTaskAttemptId.getTaskAttemptId()), TestConstants.DATA_AVAILABLE_POLL_INTERVAL, TestConstants.DATA_AVAILABLE_TIMEOUT), checkDataConsistency)) {
         readClient.connect();
-        TaskByteArrayDataBlock record = readClient.readRecord();
+        TaskDataBlock record = readClient.readDataBlock();
         Assert.assertNotNull(record);
 
-        Assert.assertEquals(record.getValue(), new byte[0]);
+        Assert.assertEquals(record.getPayload(), new byte[0]);
 
-        Assert.assertNull(readClient.readRecord());
+        Assert.assertNull(readClient.readDataBlock());
 
         long shuffleReadBytes = readClient.getShuffleReadBytes();
         Assert.assertTrue(shuffleReadBytes > 0);
@@ -442,12 +442,12 @@ public class ReplicatedReadClientTest {
       try (ReplicatedReadClient readClient = new ReplicatedReadClient(serverReplicationGroup, TestConstants.NETWORK_TIMEOUT,"user1", appShufflePartitionId,
           new ReadClientDataOptions(Arrays.asList(appTaskAttemptId.getTaskAttemptId()), TestConstants.DATA_AVAILABLE_POLL_INTERVAL, TestConstants.DATA_AVAILABLE_TIMEOUT), checkDataConsistency)) {
         readClient.connect();
-        TaskByteArrayDataBlock record = readClient.readRecord();
+        TaskDataBlock record = readClient.readDataBlock();
         Assert.assertNotNull(record);
 
-        Assert.assertEquals(new String(record.getValue(), StandardCharsets.UTF_8), "p3_value1");
+        Assert.assertEquals(new String(record.getPayload(), StandardCharsets.UTF_8), "p3_value1");
 
-        Assert.assertNull(readClient.readRecord());
+        Assert.assertNull(readClient.readDataBlock());
 
         long shuffleReadBytes = readClient.getShuffleReadBytes();
         Assert.assertTrue(shuffleReadBytes > 0);
@@ -497,14 +497,14 @@ public class ReplicatedReadClientTest {
       // is to help to trigger error on following readRecord() operation on first server. So we could test the client
       // switching to read second server.
       for (int i = 0; i < numLargeAmountRecords; i++) {
-        writeClient.sendRecord(1,
+        writeClient.writeDataBlock(1,
             ByteBuffer.wrap(("value" + i).getBytes(StandardCharsets.UTF_8)));
       }
 
-      writeClient.sendRecord(2,
+      writeClient.writeDataBlock(2,
           ByteBuffer.wrap(new byte[0]));
 
-      writeClient.sendRecord(3,
+      writeClient.writeDataBlock(3,
           ByteBuffer.wrap("value1".getBytes(StandardCharsets.UTF_8)));
 
       writeClient.finishUpload();
@@ -523,10 +523,10 @@ public class ReplicatedReadClientTest {
       testServer2.shutdown();
 
       for (int i = 0; i < numLargeAmountRecords; i++) {
-        Assert.assertNotNull(readClient.readRecord());
+        Assert.assertNotNull(readClient.readDataBlock());
       }
 
-      Assert.assertNull(readClient.readRecord());
+      Assert.assertNull(readClient.readDataBlock());
     }
   }
 
@@ -567,7 +567,7 @@ public class ReplicatedReadClientTest {
         // is to help to trigger error on following readRecord() operation on first server. So we could test the client
         // switching to read second server.
         for (int i = 0; i < numLargeAmountRecords; i++) {
-          writeClient.sendRecord(1,
+          writeClient.writeDataBlock(1,
               ByteBuffer.wrap(("server1_value" + i).getBytes(StandardCharsets.UTF_8)));
         }
 
@@ -592,7 +592,7 @@ public class ReplicatedReadClientTest {
         // is to help to trigger error on following readRecord() operation on first server. So we could test the client
         // switching to read second server.
         for (int i = 0; i < numLargeAmountRecords; i++) {
-          writeClient.sendRecord(1,
+          writeClient.writeDataBlock(1,
               ByteBuffer.wrap(("server2_value" + i).getBytes(StandardCharsets.UTF_8)));
         }
 
@@ -611,7 +611,7 @@ public class ReplicatedReadClientTest {
           if (i%1000 == 0) {
             logger.info("Reading record: " + i);
           }
-          TaskByteArrayDataBlock record = readClient.readRecord();
+          TaskDataBlock record = readClient.readDataBlock();
           Assert.assertNotNull(record);
 
         }

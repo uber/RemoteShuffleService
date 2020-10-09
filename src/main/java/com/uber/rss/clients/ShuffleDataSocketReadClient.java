@@ -30,9 +30,9 @@ import java.util.Collection;
 /***
  * Shuffle read client to download data (records) from shuffle server.
  */
-public abstract class RecordSocketReadClient implements AutoCloseable, SingleServerReadClient {
+public abstract class ShuffleDataSocketReadClient implements AutoCloseable, SingleServerReadClient {
   private static final Logger logger =
-      LoggerFactory.getLogger(RecordSocketReadClient.class);
+      LoggerFactory.getLogger(ShuffleDataSocketReadClient.class);
 
   private final DataBlockSocketReadClient dataBlockSocketReadClient;
 
@@ -40,7 +40,7 @@ public abstract class RecordSocketReadClient implements AutoCloseable, SingleSer
 
   private ReadClientMetrics metrics = null;
 
-  protected RecordSocketReadClient(String host, int port, int timeoutMillis, String user, AppShufflePartitionId appShufflePartitionId, Collection<Long> fetchTaskAttemptIds, long dataAvailablePollInterval, long dataAvailableWaitTime) {
+  protected ShuffleDataSocketReadClient(String host, int port, int timeoutMillis, String user, AppShufflePartitionId appShufflePartitionId, Collection<Long> fetchTaskAttemptIds, long dataAvailablePollInterval, long dataAvailableWaitTime) {
     this.dataBlockSocketReadClient = new DataBlockSocketReadClient(host, port, timeoutMillis, user, appShufflePartitionId, fetchTaskAttemptIds, dataAvailablePollInterval, dataAvailableWaitTime);
     this.metrics = new ReadClientMetrics(new ReadClientMetricsKey(this.getClass().getSimpleName(), user));
   }
@@ -67,13 +67,13 @@ public abstract class RecordSocketReadClient implements AutoCloseable, SingleSer
   }
 
   @Override
-  public TaskByteArrayDataBlock readRecord() {
+  public TaskDataBlock readDataBlock() {
     DataBlock dataBlock = dataBlockSocketReadClient.readDataBlock();
     if (dataBlock == null) {
       return null;
     }
     shuffleReadBytes += DataBlockHeader.NUM_BYTES + dataBlock.getPayload().length;
-    return new TaskByteArrayDataBlock(dataBlock.getPayload(), dataBlock.getHeader().getTaskAttemptId());
+    return new TaskDataBlock(dataBlock.getPayload(), dataBlock.getHeader().getTaskAttemptId());
   }
 
   @Override

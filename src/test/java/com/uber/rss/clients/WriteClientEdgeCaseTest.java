@@ -61,7 +61,7 @@ public class WriteClientEdgeCaseTest {
       AppTaskAttemptId appTaskAttemptId2 = new AppTaskAttemptId("app1", "exec1", 1, 2, 2L);
       try (SingleServerWriteClient client = ClientTestUtils.getOrCreateWriteClient(testServer.getShufflePort(), appTaskAttemptId2.getAppId(), appTaskAttemptId2.getAppAttempt())) {
         client.startUpload(appTaskAttemptId2, 1, 20);
-        client.sendRecord(1, null);
+        client.writeDataBlock(1, null);
 
         client.close();
         client.close();
@@ -70,7 +70,7 @@ public class WriteClientEdgeCaseTest {
       AppTaskAttemptId appTaskAttemptId3 = new AppTaskAttemptId("app1", "exec1", 1, 2, 3L);
       try (SingleServerWriteClient client = ClientTestUtils.getOrCreateWriteClient(testServer.getShufflePort(), appTaskAttemptId3.getAppId(), appTaskAttemptId3.getAppAttempt())) {
         client.startUpload(appTaskAttemptId3, 1, 20);
-        client.sendRecord(1, null);
+        client.writeDataBlock(1, null);
         client.finishUpload();
 
         client.close();
@@ -90,10 +90,10 @@ public class WriteClientEdgeCaseTest {
       AppTaskAttemptId appTaskAttemptId = new AppTaskAttemptId("app1", "exec1", 1, 2, 1L);
       try (SingleServerWriteClient client = ClientTestUtils.getOrCreateWriteClient(testServer.getShufflePort(), appTaskAttemptId.getAppId(), appTaskAttemptId.getAppAttempt())) {
         client.startUpload(appTaskAttemptId, 1, 20);
-        client.sendRecord(1, null);
+        client.writeDataBlock(1, null);
         client.finishUpload();
 
-        List<TaskByteArrayDataBlock> records = StreamServerTestUtils.readAllRecords2(testServer.getShufflePort(), appTaskAttemptId.getAppShuffleId(), 1, Arrays.asList(appTaskAttemptId.getTaskAttemptId()));
+        List<TaskDataBlock> records = StreamServerTestUtils.readAllRecords2(testServer.getShufflePort(), appTaskAttemptId.getAppShuffleId(), 1, Arrays.asList(appTaskAttemptId.getTaskAttemptId()));
         Assert.assertEquals(records.size(), 1);
 
         // Shutdown server first
@@ -131,19 +131,19 @@ public class WriteClientEdgeCaseTest {
       AppTaskAttemptId appTaskAttemptId = new AppTaskAttemptId("app1", "exec1", 1, 2, 0L);
       try (SingleServerWriteClient client = ClientTestUtils.getOrCreateWriteClient(testServer.getShufflePort(), appTaskAttemptId.getAppId(), appTaskAttemptId.getAppAttempt())) {
         client.startUpload(appTaskAttemptId, 1, 20);
-        client.sendRecord(1, null);
+        client.writeDataBlock(1, null);
         client.finishUpload();
       }
 
       try (SingleServerWriteClient client = ClientTestUtils.getOrCreateWriteClient(testServer.getShufflePort(), appTaskAttemptId.getAppId(), appTaskAttemptId.getAppAttempt())) {
         client.startUpload(appTaskAttemptId, 1, 20);
-        client.sendRecord(1, null);
+        client.writeDataBlock(1, null);
         client.finishUpload();
       }
 
-      List<TaskByteArrayDataBlock> readRecords = StreamServerTestUtils.readAllRecords2(testServer.getShufflePort(), appTaskAttemptId.getAppShuffleId(), 1, Arrays.asList(appTaskAttemptId.getTaskAttemptId()));
+      List<TaskDataBlock> readRecords = StreamServerTestUtils.readAllRecords2(testServer.getShufflePort(), appTaskAttemptId.getAppShuffleId(), 1, Arrays.asList(appTaskAttemptId.getTaskAttemptId()));
       Assert.assertEquals(readRecords.size(), 1);
-      Assert.assertNull(readRecords.get(0).getValue());
+      Assert.assertNull(readRecords.get(0).getPayload());
     }
     finally {
       testServer.shutdown();
@@ -165,14 +165,14 @@ public class WriteClientEdgeCaseTest {
       AppTaskAttemptId appTaskAttemptId1 = new AppTaskAttemptId("app1", "exec1", 1, 2, 1L);
       try (SingleServerWriteClient client1 = ClientTestUtils.getOrCreateWriteClient(testServer.getShufflePort(), appTaskAttemptId1.getAppId(), appTaskAttemptId1.getAppAttempt())) {
         client1.startUpload(appTaskAttemptId1, 1, 20);
-        client1.sendRecord(1,
+        client1.writeDataBlock(1,
             ByteBuffer.wrap("value1".getBytes(StandardCharsets.UTF_8)));
 
         // task 2 sends data and finish upload
         AppTaskAttemptId appTaskAttemptId2 = new AppTaskAttemptId("app1", "exec1", 1, 2, 2L);
         try (SingleServerWriteClient client2 = ClientTestUtils.getOrCreateWriteClient(testServer.getShufflePort(), appTaskAttemptId1.getAppId(), appTaskAttemptId1.getAppAttempt())) {
           client2.startUpload(appTaskAttemptId2, 1, 20);
-          client2.sendRecord(1,
+          client2.writeDataBlock(1,
               ByteBuffer.wrap("value2".getBytes(StandardCharsets.UTF_8)));
           client2.finishUpload();
         }
@@ -180,9 +180,9 @@ public class WriteClientEdgeCaseTest {
         // task 1 finishes upload
         client1.finishUpload();
 
-        List<TaskByteArrayDataBlock> readRecords = StreamServerTestUtils.readAllRecords2(testServer.getShufflePort(), appTaskAttemptId1.getAppShuffleId(), 1, Arrays.asList(appTaskAttemptId2.getTaskAttemptId()));
+        List<TaskDataBlock> readRecords = StreamServerTestUtils.readAllRecords2(testServer.getShufflePort(), appTaskAttemptId1.getAppShuffleId(), 1, Arrays.asList(appTaskAttemptId2.getTaskAttemptId()));
         Assert.assertEquals(readRecords.size(), 1);
-        Assert.assertEquals(new String(readRecords.get(0).getValue(), StandardCharsets.UTF_8), "value2");
+        Assert.assertEquals(new String(readRecords.get(0).getPayload(), StandardCharsets.UTF_8), "value2");
       }
     }
     finally {
@@ -201,7 +201,7 @@ public class WriteClientEdgeCaseTest {
         client.finishUpload();
       }
 
-      List<TaskByteArrayDataBlock> records = StreamServerTestUtils.readAllRecords2(testServer.getShufflePort(), appTaskAttemptId.getAppShuffleId(), 0, Arrays.asList(appTaskAttemptId.getTaskAttemptId()));
+      List<TaskDataBlock> records = StreamServerTestUtils.readAllRecords2(testServer.getShufflePort(), appTaskAttemptId.getAppShuffleId(), 0, Arrays.asList(appTaskAttemptId.getTaskAttemptId()));
       Assert.assertEquals(records.size(), 0);
     }
     finally {
@@ -258,7 +258,7 @@ public class WriteClientEdgeCaseTest {
 
       try (ServerBusyRetriableWriteClient retriableWriteClient =
                new ServerBusyRetriableWriteClient(
-                   ()->new PlainRecordSyncWriteClient("localhost", testServer.getShufflePort(), 500, finishUploadAck, "user1", appTaskAttemptId2.getAppId(), appTaskAttemptId2.getAppAttempt(), TestConstants.SHUFFLE_WRITE_CONFIG),
+                   ()->new PlainShuffleDataSyncWriteClient("localhost", testServer.getShufflePort(), 500, finishUploadAck, "user1", appTaskAttemptId2.getAppId(), appTaskAttemptId2.getAppAttempt(), TestConstants.SHUFFLE_WRITE_CONFIG),
                    1000,
                    "user1",
                    appTaskAttemptId2.getAppId(),

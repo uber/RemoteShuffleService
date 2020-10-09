@@ -94,8 +94,8 @@ public class MultiServerSocketReadClient implements MultiServerReadClient {
   }
 
   @Override
-  public synchronized TaskByteArrayDataBlock readRecord() {
-    TaskByteArrayDataBlock record = currentClient.readRecord();
+  public synchronized TaskDataBlock readDataBlock() {
+    TaskDataBlock record = currentClient.readDataBlock();
 
     while (record == null) {
       shuffleReadBytesOfFinishedClients += currentClient.getShuffleReadBytes();
@@ -105,7 +105,7 @@ public class MultiServerSocketReadClient implements MultiServerReadClient {
         return null;
       } else if (nextClientIndex < servers.size()) {
         connectAndInitializeClient();
-        record = currentClient.readRecord();
+        record = currentClient.readDataBlock();
       } else {
         throw new RssInvalidStateException(String.format("Invalid nextClientIndex value: %s, max value: %s, %s", nextClientIndex, this.servers.size() - 1, this));
       }
