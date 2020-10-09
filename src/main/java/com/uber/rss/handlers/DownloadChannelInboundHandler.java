@@ -165,11 +165,11 @@ public class DownloadChannelInboundHandler extends ChannelInboundHandlerAdapter 
     private void sendResponseAndFiles2(ChannelHandlerContext ctx, boolean dataAvailable, ShuffleStageStatus shuffleStageStatus, BaseMessage responseMessage) {
         byte responseStatus = shuffleStageStatus.transformToMessageResponseStatus();
         if (dataAvailable) {
-            List<FilePathAndLength> files = downloadServerHandler.getNonEmptyPartitionFiles(connectionInfo);
-
-            // TODO optimize folllowing and run them asynchronously
+            // TODO optimize following and run them asynchronously and only run once for each stage
             downloadServerHandler.closePartitionFiles(appShufflePartitionId);
             downloadServerHandler.finishShuffleStage(appShufflePartitionId.getAppShuffleId());
+
+            List<FilePathAndLength> files = downloadServerHandler.getNonEmptyPartitionFiles(connectionInfo);
 
             ChannelFuture channelFuture = HandlerUtil.writeResponseMsg(ctx, responseStatus, responseMessage, true);
 
