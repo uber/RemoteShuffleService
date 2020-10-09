@@ -19,13 +19,13 @@ import com.uber.rss.common.AppTaskAttemptId;
 import java.nio.ByteBuffer;
 
 /***
- * Shuffle record writer.
+ * Shuffle data writer.
  */
-public interface RecordWriter extends AutoCloseable {
+public interface ShuffleDataWriter extends AutoCloseable {
 
   void startUpload(AppTaskAttemptId appTaskAttemptId, int numMaps, int numPartitions);
 
-  void sendRecord(int partition, ByteBuffer value);
+  void writeDataBlock(int partition, ByteBuffer value);
 
   void finishUpload();
 

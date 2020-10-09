@@ -14,8 +14,8 @@
 
 package com.uber.rss.testutil;
 
-import com.uber.rss.clients.TaskByteArrayDataBlock;
-import com.uber.rss.clients.RecordSocketReadClient;
+import com.uber.rss.clients.ShuffleDataSocketReadClient;
+import com.uber.rss.clients.TaskDataBlock;
 import com.uber.rss.clients.ShuffleWriteConfig;
 import com.uber.rss.clients.SingleServerWriteClient;
 import com.uber.rss.clients.PooledWriteClientFactory;
@@ -64,19 +64,19 @@ public class ClientTestUtils {
     for (Integer partition : mapTaskData.keySet()) {
       List<Pair<String, String>> records = mapTaskData.get(partition);
       for (Pair<String, String> record : records) {
-        writeClient.sendRecord(partition, ByteBuffer.wrap(record.getValue().getBytes(StandardCharsets.UTF_8)));
+        writeClient.writeDataBlock(partition, ByteBuffer.wrap(record.getValue().getBytes(StandardCharsets.UTF_8)));
       }
     }
     writeClient.finishUpload();
   }
 
-  public static List<TaskByteArrayDataBlock> readData(AppShufflePartitionId appShufflePartitionId, RecordSocketReadClient readClient) {
+  public static List<TaskDataBlock> readData(AppShufflePartitionId appShufflePartitionId, ShuffleDataSocketReadClient readClient) {
     readClient.connect();
-    List<TaskByteArrayDataBlock> readRecords = new ArrayList<>();
-    TaskByteArrayDataBlock record = readClient.readRecord();
+    List<TaskDataBlock> readRecords = new ArrayList<>();
+    TaskDataBlock record = readClient.readDataBlock();
     while (record != null) {
       readRecords.add(record);
-      record = readClient.readRecord();
+      record = readClient.readDataBlock();
     }
     return readRecords;
   }

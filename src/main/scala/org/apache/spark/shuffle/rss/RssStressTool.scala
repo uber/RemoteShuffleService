@@ -303,7 +303,7 @@ class RssStressTool extends Logging {
 
     val shuffleWriteConfig = new ShuffleWriteConfig(numSplits.toShort)
 
-    var writeClient: RecordWriter = null
+    var writeClient: ShuffleDataWriter = null
     val networkTimeoutMillis = 120 * 1000
     val maxTryingMillis = networkTimeoutMillis * 3
     val serverReplicationGroups = ServerReplicationGroupUtil.createReplicationGroups(serverDetails, numReplicas)

@@ -59,12 +59,12 @@ public class ReplicatedReadClient implements MultiServerReadClient {
   // Store how many records have been consumed (returned to caller of this class) for each task attempt.
   // It is used to skip records to avoid reading duplicate data when we switch from failed server to another server.
   private final Map<Long, Long> numConsumedRecordsMap = new HashMap<>();
-  private final Map<Long, TaskByteArrayDataBlock> lastConsumedRecordsMap = new HashMap<>();
+  private final Map<Long, TaskDataBlock> lastConsumedRecordsMap = new HashMap<>();
 
   // Store how many records have been read from current client/server connection for each task attempt.
   // It is used to skip records to avoid reading duplicate data when we switch from failed server to another server.
   private final Map<Long, Long> numReadRecordsMap = new HashMap<>();
-  private final Map<Long, TaskByteArrayDataBlock> lastReadRecordsMap = new HashMap<>();
+  private final Map<Long, TaskDataBlock> lastReadRecordsMap = new HashMap<>();
 
   private final boolean checkDataConsistency;
 
@@ -182,7 +182,7 @@ public class ReplicatedReadClient implements MultiServerReadClient {
   }
 
   @Override
-  public synchronized TaskByteArrayDataBlock readRecord() {
+  public synchronized TaskDataBlock readDataBlock() {
     if (endOfRead) {
       return null;
     }
@@ -207,7 +207,7 @@ public class ReplicatedReadClient implements MultiServerReadClient {
         }
 
         retriable = true;
-        TaskByteArrayDataBlock record = clients[currentClientIndex].readRecord();
+        TaskDataBlock record = clients[currentClientIndex].readDataBlock();
         retriable = false;
 
         if (clients.length == 1) {
@@ -218,7 +218,7 @@ public class ReplicatedReadClient implements MultiServerReadClient {
           if (shouldSkipReadRecord(record)) {
             rememberLastReadRecord(record);
             retriable = true;
-            record = clients[currentClientIndex].readRecord();
+            record = clients[currentClientIndex].readDataBlock();
             retriable = false;
             continue;
           }
@@ -331,14 +331,14 @@ public class ReplicatedReadClient implements MultiServerReadClient {
     }
   }
 
-  private void rememberLastConsumedRecord(TaskByteArrayDataBlock record) {
+  private void rememberLastConsumedRecord(TaskDataBlock record) {
     increaseRecordCount(numConsumedRecordsMap, record.getTaskAttemptId());
     if (checkDataConsistency) {
       lastConsumedRecordsMap.put(record.getTaskAttemptId(), record);
     }
   }
 
-  private void rememberLastReadRecord(TaskByteArrayDataBlock record) {
+  private void rememberLastReadRecord(TaskDataBlock record) {
     increaseRecordCount(numReadRecordsMap, record.getTaskAttemptId());
     if (checkDataConsistency) {
       lastReadRecordsMap.put(record.getTaskAttemptId(), record);
@@ -359,7 +359,7 @@ public class ReplicatedReadClient implements MultiServerReadClient {
     }
   }
 
-  private boolean shouldSkipReadRecord(TaskByteArrayDataBlock record) {
+  private boolean shouldSkipReadRecord(TaskDataBlock record) {
     long taskAttemptId = record.getTaskAttemptId();
     Long consumedCount = numConsumedRecordsMap.get(taskAttemptId);
     if (consumedCount == null) {
@@ -371,8 +371,8 @@ public class ReplicatedReadClient implements MultiServerReadClient {
       return true;
     } else if (numReadCount == consumedCount) {
       if (checkDataConsistency) {
-        TaskByteArrayDataBlock lastConsumedRecord = lastConsumedRecordsMap.get(taskAttemptId);
-        TaskByteArrayDataBlock lastReadRecord = lastReadRecordsMap.get(taskAttemptId);
+        TaskDataBlock lastConsumedRecord = lastConsumedRecordsMap.get(taskAttemptId);
+        TaskDataBlock lastReadRecord = lastReadRecordsMap.get(taskAttemptId);
         if (!recordEquals(lastConsumedRecord, lastReadRecord)) {
           throw new RssInconsistentReplicaException(
               String.format("Got different records from two servers in the replication group for task attempt %s (after %s records), record from previous server: %s, record from new server: %s (%s)",
@@ -401,7 +401,7 @@ public class ReplicatedReadClient implements MultiServerReadClient {
           clients[currentClientIndex]));
     }
     if (checkDataConsistency) {
-      MapDifference<Long, TaskByteArrayDataBlock> lastRecordsDifference = Maps.difference(lastReadRecordsMap, lastConsumedRecordsMap);
+      MapDifference<Long, TaskDataBlock> lastRecordsDifference = Maps.difference(lastReadRecordsMap, lastConsumedRecordsMap);
       if (!lastRecordsDifference.areEqual()) {
         // TODO refine exception message
         throw new RssInconsistentReplicaException(String.format(
@@ -426,7 +426,7 @@ public class ReplicatedReadClient implements MultiServerReadClient {
     resetReadRecords();
   }
 
-  private void closeClient(RecordReader client) {
+  private void closeClient(ShuffleDataReader client) {
     try {
       client.close();
     } catch (Throwable ex) {
@@ -434,7 +434,7 @@ public class ReplicatedReadClient implements MultiServerReadClient {
     }
   }
 
-  private boolean recordEquals(TaskByteArrayDataBlock record1, TaskByteArrayDataBlock record2) {
+  private boolean recordEquals(TaskDataBlock record1, TaskDataBlock record2) {
     return Objects.equals(record1, record2);
   }
 

@@ -14,19 +14,33 @@
 
 package com.uber.rss.clients;
 
-/***
- * This class is a marker to put into the record queue in async read client, so it knows 
- * there is an underlying failure.
- */
-public class FailedFetchRecordKeyValuePair extends TaskByteArrayDataBlock {
-    private Throwable cause;
-    
-    public FailedFetchRecordKeyValuePair(Throwable cause) {
-        super(null, 0L);
-        this.cause = cause;
-    }
+import com.uber.rss.common.AppTaskAttemptId;
+import com.uber.rss.messages.ConnectUploadResponse;
 
-    public Throwable getCause() {
-        return cause;
-    }
+import java.nio.ByteBuffer;
+
+/***
+ * Shuffle write client to upload data (records) to shuffle server.
+ */
+public interface ShuffleDataSyncWriteClient extends SingleServerWriteClient {
+
+  String getHost();
+
+  int getPort();
+
+  String getUser();
+
+  String getAppId();
+
+  String getAppAttempt();
+
+  ConnectUploadResponse connect();
+
+  void startUpload(AppTaskAttemptId appTaskAttemptId, int numMaps, int numPartitions);
+
+  void writeDataBlock(int partition, ByteBuffer value);
+
+  void finishUpload();
+
+  long getShuffleWriteBytes();
 }

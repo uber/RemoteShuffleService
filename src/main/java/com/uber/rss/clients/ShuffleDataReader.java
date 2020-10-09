@@ -15,11 +15,11 @@
 package com.uber.rss.clients;
 
 /***
- * Shuffle record reader.
+ * Shuffle data reader.
  */
-public interface RecordReader extends AutoCloseable {
+public interface ShuffleDataReader extends AutoCloseable {
 
-  TaskByteArrayDataBlock readRecord();
+  TaskDataBlock readDataBlock();
 
   long getShuffleReadBytes();
 

@@ -101,6 +101,7 @@ public class DataBlockSyncWriteClient extends com.uber.rss.clients.ClientBase {
     return connectUploadResponse;
   }
 
+  // TODO do not need mapId/taskAttamptId for StartUploadMessage
   public void startUpload(ShuffleMapTaskAttemptId shuffleMapTaskAttemptId, int numMaps, int numPartitions, ShuffleWriteConfig shuffleWriteConfig) {
     logger.debug(String.format("Starting upload %s, %s", shuffleMapTaskAttemptId, connectionInfo));
 

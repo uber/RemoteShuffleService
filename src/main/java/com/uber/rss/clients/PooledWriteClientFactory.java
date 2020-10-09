@@ -63,10 +63,10 @@ public class PooledWriteClientFactory implements WriteClientFactory {
   }
 
   @Override
-  public RecordSyncWriteClient getOrCreateClient(String host, int port, int timeoutMillis, boolean finishUploadAck, String user, String appId, String appAttempt, ShuffleWriteConfig shuffleWriteConfig) {
+  public ShuffleDataSyncWriteClient getOrCreateClient(String host, int port, int timeoutMillis, boolean finishUploadAck, String user, String appId, String appAttempt, ShuffleWriteConfig shuffleWriteConfig) {
     ClientKey clientKey = new ClientKey(host, port, user, appId, appAttempt);
     ClientPool pool = getPool(clientKey);
-    RecordSyncWriteClient client = pool.getOrCreateClient(timeoutMillis, finishUploadAck, shuffleWriteConfig);
+    ShuffleDataSyncWriteClient client = pool.getOrCreateClient(timeoutMillis, finishUploadAck, shuffleWriteConfig);
     return client;
   }
 
@@ -74,7 +74,7 @@ public class PooledWriteClientFactory implements WriteClientFactory {
    * Return the client to connection pool for later reuse.
    * @param client
    */
-  public void returnClientToPool(PooledRecordSyncWriteClient client) {
+  public void returnClientToPool(PooledShuffleDataSyncWriteClient client) {
     if (!client.isReusable()) {
       logger.info(String.format("Client %s is not reusable, will close it instead of reuse it", client));
       client.closeWithoutReuse();
@@ -142,7 +142,7 @@ public class PooledWriteClientFactory implements WriteClientFactory {
     String appId;
     String appAttempt;
 
-    public ClientKey(PooledRecordSyncWriteClient client) {
+    public ClientKey(PooledShuffleDataSyncWriteClient client) {
       this(client.getHost(), client.getPort(), client.getUser(), client.getAppId(), client.getAppAttempt());
     }
 
@@ -195,7 +195,7 @@ public class PooledWriteClientFactory implements WriteClientFactory {
       this.clientKey = clientKey;
     }
 
-    public RecordSyncWriteClient getOrCreateClient(int timeoutMillis, boolean finishUploadAck, ShuffleWriteConfig shuffleWriteConfig) {
+    public ShuffleDataSyncWriteClient getOrCreateClient(int timeoutMillis, boolean finishUploadAck, ShuffleWriteConfig shuffleWriteConfig) {
       ClientAndState clientAndState;
       synchronized (this) {
         if (!idleClients.isEmpty()) {
@@ -204,7 +204,7 @@ public class PooledWriteClientFactory implements WriteClientFactory {
           if (numCreatedClients > MaxClients) {
             throw new RssInvalidStateException(String.format("Creating too many clients (current: %s, max: %s)", numCreatedClients, MaxClients));
           }
-          PooledRecordSyncWriteClient client = createClient(clientKey.host, clientKey.port, timeoutMillis, finishUploadAck, clientKey.user, clientKey.appId, clientKey.appAttempt, shuffleWriteConfig);
+          PooledShuffleDataSyncWriteClient client = createClient(clientKey.host, clientKey.port, timeoutMillis, finishUploadAck, clientKey.user, clientKey.appId, clientKey.appAttempt, shuffleWriteConfig);
           numCreatedClients++;
           clientAndState = new ClientAndState(client);
         }
@@ -212,7 +212,7 @@ public class PooledWriteClientFactory implements WriteClientFactory {
       return clientAndState.getConnectedClient();
     }
 
-    public void returnClientToPool(PooledRecordSyncWriteClient client) {
+    public void returnClientToPool(PooledShuffleDataSyncWriteClient client) {
       synchronized (this) {
         for (ClientAndState entry: idleClients) {
           if (entry.client.getClientId() == client.getClientId()) {
@@ -244,28 +244,28 @@ public class PooledWriteClientFactory implements WriteClientFactory {
       }
     }
 
-    private PooledRecordSyncWriteClient createClient(String host, int port, int timeoutMillis, boolean finishUploadAck, String user, String appId, String appAttempt, ShuffleWriteConfig shuffleWriteConfig) {
-      RecordSyncWriteClient client;
-      client = new PlainRecordSyncWriteClient(host, port, timeoutMillis, finishUploadAck, user, appId, appAttempt, shuffleWriteConfig);
+    private PooledShuffleDataSyncWriteClient createClient(String host, int port, int timeoutMillis, boolean finishUploadAck, String user, String appId, String appAttempt, ShuffleWriteConfig shuffleWriteConfig) {
+      ShuffleDataSyncWriteClient client;
+      client = new PlainShuffleDataSyncWriteClient(host, port, timeoutMillis, finishUploadAck, user, appId, appAttempt, shuffleWriteConfig);
       logger.info(String.format("Created new client: %s", client));
-      return new PooledRecordSyncWriteClient(client, PooledWriteClientFactory.this);
+      return new PooledShuffleDataSyncWriteClient(client, PooledWriteClientFactory.this);
     }
   }
 
   private class ClientAndState {
-    final PooledRecordSyncWriteClient client;
+    final PooledShuffleDataSyncWriteClient client;
     long lastActiveTime = 0;
 
-    public ClientAndState(PooledRecordSyncWriteClient client) {
+    public ClientAndState(PooledShuffleDataSyncWriteClient client) {
       this.client = client;
     }
 
-    public ClientAndState(PooledRecordSyncWriteClient client, long lastActiveTime) {
+    public ClientAndState(PooledShuffleDataSyncWriteClient client, long lastActiveTime) {
       this.client = client;
       this.lastActiveTime = lastActiveTime;
     }
 
-    public PooledRecordSyncWriteClient getConnectedClient() {
+    public PooledShuffleDataSyncWriteClient getConnectedClient() {
       synchronized (this) {
         if (lastActiveTime > 0) {
           return client;
