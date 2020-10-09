@@ -28,10 +28,10 @@ import java.util.List;
 
 public class TaskAttemptCommitStateItem extends BaseMessage {
     private final AppShuffleId appShuffleId;
-    private final Collection<MapTaskAttemptId> mapTaskAttemptIds;
+    private final Collection<Long> mapTaskAttemptIds;
     private final Collection<PartitionFilePathAndLength> partitionFilePathAndLengths;
 
-    public TaskAttemptCommitStateItem(AppShuffleId appShuffleId, Collection<MapTaskAttemptId> mapTaskAttemptIds, Collection<PartitionFilePathAndLength> partitionFilePathAndLengths) {
+    public TaskAttemptCommitStateItem(AppShuffleId appShuffleId, Collection<Long> mapTaskAttemptIds, Collection<PartitionFilePathAndLength> partitionFilePathAndLengths) {
         this.appShuffleId = appShuffleId;
         this.mapTaskAttemptIds = Collections.unmodifiableCollection(mapTaskAttemptIds);
         this.partitionFilePathAndLengths = Collections.unmodifiableCollection(partitionFilePathAndLengths);
@@ -48,9 +48,8 @@ public class TaskAttemptCommitStateItem extends BaseMessage {
         ByteBufUtils.writeLengthAndString(buf, appShuffleId.getAppAttempt());
         buf.writeInt(appShuffleId.getShuffleId());
         buf.writeInt(mapTaskAttemptIds.size());
-        for (MapTaskAttemptId entry: mapTaskAttemptIds) {
-            buf.writeInt(entry.getMapId());
-            buf.writeLong(entry.getTaskAttemptId());
+        for (Long entry: mapTaskAttemptIds) {
+            buf.writeLong(entry);
         }
         buf.writeInt(partitionFilePathAndLengths.size());
         for (PartitionFilePathAndLength entry: partitionFilePathAndLengths) {
@@ -65,11 +64,10 @@ public class TaskAttemptCommitStateItem extends BaseMessage {
         String appAttempt = ByteBufUtils.readLengthAndString(buf);
         int shuffleId = buf.readInt();
         int count = buf.readInt();
-        List<MapTaskAttemptId> mapTaskAttemptIdList = new ArrayList<>(count);
+        List<Long> mapTaskAttemptIdList = new ArrayList<>(count);
         for (int i = 0; i < count; i++) {
-            int mapId = buf.readInt();
             long taskAttemptId = buf.readLong();
-            mapTaskAttemptIdList.add(new MapTaskAttemptId(mapId, taskAttemptId));
+            mapTaskAttemptIdList.add(taskAttemptId);
         }
         count = buf.readInt();
         List<PartitionFilePathAndLength> partitionFilePathAndLengthList = new ArrayList<>(count);
@@ -87,7 +85,7 @@ public class TaskAttemptCommitStateItem extends BaseMessage {
         return appShuffleId;
     }
 
-    public Collection<MapTaskAttemptId> getMapTaskAttemptIds() {
+    public Collection<Long> getMapTaskAttemptIds() {
         return mapTaskAttemptIds;
     }
 

@@ -133,15 +133,13 @@ public class ExecutorShuffleStageState {
         }
     }
 
-    public synchronized void markMapAttemptStartUpload(AppTaskAttemptId appTaskAttemptId) {
-        AppMapId appMapId = appTaskAttemptId.getAppMapId();
-        TaskAttemptIdAndState taskState = getTaskState(appTaskAttemptId.getTaskAttemptId());
+    public synchronized void markMapAttemptStartUpload(long taskAttemptId) {
+        TaskAttemptIdAndState taskState = getTaskState(taskAttemptId);
         taskState.markStartUpload();
     }
 
-    public synchronized void markMapAttemptFinishUpload(AppTaskAttemptId appTaskAttemptId) {
-        AppMapId appMapId = appTaskAttemptId.getAppMapId();
-        TaskAttemptIdAndState taskState = getTaskState(appTaskAttemptId.getTaskAttemptId());
+    public synchronized void markMapAttemptFinishUpload(long taskAttemptId) {
+        TaskAttemptIdAndState taskState = getTaskState(taskAttemptId);
         taskState.markFinishUpload();
     }
 
@@ -276,10 +274,9 @@ public class ExecutorShuffleStageState {
 
     /***
      * Set last successful task attempt id for a given map id
-     * @param mapId
      * @param taskId
      */
-    public synchronized void commitMapTask(int mapId, long taskId) {
+    public synchronized void commitMapTask(long taskId) {
         TaskAttemptIdAndState taskState = getTaskState(taskId);
         taskState.markCommitted();
     }

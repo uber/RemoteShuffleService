@@ -332,7 +332,7 @@ public class LocalFileLocalFileStateStoreIteratorTest {
     LocalFileStateStore store = new LocalFileStateStore(tempPath.toString());
     store.storeStageInfo(appShuffleId1, new StagePersistentInfo(4, 5, shuffleWriteConfig1, ShuffleStageStatus.FILE_STATUS_OK));
     store.storeTaskAttemptCommit(appShuffleId1,
-        Arrays.asList(new MapTaskAttemptId(appTaskAttemptId1.getMapId(), appTaskAttemptId1.getTaskAttemptId())),
+        Arrays.asList(appTaskAttemptId1.getTaskAttemptId()),
         Arrays.asList(partitionFilePathAndLength1));
     store.storeAppDeletion("deletedApp");
     store.storeAppDeletion(appShuffleId1.getAppId());

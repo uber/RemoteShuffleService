@@ -18,6 +18,7 @@ import com.uber.m3.tally.Counter;
 import com.uber.m3.tally.Gauge;
 import com.uber.rss.RssBuildInfo;
 import com.uber.rss.clients.ShuffleWriteConfig;
+import com.uber.rss.common.AppShuffleId;
 import com.uber.rss.common.AppTaskAttemptId;
 import com.uber.rss.exceptions.RssInvalidDataException;
 import com.uber.rss.exceptions.RssMaxConnectionsException;
@@ -165,14 +166,13 @@ public class UploadChannelInboundHandler extends ChannelInboundHandlerAdapter {
             } else if (msg instanceof StartUploadMessage) {
                 startUploadMessage = (StartUploadMessage)msg;
 
-                AppTaskAttemptId appTaskAttemptId = new AppTaskAttemptId(appId,
+                AppShuffleId appShuffleId = new AppShuffleId(appId,
                     appAttempt,
-                    startUploadMessage.getShuffleId(),
-                    startUploadMessage.getMapId(),
-                    startUploadMessage.getAttemptId());
+                    startUploadMessage.getShuffleId());
+                long taskAttemptId = startUploadMessage.getAttemptId();
 
                 ShuffleWriteConfig writeConfig = new ShuffleWriteConfig(startUploadMessage.getNumSplits());
-                uploadServerHandler.initializeAppTaskAttempt(appTaskAttemptId, startUploadMessage.getNumPartitions(), writeConfig, ctx);
+                uploadServerHandler.initializeAppTaskAttempt(appShuffleId, taskAttemptId, startUploadMessage.getNumPartitions(), writeConfig, ctx);
             } else if (msg instanceof FinishUploadMessage) {
                 logger.info("FinishUploadMessage, {}, {}", msg, connectionInfo);
                 FinishUploadMessage finishUploadMessage = (FinishUploadMessage)msg;

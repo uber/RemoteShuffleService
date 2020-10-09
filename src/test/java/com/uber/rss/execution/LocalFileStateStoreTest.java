@@ -124,11 +124,11 @@ public class LocalFileStateStoreTest {
 
     stateStore.storeStageInfo(appShuffleId1, stageInfo1);
     stateStore.storeTaskAttemptCommit(appShuffleId1,
-        Arrays.asList(new MapTaskAttemptId(1, 2), new MapTaskAttemptId(3, 4)),
+        Arrays.asList(2L, 4L),
         Arrays.asList(new PartitionFilePathAndLength(1, "p1", 10), new PartitionFilePathAndLength(2, "p2", 11)));
     stateStore.storeStageInfo(appShuffleId2, stageInfo2);
     stateStore.storeTaskAttemptCommit(appShuffleId1,
-        Arrays.asList(new MapTaskAttemptId(30, 40)),
+        Arrays.asList(40L),
         Arrays.asList(new PartitionFilePathAndLength(9, "p9", 0), new PartitionFilePathAndLength(10, "p10", 100)));
 
     // load data before commit, should get no data
@@ -153,7 +153,7 @@ public class LocalFileStateStoreTest {
     Assert.assertTrue(iterator.hasNext());
     TaskAttemptCommitStateItem taskAttemptCommitStateItem = (TaskAttemptCommitStateItem)iterator.next();
     Assert.assertEquals(taskAttemptCommitStateItem.getAppShuffleId(), appShuffleId1);
-    Assert.assertEquals(taskAttemptCommitStateItem.getMapTaskAttemptIds(), Arrays.asList(new MapTaskAttemptId(1, 2), new MapTaskAttemptId(3, 4)));
+    Assert.assertEquals(taskAttemptCommitStateItem.getMapTaskAttemptIds(), Arrays.asList(2L, 4L));
     Assert.assertEquals(taskAttemptCommitStateItem.getPartitionFilePathAndLengths(),
         Arrays.asList(new PartitionFilePathAndLength(1, "p1", 10),
           new PartitionFilePathAndLength(2, "p2", 11)));
@@ -169,7 +169,7 @@ public class LocalFileStateStoreTest {
     Assert.assertTrue(iterator.hasNext());
     taskAttemptCommitStateItem = (TaskAttemptCommitStateItem)iterator.next();
     Assert.assertEquals(taskAttemptCommitStateItem.getAppShuffleId(), appShuffleId1);
-    Assert.assertEquals(taskAttemptCommitStateItem.getMapTaskAttemptIds(), Arrays.asList(new MapTaskAttemptId(30, 40)));
+    Assert.assertEquals(taskAttemptCommitStateItem.getMapTaskAttemptIds(), Arrays.asList(40L));
     Assert.assertEquals(taskAttemptCommitStateItem.getPartitionFilePathAndLengths(),
         Arrays.asList(new PartitionFilePathAndLength(9, "p9", 0),
             new PartitionFilePathAndLength(10, "p10", 100)));
@@ -181,7 +181,7 @@ public class LocalFileStateStoreTest {
     for (int i = 0; i < 10000; i++) {
       stateStore.storeStageInfo(appShuffleId1, stageInfo1);
       stateStore.storeTaskAttemptCommit(appShuffleId1,
-          Arrays.asList(new MapTaskAttemptId(1000, 2000)),
+          Arrays.asList(2000L),
           Arrays.asList(new PartitionFilePathAndLength(1000, "p1000", 10000),
               new PartitionFilePathAndLength(2000, "p2000", 11000)));
     }
@@ -199,7 +199,7 @@ public class LocalFileStateStoreTest {
     Assert.assertTrue(iterator.hasNext());
     taskAttemptCommitStateItem = (TaskAttemptCommitStateItem)iterator.next();
     Assert.assertEquals(taskAttemptCommitStateItem.getAppShuffleId(), appShuffleId1);
-    Assert.assertEquals(taskAttemptCommitStateItem.getMapTaskAttemptIds(), Arrays.asList(new MapTaskAttemptId(1, 2), new MapTaskAttemptId(3, 4)));
+    Assert.assertEquals(taskAttemptCommitStateItem.getMapTaskAttemptIds(), Arrays.asList(2L, 4L));
     Assert.assertEquals(taskAttemptCommitStateItem.getPartitionFilePathAndLengths(),
         Arrays.asList(new PartitionFilePathAndLength(1, "p1", 10),
             new PartitionFilePathAndLength(2, "p2", 11)));
@@ -214,7 +214,7 @@ public class LocalFileStateStoreTest {
     Assert.assertTrue(iterator.hasNext());
     taskAttemptCommitStateItem = (TaskAttemptCommitStateItem)iterator.next();
     Assert.assertEquals(taskAttemptCommitStateItem.getAppShuffleId(), appShuffleId1);
-    Assert.assertEquals(taskAttemptCommitStateItem.getMapTaskAttemptIds(), Arrays.asList(new MapTaskAttemptId(30, 40)));
+    Assert.assertEquals(taskAttemptCommitStateItem.getMapTaskAttemptIds(), Arrays.asList(40L));
     Assert.assertEquals(taskAttemptCommitStateItem.getPartitionFilePathAndLengths(),
         Arrays.asList(new PartitionFilePathAndLength(9, "p9", 0),
             new PartitionFilePathAndLength(10, "p10", 100)));
@@ -238,7 +238,7 @@ public class LocalFileStateStoreTest {
     Assert.assertTrue(iterator.hasNext());
     taskAttemptCommitStateItem = (TaskAttemptCommitStateItem)iterator.next();
     Assert.assertEquals(taskAttemptCommitStateItem.getAppShuffleId(), appShuffleId1);
-    Assert.assertEquals(taskAttemptCommitStateItem.getMapTaskAttemptIds(), Arrays.asList(new MapTaskAttemptId(1, 2), new MapTaskAttemptId(3, 4)));
+    Assert.assertEquals(taskAttemptCommitStateItem.getMapTaskAttemptIds(), Arrays.asList(2L, 4L));
     Assert.assertEquals(taskAttemptCommitStateItem.getPartitionFilePathAndLengths(),
         Arrays.asList(new PartitionFilePathAndLength(1, "p1", 10),
             new PartitionFilePathAndLength(2, "p2", 11)));
@@ -253,7 +253,7 @@ public class LocalFileStateStoreTest {
     Assert.assertTrue(iterator.hasNext());
     taskAttemptCommitStateItem = (TaskAttemptCommitStateItem)iterator.next();
     Assert.assertEquals(taskAttemptCommitStateItem.getAppShuffleId(), appShuffleId1);
-    Assert.assertEquals(taskAttemptCommitStateItem.getMapTaskAttemptIds(), Arrays.asList(new MapTaskAttemptId(30, 40)));
+    Assert.assertEquals(taskAttemptCommitStateItem.getMapTaskAttemptIds(), Arrays.asList(40L));
     Assert.assertEquals(taskAttemptCommitStateItem.getPartitionFilePathAndLengths(),
         Arrays.asList(new PartitionFilePathAndLength(9, "p9", 0),
             new PartitionFilePathAndLength(10, "p10", 100)));
@@ -269,7 +269,7 @@ public class LocalFileStateStoreTest {
       Assert.assertTrue(iterator.hasNext());
       taskAttemptCommitStateItem = (TaskAttemptCommitStateItem)iterator.next();
       Assert.assertEquals(taskAttemptCommitStateItem.getAppShuffleId(), appShuffleId1);
-      Assert.assertEquals(taskAttemptCommitStateItem.getMapTaskAttemptIds(), Arrays.asList(new MapTaskAttemptId(1000, 2000)));
+      Assert.assertEquals(taskAttemptCommitStateItem.getMapTaskAttemptIds(), Arrays.asList(2000L));
       Assert.assertEquals(taskAttemptCommitStateItem.getPartitionFilePathAndLengths(),
           Arrays.asList(new PartitionFilePathAndLength(1000, "p1000", 10000),
               new PartitionFilePathAndLength(2000, "p2000", 11000)));

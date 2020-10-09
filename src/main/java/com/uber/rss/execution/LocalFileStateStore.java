@@ -99,7 +99,7 @@ public class LocalFileStateStore implements StateStore {
     writeState(item);
   }
 
-  public void storeTaskAttemptCommit(AppShuffleId appShuffleId, Collection<MapTaskAttemptId> committedTaskAttempts, Collection<PartitionFilePathAndLength> partitionFilePathAndLengths) {
+  public void storeTaskAttemptCommit(AppShuffleId appShuffleId, Collection<Long> committedTaskAttempts, Collection<PartitionFilePathAndLength> partitionFilePathAndLengths) {
     TaskAttemptCommitStateItem item = new TaskAttemptCommitStateItem(appShuffleId, committedTaskAttempts, partitionFilePathAndLengths);
     writeState(item);
   }

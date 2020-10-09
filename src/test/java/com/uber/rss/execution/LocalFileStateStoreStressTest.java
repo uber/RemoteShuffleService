@@ -81,7 +81,7 @@ public class LocalFileStateStoreStressTest {
               break;
             case 1:
               stateStore.storeTaskAttemptCommit(appShuffleId,
-                  Arrays.asList(new MapTaskAttemptId(1, 2)),
+                  Arrays.asList(2L),
                   Arrays.asList(partitionFilePathAndLength));
               break;
             case 2:

@@ -25,7 +25,7 @@ public interface StateStore extends AutoCloseable {
   void storeStageInfo(AppShuffleId appShuffleId, StagePersistentInfo info);
 
   void storeTaskAttemptCommit(AppShuffleId appShuffleId,
-                              Collection<MapTaskAttemptId> committedTaskAttempts,
+                              Collection<Long> committedTaskAttempts,
                               Collection<PartitionFilePathAndLength> partitionFilePathAndLengths);
 
   void storeAppDeletion(String appId);

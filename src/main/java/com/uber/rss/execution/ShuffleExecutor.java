@@ -227,16 +227,16 @@ public class ShuffleExecutor {
         }
     }
 
-    public void startUpload(AppTaskAttemptId appTaskAttemptId) {
-        logger.debug("startUpload, {}", appTaskAttemptId);
+    public void startUpload(AppShuffleId appShuffleId, long taskAttemptId) {
+        logger.debug("startUpload, {}, {}", appShuffleId, taskAttemptId);
 
-        ExecutorAppState appState = updateLiveness(appTaskAttemptId.getAppId());
+        ExecutorAppState appState = updateLiveness(appShuffleId.getAppId());
 
         long appWriteBytes = appState.getNumWriteBytes();
-        checkAppMaxWriteBytes(appTaskAttemptId, appWriteBytes);
+        checkAppMaxWriteBytes(appShuffleId, appWriteBytes);
 
-        ExecutorShuffleStageState stageState = getStageState(appTaskAttemptId.getAppShuffleId());
-        stageState.markMapAttemptStartUpload(appTaskAttemptId);
+        ExecutorShuffleStageState stageState = getStageState(appShuffleId);
+        stageState.markMapAttemptStartUpload(taskAttemptId);
     }
     
     /***
@@ -252,12 +252,9 @@ public class ShuffleExecutor {
             appState.updateLivenessTimestamp();
 
             AppShuffleId appShuffleId = writeOp.getShuffleId();
-            AppMapId appMapId = new AppMapId(appShuffleId, writeOp.getMapId());
-            AppTaskAttemptId appTaskAttemptId = new AppTaskAttemptId(appMapId, writeOp.getTaskAttemptId());
-
             ByteBuf bytes = writeOp.getBytes();
             long appWriteBytes = appState.addNumWriteBytes(bytes.readableBytes());
-            checkAppMaxWriteBytes(appTaskAttemptId, appWriteBytes);
+            checkAppMaxWriteBytes(appShuffleId, appWriteBytes);
 
             int partition = writeOp.getPartition();
 
@@ -284,37 +281,36 @@ public class ShuffleExecutor {
 
     /***
      * Add an operation to indicate a map task finishing upload data.
-     * @param appTaskAttemptId
      * @return true when things are good, false when hitting stale task attempt (old task attempt tries
      * to finish upload, but there is a new task attempt uploading data, which may happen when there is
      * task retry);
      */
-    public void addFinishUploadOperation(AppTaskAttemptId appTaskAttemptId) {
+    public void addFinishUploadOperation(AppShuffleId appShuffleId, long taskAttemptId) {
         try {
-            addFinishUploadOperationImpl(appTaskAttemptId);
+            addFinishUploadOperationImpl(appShuffleId, taskAttemptId);
         } catch (Throwable ex) {
             M3Stats.addException(ex, this.getClass().getSimpleName());
-            ExecutorShuffleStageState stageState = getStageState(appTaskAttemptId.getAppShuffleId());
+            ExecutorShuffleStageState stageState = getStageState(appShuffleId);
             stageState.setFileCorrupted();
             stateStore.storeStageCorruption(stageState.getAppShuffleId());
-            logger.warn(String.format("Set file corrupted during finishing upload for shuffle stage %s", appTaskAttemptId.getAppShuffleId()), ex);
+            logger.warn(String.format("Set file corrupted during finishing upload for shuffle stage %s", appShuffleId), ex);
             throw ex;
         }
     }
 
-    private void addFinishUploadOperationImpl(AppTaskAttemptId appTaskAttemptId) {
-        ExecutorAppState appState = getAppState(appTaskAttemptId.getAppId());
+    private void addFinishUploadOperationImpl(AppShuffleId appShuffleId, long taskAttemptId) {
+        ExecutorAppState appState = getAppState(appShuffleId.getAppId());
         appState.updateLivenessTimestamp();
 
-        ExecutorShuffleStageState stageState = getStageState(appTaskAttemptId.getAppShuffleId());
+        ExecutorShuffleStageState stageState = getStageState(appShuffleId);
         synchronized (stageState) {
-          stageState.markMapAttemptFinishUpload(appTaskAttemptId);
-          stageState.commitMapTask(appTaskAttemptId.getMapId(), appTaskAttemptId.getTaskAttemptId());
+          stageState.markMapAttemptFinishUpload(taskAttemptId);
+          stageState.commitMapTask(taskAttemptId);
 
-          logger.info("CommitTask: {}", appTaskAttemptId);
+          logger.info("CommitTask: {}, {}", appShuffleId, taskAttemptId);
 
           // TODO not efficient code, optimize it
-          stateStore.storeTaskAttemptCommit(appTaskAttemptId.getAppShuffleId(), Arrays.asList(new MapTaskAttemptId(appTaskAttemptId.getMapId(), appTaskAttemptId.getTaskAttemptId())), stageState.getPersistedBytesSnapshots());
+          stateStore.storeTaskAttemptCommit(appShuffleId, Arrays.asList(taskAttemptId), stageState.getPersistedBytesSnapshots());
           stateStore.commit();
           // TODO call stageState.closeWriters() when downloading data
         }
@@ -472,10 +468,9 @@ public class ShuffleExecutor {
         checkAppMaxWriteBytes(appId, appWriteBytes);
     }
 
-    private void checkAppMaxWriteBytes(AppTaskAttemptId appTaskAttemptId, long currentAppWriteBytes) {
+    private void checkAppMaxWriteBytes(AppShuffleId appShuffleId, long currentAppWriteBytes) {
         if (currentAppWriteBytes > appMaxWriteBytes) {
             numTruncatedApplications.inc(1);
-          AppShuffleId appShuffleId = appTaskAttemptId.getAppShuffleId();
           ExecutorShuffleStageState stageState = stageStates.get(appShuffleId);
           if (stageState != null) {
             stageState.setFileCorrupted();
@@ -483,7 +478,7 @@ public class ShuffleExecutor {
           }
           throw new RssTooMuchDataException(String.format(
                 "Application %s wrote too much data (%s bytes exceeding max allowed %s)",
-                appTaskAttemptId.getAppId(), currentAppWriteBytes, appMaxWriteBytes));
+              appShuffleId.getAppId(), currentAppWriteBytes, appMaxWriteBytes));
         }
     }
 
@@ -733,8 +728,8 @@ public class ShuffleExecutor {
                     taskAttemptCommitStateItem, appShuffleId));
                 corruptedStages.add(appShuffleId);
             } else {
-                for (MapTaskAttemptId mapTaskAttemptId: taskAttemptCommitStateItem.getMapTaskAttemptIds()) {
-                    stageState.commitMapTask(mapTaskAttemptId.getMapId(), mapTaskAttemptId.getTaskAttemptId());
+                for (Long mapTaskAttemptId: taskAttemptCommitStateItem.getMapTaskAttemptIds()) {
+                    stageState.commitMapTask(mapTaskAttemptId);
                 }
                 stageState.addFinalizedFiles(taskAttemptCommitStateItem.getPartitionFilePathAndLengths());
                 if (corruptedStages.contains(appShuffleId)) {

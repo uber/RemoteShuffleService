@@ -16,6 +16,7 @@ package com.uber.rss.handlers;
 
 import com.uber.rss.clients.ShuffleWriteConfig;
 import com.uber.rss.common.AppMapId;
+import com.uber.rss.common.AppShuffleId;
 import com.uber.rss.common.AppTaskAttemptId;
 import com.uber.rss.common.Compression;
 import com.uber.rss.exceptions.RssInvalidDataException;
@@ -41,7 +42,7 @@ public class UploadServerHandler {
     private final ShuffleExecutor executor;
     private final UploadChannelManager channelManager;
 
-    private final ConcurrentHashMap<Long, AppMapId> taskAttemptMap = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<Long, AppShuffleId> taskAttemptMap = new ConcurrentHashMap<>();
 
     private String connectionInfo;
 
@@ -57,23 +58,22 @@ public class UploadServerHandler {
         channelManager.incNumConnections();
     }
 
-    public void initializeAppTaskAttempt(AppTaskAttemptId appTaskAttemptId, int numPartitions, ShuffleWriteConfig writeConfig, ChannelHandlerContext ctx) {
-        initializeAppTaskAttemptImpl(appTaskAttemptId, numPartitions, writeConfig, ctx, null);
+    public void initializeAppTaskAttempt(AppShuffleId appShuffleId, long taskAttemptId, int numPartitions, ShuffleWriteConfig writeConfig, ChannelHandlerContext ctx) {
+        initializeAppTaskAttemptImpl(appShuffleId, taskAttemptId, numPartitions, writeConfig, ctx, null);
     }
 
-    private void initializeAppTaskAttemptImpl(AppTaskAttemptId appTaskAttemptId, int numPartitions, ShuffleWriteConfig writeConfig, ChannelHandlerContext ctx, String networkCompressionCodecName) {
+    private void initializeAppTaskAttemptImpl(AppShuffleId appShuffleId, long taskAttemptId, int numPartitions, ShuffleWriteConfig writeConfig, ChannelHandlerContext ctx, String networkCompressionCodecName) {
         this.connectionInfo = NettyUtils.getServerConnectionInfo(ctx.channel());
 
         this.numPartitions = numPartitions;
         this.writeConfig = writeConfig;
 
-        AppMapId newAppMapIdValue = appTaskAttemptId.getAppMapId();
-        AppMapId oldAppMapIdValue = this.taskAttemptMap.put(appTaskAttemptId.getTaskAttemptId(), newAppMapIdValue);
-        if (oldAppMapIdValue != null) {
-            if (!oldAppMapIdValue.equals(newAppMapIdValue)) {
+        AppShuffleId oldAppShuffleIdValue = this.taskAttemptMap.put(taskAttemptId, appShuffleId);
+        if (oldAppShuffleIdValue != null) {
+            if (!oldAppShuffleIdValue.equals(appShuffleId)) {
                 throw new RssInvalidStateException(String.format(
                     "There was already value %s with task attempt %s, but trying to set a different value %s",
-                    oldAppMapIdValue, appTaskAttemptId.getTaskAttemptId(), newAppMapIdValue));
+                    oldAppShuffleIdValue, taskAttemptId, appShuffleId));
             }
         }
 
@@ -104,47 +104,46 @@ public class UploadServerHandler {
     }
 
     public void writeRecord(com.uber.rss.messages.ShuffleDataWrapper shuffleDataWrapper) {
-        AppMapId appMapId = getAppMapId(shuffleDataWrapper.getTaskAttemptId());
+        AppShuffleId appShuffleId = getAppShuffleId(shuffleDataWrapper.getTaskAttemptId());
 
-        lazyStartUpload(new AppTaskAttemptId(appMapId, shuffleDataWrapper.getTaskAttemptId()));
+        lazyStartUpload(appShuffleId, shuffleDataWrapper.getTaskAttemptId());
 
         if (shuffleDataWrapper.getPartitionId() < 0 || shuffleDataWrapper.getPartitionId() > numPartitions) {
             throw new RssInvalidDataException(String.format("Invalid partition: %s, %s", shuffleDataWrapper.getPartitionId(), connectionInfo));
         }
 
         executor.writeData(new ShuffleDataWrapper(
-            appMapId.getAppShuffleId(), appMapId.getMapId(), shuffleDataWrapper.getTaskAttemptId(), shuffleDataWrapper.getPartitionId(), Unpooled.wrappedBuffer(shuffleDataWrapper.getBytes())));
+            appShuffleId, shuffleDataWrapper.getTaskAttemptId(), shuffleDataWrapper.getPartitionId(), Unpooled.wrappedBuffer(shuffleDataWrapper.getBytes())));
     }
 
     public void finishUpload(long taskAttemptId) {
-        AppMapId appMapId = getAppMapId(taskAttemptId);
-        AppTaskAttemptId appTaskAttemptIdToFinishUpload = new AppTaskAttemptId(appMapId, taskAttemptId);
-        finishUploadImpl(appTaskAttemptIdToFinishUpload);
+        AppShuffleId appShuffleId = getAppShuffleId(taskAttemptId);
+        finishUploadImpl(appShuffleId, taskAttemptId);
     }
 
-    private void finishUploadImpl(AppTaskAttemptId appTaskAttemptIdToFinishUpload) {
-        lazyStartUpload(appTaskAttemptIdToFinishUpload);
-        executor.addFinishUploadOperation(appTaskAttemptIdToFinishUpload);
-        taskAttemptMap.remove(appTaskAttemptIdToFinishUpload.getTaskAttemptId());
-        taskAttemptUploadStarted.remove(appTaskAttemptIdToFinishUpload.getTaskAttemptId());
+    private void finishUploadImpl(AppShuffleId appShuffleId, long taskAttemptIdToFinishUpload) {
+        lazyStartUpload(appShuffleId, taskAttemptIdToFinishUpload);
+        executor.addFinishUploadOperation(appShuffleId, taskAttemptIdToFinishUpload);
+        taskAttemptMap.remove(taskAttemptIdToFinishUpload);
+        taskAttemptUploadStarted.remove(taskAttemptIdToFinishUpload);
     }
 
     // lazy initialize on executor when only upload the first record, so same map task
     // could retry connecting to the server without really start the upload
-    private void lazyStartUpload(AppTaskAttemptId appTaskAttemptIdToStartUpload) {
-        if (!taskAttemptUploadStarted.getOrDefault(appTaskAttemptIdToStartUpload.getTaskAttemptId(), false)) {
-            executor.registerShuffle(appTaskAttemptIdToStartUpload.getAppShuffleId(), numPartitions, writeConfig);
-            executor.startUpload(appTaskAttemptIdToStartUpload);
+    private void lazyStartUpload(AppShuffleId appShuffleId, long taskAttemptIdToStartUpload) {
+        if (!taskAttemptUploadStarted.getOrDefault(taskAttemptIdToStartUpload, false)) {
+            executor.registerShuffle(appShuffleId, numPartitions, writeConfig);
+            executor.startUpload(appShuffleId, taskAttemptIdToStartUpload);
 
-            taskAttemptUploadStarted.put(appTaskAttemptIdToStartUpload.getTaskAttemptId(), true);
+            taskAttemptUploadStarted.put(taskAttemptIdToStartUpload, true);
         }
     }
 
-    private AppMapId getAppMapId(long taskAttemptId) {
-        AppMapId appMapId = taskAttemptMap.get(taskAttemptId);
-        if (appMapId == null) {
-            throw new RssInvalidStateException(String.format("Did not get app map id for task attempt %s, %s", taskAttemptId, connectionInfo));
+    private AppShuffleId getAppShuffleId(long taskAttemptId) {
+        AppShuffleId result = taskAttemptMap.get(taskAttemptId);
+        if (result == null) {
+            throw new RssInvalidStateException(String.format("Did not get app shuffle id for task attempt %s, %s", taskAttemptId, connectionInfo));
         }
-        return appMapId;
+        return result;
     }
 }

@@ -51,20 +51,20 @@ public class ShuffleExecutorTest {
 
         executor.registerShuffle(appShuffleId, numPartitions, new ShuffleWriteConfig((short)1));
 
-        executor.startUpload(appTaskAttemptId);
+        executor.startUpload(appTaskAttemptId.getAppShuffleId(), appTaskAttemptId.getTaskAttemptId());
 
         {
             ShuffleDataWrapper writeOp = new ShuffleDataWrapper(
-                    appShuffleId, mapId1, 0L, 1, serialize("str1"));
+                    appShuffleId, 0L, 1, serialize("str1"));
             executor.writeData(writeOp);
         }
         {
             ShuffleDataWrapper writeOp = new ShuffleDataWrapper(
-                    appShuffleId, mapId1, 0L, 1, serialize("str2"));
+                    appShuffleId, 0L, 1, serialize("str2"));
             executor.writeData(writeOp);
         }
 
-        executor.addFinishUploadOperation(appTaskAttemptId);
+        executor.addFinishUploadOperation(appTaskAttemptId.getAppShuffleId(), appTaskAttemptId.getTaskAttemptId());
 
         executor.pollAndWaitMapAttemptCommitted(new AppTaskAttemptId(appShuffleId, mapId1, 0L), 10000);
 
@@ -106,16 +106,16 @@ public class ShuffleExecutorTest {
             AppTaskAttemptId appTaskAttemptId = new AppTaskAttemptId(appShuffleId, mapId1, 0L);
             appTaskAttemptIds.add(appTaskAttemptId);
             
-            executor.startUpload(appTaskAttemptId);
+            executor.startUpload(appTaskAttemptId.getAppShuffleId(), appTaskAttemptId.getTaskAttemptId());
             
             String str = "str1";
             writtenValues.add(str);
             
             ShuffleDataWrapper writeOp = new ShuffleDataWrapper(
-                    appShuffleId, mapId1, 0L,1, serialize(str));
+                    appShuffleId, 0L,1, serialize(str));
             executor.writeData(writeOp);
 
-            executor.addFinishUploadOperation(appTaskAttemptId);
+            executor.addFinishUploadOperation(appTaskAttemptId.getAppShuffleId(), appTaskAttemptId.getTaskAttemptId());
 
             appMapIds.add(appTaskAttemptId.getAppMapId());
         }
@@ -123,16 +123,16 @@ public class ShuffleExecutorTest {
             AppTaskAttemptId appTaskAttemptId = new AppTaskAttemptId(appShuffleId, mapId2, 1L);
             appTaskAttemptIds.add(appTaskAttemptId);
             
-            executor.startUpload(appTaskAttemptId);
+            executor.startUpload(appTaskAttemptId.getAppShuffleId(), appTaskAttemptId.getTaskAttemptId());
             
             String str = "str22";
             writtenValues.add(str);
             
             ShuffleDataWrapper writeOp = new ShuffleDataWrapper(
-                    appShuffleId, mapId2, 0L,1, serialize(str));
+                    appShuffleId, 0L,1, serialize(str));
             executor.writeData(writeOp);
 
-            executor.addFinishUploadOperation(appTaskAttemptId);
+            executor.addFinishUploadOperation(appTaskAttemptId.getAppShuffleId(), appTaskAttemptId.getTaskAttemptId());
 
             appMapIds.add(appTaskAttemptId.getAppMapId());
         }
@@ -140,16 +140,16 @@ public class ShuffleExecutorTest {
             AppTaskAttemptId appTaskAttemptId = new AppTaskAttemptId(appShuffleId, mapId3, 2L);
             appTaskAttemptIds.add(appTaskAttemptId);
             
-            executor.startUpload(appTaskAttemptId);
+            executor.startUpload(appTaskAttemptId.getAppShuffleId(), appTaskAttemptId.getTaskAttemptId());
             
             String str = "str333";
             writtenValues.add(str);
             
             ShuffleDataWrapper writeOp = new ShuffleDataWrapper(
-                    appShuffleId, mapId3, 0L,2, serialize(str));
+                    appShuffleId, 0L,2, serialize(str));
             executor.writeData(writeOp);
 
-            executor.addFinishUploadOperation(appTaskAttemptId);
+            executor.addFinishUploadOperation(appTaskAttemptId.getAppShuffleId(), appTaskAttemptId.getTaskAttemptId());
 
             appMapIds.add(appTaskAttemptId.getAppMapId());
         }
@@ -192,20 +192,20 @@ public class ShuffleExecutorTest {
 
         executor.registerShuffle(appShuffleId, numPartitions, new ShuffleWriteConfig((short)1));
 
-        executor.startUpload(appTaskAttemptId);
+        executor.startUpload(appTaskAttemptId.getAppShuffleId(), appTaskAttemptId.getTaskAttemptId());
 
         {
             ShuffleDataWrapper writeOp = new ShuffleDataWrapper(
-                appShuffleId, mapId1, 0L, partition, serialize("str1"));
+                appShuffleId, 0L, partition, serialize("str1"));
             executor.writeData(writeOp);
         }
         {
             ShuffleDataWrapper writeOp = new ShuffleDataWrapper(
-                appShuffleId, mapId1, 0L, partition, serialize("str2"));
+                appShuffleId, 0L, partition, serialize("str2"));
             executor.writeData(writeOp);
         }
 
-        executor.addFinishUploadOperation(appTaskAttemptId);
+        executor.addFinishUploadOperation(appTaskAttemptId.getAppShuffleId(), appTaskAttemptId.getTaskAttemptId());
 
         executor.pollAndWaitMapAttemptCommitted(new AppTaskAttemptId(appShuffleId, mapId1, taskAttemptId), 10000);
 
