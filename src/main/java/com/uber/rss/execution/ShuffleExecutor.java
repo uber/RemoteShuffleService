@@ -309,9 +309,6 @@ public class ShuffleExecutor {
 
           logger.info("CommitTask: {}, {}", appShuffleId, taskAttemptId);
 
-          // TODO not efficient code, optimize it
-          stateStore.storeTaskAttemptCommit(appShuffleId, Arrays.asList(taskAttemptId), stageState.getPersistedBytesSnapshots());
-          stateStore.commit();
           // TODO call stageState.closeWriters() when downloading data
         }
     }
@@ -355,12 +352,21 @@ public class ShuffleExecutor {
     public List<FilePathAndLength> getPersistedBytes(AppShuffleId appShuffleId, int partition) {
         updateLiveness(appShuffleId.getAppId());
 
-        return getStageState(appShuffleId).getPersistedBytesSnapshot(partition);
+        ExecutorShuffleStageState stageState = getStageState(appShuffleId);
+        List<FilePathAndLength>  persistedBytes = stageState.getPersistedBytesSnapshot(partition);
+        return persistedBytes;
     }
 
     public void closePartitionFiles(AppShufflePartitionId appShufflePartitionId) {
       ExecutorShuffleStageState stageState = getStageState(appShufflePartitionId.getAppShuffleId());
       stageState.closeWriter(appShufflePartitionId.getPartitionId());
+    }
+
+    public void finishShuffleStage(AppShuffleId appShuffleId) {
+      ExecutorShuffleStageState stageState = getStageState(appShuffleId);
+      List<PartitionFilePathAndLength> persistedBytes = stageState.getPersistedBytesSnapshots();
+      stateStore.storeTaskAttemptCommit(appShuffleId, stageState.getCommittedTaskIds(), persistedBytes);
+      stateStore.commit();
     }
 
     /**

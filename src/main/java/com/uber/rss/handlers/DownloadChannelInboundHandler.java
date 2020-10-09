@@ -162,40 +162,14 @@ public class DownloadChannelInboundHandler extends ChannelInboundHandlerAdapter 
     }
 
     // send response to client, also send files if data is available
-    private void sendResponseAndFiles(ChannelHandlerContext ctx, boolean dataAvailable, ShuffleStageStatus shuffleStageStatus, BaseMessage responseMessage) {
-        byte responseStatus = shuffleStageStatus.transformToMessageResponseStatus();
-        if (dataAvailable) {
-            List<FilePathAndLength> files = downloadServerHandler.getNonEmptyPartitionFiles(connectionInfo);
-            downloadServerHandler.closePartitionFiles(appShufflePartitionId);
-            ChannelFuture channelFuture = HandlerUtil.writeResponseMsg(ctx, responseStatus, responseMessage, true);
-            if (shuffleStageStatus.getFileStatus() == ShuffleStageStatus.FILE_STATUS_CORRUPTED || files.isEmpty()) {
-                logger.warn("Partition file corrupted, partition {}, {}", appShufflePartitionId, connectionInfo);
-                channelFuture.addListener(ChannelFutureListener.CLOSE);
-            } else {
-                ChannelFuture sendFileChannelFuture = downloadServerHandler.sendFiles(ctx, files);
-                if (sendFileChannelFuture == null) {
-                    logger.warn("No file sent out, closing the connection, partition {}, {}", appShufflePartitionId, connectionInfo);
-                    channelFuture.addListener(ChannelFutureListener.CLOSE);
-                } else {
-                    sendFileChannelFuture.addListener(ChannelFutureListener.CLOSE);
-                }
-            }
-        } else {
-            ChannelFuture channelFuture = HandlerUtil.writeResponseMsg(ctx, responseStatus, responseMessage, true);
-            if (shuffleStageStatus.getFileStatus() == ShuffleStageStatus.FILE_STATUS_CORRUPTED) {
-                logger.warn("Partition file corrupted, partition {}, {}", appShufflePartitionId, connectionInfo);
-                channelFuture.addListener(ChannelFutureListener.CLOSE);
-            }
-        }
-    }
-
-    // send response to client, also send files if data is available
-    // TODO delete old sendResponseAndFiles method later
     private void sendResponseAndFiles2(ChannelHandlerContext ctx, boolean dataAvailable, ShuffleStageStatus shuffleStageStatus, BaseMessage responseMessage) {
         byte responseStatus = shuffleStageStatus.transformToMessageResponseStatus();
         if (dataAvailable) {
-            List<FilePathAndLength> files = downloadServerHandler.getNonEmptyPartitionFiles(connectionInfo);
+            List<FilePathAndLength> files = downloadServerHandler.fetchPartitionFiles(connectionInfo);
+
+            // TODO optimize folllowing and run them asynchronously
             downloadServerHandler.closePartitionFiles(appShufflePartitionId);
+            downloadServerHandler.finishShuffleStage(appShufflePartitionId.getAppShuffleId());
 
             ChannelFuture channelFuture = HandlerUtil.writeResponseMsg(ctx, responseStatus, responseMessage, true);
 

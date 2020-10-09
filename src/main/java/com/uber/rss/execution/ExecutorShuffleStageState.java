@@ -264,12 +264,8 @@ public class ExecutorShuffleStageState {
         return result;
     }
 
-    /***
-     * Get all file locations.
-     * @return
-     */
-    public synchronized List<String> getFileLocations() {
-        return writers.values().stream().flatMap(t->t.getFileLocations().stream()).collect(Collectors.toList());
+    public synchronized List<Long> getCommittedTaskIds() {
+        return taskAttempts.getCommittedTaskIds();
     }
 
     /***

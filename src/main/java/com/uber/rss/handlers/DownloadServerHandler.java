@@ -83,7 +83,7 @@ public class DownloadServerHandler {
         return executor.getShuffleStageStatus(appShuffleId);
     }
 
-    public List<FilePathAndLength> getNonEmptyPartitionFiles(String connectionInfoForLogging) {
+    public List<FilePathAndLength> fetchPartitionFiles(String connectionInfoForLogging) {
         if (!storage.isLocalStorage()) {
             throw new RssInvalidStateException("Only local file storage is supported to download shuffle data, closing the connection");
         }
@@ -135,6 +135,10 @@ public class DownloadServerHandler {
 
     public void closePartitionFiles(AppShufflePartitionId appShufflePartitionId) {
         executor.closePartitionFiles(appShufflePartitionId);
+    }
+
+    public void finishShuffleStage(AppShuffleId appShuffleId) {
+        executor.finishShuffleStage(appShuffleId);
     }
 
     public ChannelFuture sendFiles(ChannelHandlerContext ctx, List<FilePathAndLength> nonEmptyFiles) {
