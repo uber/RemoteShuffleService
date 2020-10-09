@@ -18,7 +18,7 @@ import com.uber.rss.common.DataBlockHeader;
 import com.uber.rss.exceptions.RssException;
 import com.uber.rss.exceptions.RssInvalidDataException;
 import com.uber.rss.messages.CloseConnectionMessage;
-import com.uber.rss.messages.ConnectDownload2Request;
+import com.uber.rss.messages.ConnectDownloadRequest;
 import com.uber.rss.messages.ConnectDownloadResponse;
 import com.uber.rss.messages.ConnectNotifyRequest;
 import com.uber.rss.messages.ConnectNotifyResponse;
@@ -29,7 +29,7 @@ import com.uber.rss.messages.ConnectUploadResponse;
 import com.uber.rss.messages.FinishApplicationAttemptRequestMessage;
 import com.uber.rss.messages.FinishApplicationJobRequestMessage;
 import com.uber.rss.messages.FinishUploadMessage;
-import com.uber.rss.messages.GetDataAvailability2Request;
+import com.uber.rss.messages.GetDataAvailabilityRequest;
 import com.uber.rss.messages.GetDataAvailabilityResponse;
 import com.uber.rss.messages.GetServersRequestMessage;
 import com.uber.rss.messages.HeartbeatMessage;
@@ -327,7 +327,7 @@ public class StreamServerMessageDecoder extends ByteToMessageDecoder {
         return ConnectUploadResponse.deserialize(in);
       case MessageConstants.MESSAGE_StartUploadMessage:
         return StartUploadMessage.deserialize(in);
-      case MessageConstants.MESSAGE_FinishUpload2Message:
+      case MessageConstants.MESSAGE_FinishUploadMessage:
         return FinishUploadMessage.deserialize(in);
       case MessageConstants.MESSAGE_CloseConnectionMessage:
         CloseConnectionMessage closeConnectionMessage = CloseConnectionMessage.deserialize(in);
@@ -335,16 +335,16 @@ public class StreamServerMessageDecoder extends ByteToMessageDecoder {
       case MessageConstants.MESSAGE_HeartbeatMessage:
         HeartbeatMessage heartbeatMessage = HeartbeatMessage.deserialize(in);
         return heartbeatMessage;
-      case MessageConstants.MESSAGE_ConnectDownload2Request:
-        ConnectDownload2Request connectDownload2Request = ConnectDownload2Request.deserialize(in);
+      case MessageConstants.MESSAGE_ConnectDownloadRequest:
+        ConnectDownloadRequest connectDownloadRequest = ConnectDownloadRequest.deserialize(in);
         metricGroupContainer.removeMetricGroup(user);
-        user = connectDownload2Request.getUser();
+        user = connectDownloadRequest.getUser();
         metrics = metricGroupContainer.getMetricGroup(user);
-        return connectDownload2Request;
+        return connectDownloadRequest;
       case MessageConstants.MESSAGE_ConnectDownloadResponse:
         return ConnectDownloadResponse.deserialize(in);
-      case MessageConstants.MESSAGE_GetDataAvailability2Request:
-        return GetDataAvailability2Request.deserialize(in);
+      case MessageConstants.MESSAGE_GetDataAvailabilityRequest:
+        return GetDataAvailabilityRequest.deserialize(in);
       case MessageConstants.MESSAGE_GetDataAvailabilityResponse:
         return GetDataAvailabilityResponse.deserialize(in);
       case MessageConstants.MESSAGE_ConnectNotifyRequest:
