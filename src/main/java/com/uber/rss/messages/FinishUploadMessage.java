@@ -36,7 +36,7 @@ public class FinishUploadMessage extends BaseMessage {
 
     @Override
     public int getMessageType() {
-        return MessageConstants.MESSAGE_FinishUpload2Message;
+        return MessageConstants.MESSAGE_FinishUploadMessage;
     }
 
     @Override

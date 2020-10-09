@@ -23,16 +23,14 @@ import com.uber.rss.common.FilePathAndLength;
 import com.uber.rss.exceptions.RssInvalidStateException;
 import com.uber.rss.exceptions.RssShuffleCorruptedException;
 import com.uber.rss.execution.ShuffleExecutor;
-import com.uber.rss.messages.ConnectDownload2Request;
+import com.uber.rss.messages.ConnectDownloadRequest;
 import com.uber.rss.messages.ShuffleStageStatus;
 import com.uber.rss.metrics.M3Stats;
 import com.uber.rss.storage.ShuffleFileStorage;
 import com.uber.rss.storage.ShuffleStorage;
 import com.uber.rss.util.LogUtils;
 import com.uber.rss.util.NettyUtils;
-import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelProgressiveFuture;
 import io.netty.channel.ChannelProgressiveFutureListener;
@@ -43,7 +41,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -69,7 +66,7 @@ public class DownloadServerHandler {
         this.executor = executor;
     }
 
-    public void initialize(ConnectDownload2Request connectDownloadRequest) {
+    public void initialize(ConnectDownloadRequest connectDownloadRequest) {
         this.appShuffleId = new AppShuffleId(
             connectDownloadRequest.getAppId(), connectDownloadRequest.getAppAttempt(), connectDownloadRequest.getShuffleId());
         this.partitionId = connectDownloadRequest.getPartitionId();

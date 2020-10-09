@@ -31,8 +31,8 @@ import com.uber.rss.exceptions.RssException;
 import com.uber.rss.exceptions.RssShuffleCorruptedException;
 import com.uber.rss.exceptions.RssShuffleDataNotAvailableException;
 import com.uber.rss.exceptions.RssStreamReadException;
-import com.uber.rss.messages.ConnectDownload2Request;
-import com.uber.rss.messages.GetDataAvailability2Request;
+import com.uber.rss.messages.ConnectDownloadRequest;
+import com.uber.rss.messages.GetDataAvailabilityRequest;
 import com.uber.rss.messages.MessageConstants;
 import com.uber.rss.messages.ConnectDownloadResponse;
 import com.uber.rss.messages.GetDataAvailabilityResponse;
@@ -116,7 +116,7 @@ public class DataBlockSocketReadClient extends com.uber.rss.clients.ClientBase {
     write(MessageConstants.DOWNLOAD_UPLINK_MAGIC_BYTE);
     write(MessageConstants.DOWNLOAD_UPLINK_VERSION_3);
 
-    ConnectDownload2Request connectRequest = new ConnectDownload2Request(user, appShufflePartitionId, fetchTaskAttemptIds);
+    ConnectDownloadRequest connectRequest = new ConnectDownloadRequest(user, appShufflePartitionId, fetchTaskAttemptIds);
 
 
     ExceptionWrapper<RssException> exceptionWrapper = new ExceptionWrapper<>();
@@ -311,7 +311,7 @@ public class DataBlockSocketReadClient extends com.uber.rss.clients.ClientBase {
   }
 
   private GetDataAvailabilityResponse getDataAvailability() {
-    GetDataAvailability2Request request = new GetDataAvailability2Request();
+    GetDataAvailabilityRequest request = new GetDataAvailabilityRequest();
     writeControlMessageAndWaitResponseStatus(request);
     GetDataAvailabilityResponse getDataAvailabilityResponse = readResponseMessage(MessageConstants.MESSAGE_GetDataAvailabilityResponse, GetDataAvailabilityResponse::deserialize);
     return getDataAvailabilityResponse;
