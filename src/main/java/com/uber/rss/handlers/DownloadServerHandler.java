@@ -83,7 +83,7 @@ public class DownloadServerHandler {
         return executor.getShuffleStageStatus(appShuffleId);
     }
 
-    public List<FilePathAndLength> fetchPartitionFiles(String connectionInfoForLogging) {
+    public List<FilePathAndLength> getNonEmptyPartitionFiles(String connectionInfoForLogging) {
         if (!storage.isLocalStorage()) {
             throw new RssInvalidStateException("Only local file storage is supported to download shuffle data, closing the connection");
         }

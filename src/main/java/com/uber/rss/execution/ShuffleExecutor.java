@@ -308,8 +308,6 @@ public class ShuffleExecutor {
           stageState.commitMapTask(taskAttemptId);
 
           logger.info("CommitTask: {}, {}", appShuffleId, taskAttemptId);
-
-          // TODO call stageState.closeWriters() when downloading data
         }
     }
 
