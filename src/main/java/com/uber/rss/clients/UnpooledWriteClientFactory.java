@@ -30,8 +30,8 @@ public class UnpooledWriteClientFactory implements WriteClientFactory {
   }
 
   @Override
-  public RecordSyncWriteClient getOrCreateClient(String host, int port, int timeoutMillis, boolean finishUploadAck, String user, String appId, String appAttempt, ShuffleWriteConfig shuffleWriteConfig) {
-    final RecordSyncWriteClient writeClient = new PlainRecordSyncWriteClient(
+  public ShuffleDataSyncWriteClient getOrCreateClient(String host, int port, int timeoutMillis, boolean finishUploadAck, String user, String appId, String appAttempt, ShuffleWriteConfig shuffleWriteConfig) {
+    final ShuffleDataSyncWriteClient writeClient = new PlainShuffleDataSyncWriteClient(
         host,
         port,
         timeoutMillis,

@@ -14,8 +14,6 @@
 
 package com.uber.rss.clients;
 
-import com.uber.rss.clients.PooledWriteClientFactory;
-import com.uber.rss.clients.RecordSyncWriteClient;
 import com.uber.rss.common.AppTaskAttemptId;
 import com.uber.rss.exceptions.RssFinishUploadException;
 import com.uber.rss.exceptions.RssNetworkException;
@@ -44,7 +42,7 @@ public class ServerIdleTimeoutTest {
 
       boolean finishUploadAck = true;
 
-      try (RecordSyncWriteClient writeClient = writeClientFactory.getOrCreateClient("localhost", testServer1.getShufflePort(), TestConstants.NETWORK_TIMEOUT, finishUploadAck, "user1", appId, appAttempt, TestConstants.SHUFFLE_WRITE_CONFIG)) {
+      try (ShuffleDataSyncWriteClient writeClient = writeClientFactory.getOrCreateClient("localhost", testServer1.getShufflePort(), TestConstants.NETWORK_TIMEOUT, finishUploadAck, "user1", appId, appAttempt, TestConstants.SHUFFLE_WRITE_CONFIG)) {
         // sleep sometime so the server thinks the connection is idle and timeout
         try {
           Thread.sleep(serverIdleTimeoutMillis * 2);

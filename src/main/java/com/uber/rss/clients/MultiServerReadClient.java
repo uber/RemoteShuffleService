@@ -14,6 +14,6 @@
 
 package com.uber.rss.clients;
 
-public interface MultiServerReadClient extends RecordReader {
+public interface MultiServerReadClient extends ShuffleDataReader {
     void connect();
 }

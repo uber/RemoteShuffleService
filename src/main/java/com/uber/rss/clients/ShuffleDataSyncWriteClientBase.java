@@ -26,9 +26,9 @@ import java.nio.ByteBuffer;
 /***
  * Shuffle write client to upload data (records) to shuffle server.
  */
-public abstract class RecordSyncWriteClientBase implements RecordSyncWriteClient {
+public abstract class ShuffleDataSyncWriteClientBase implements ShuffleDataSyncWriteClient {
   private static final Logger logger =
-      LoggerFactory.getLogger(RecordSyncWriteClientBase.class);
+      LoggerFactory.getLogger(ShuffleDataSyncWriteClientBase.class);
 
   private final String host;
   private final int port;
@@ -41,7 +41,7 @@ public abstract class RecordSyncWriteClientBase implements RecordSyncWriteClient
 
   protected ShuffleMapTaskAttemptId shuffleMapTaskAttemptId;
 
-  protected RecordSyncWriteClientBase(String host, int port, int timeoutMillis, boolean finishUploadAck, String user, String appId, String appAttempt, ShuffleWriteConfig shuffleWriteConfig) {
+  protected ShuffleDataSyncWriteClientBase(String host, int port, int timeoutMillis, boolean finishUploadAck, String user, String appId, String appAttempt, ShuffleWriteConfig shuffleWriteConfig) {
     this.dataBlockSyncWriteClient = new DataBlockSyncWriteClient(host, port, timeoutMillis, finishUploadAck, user, appId, appAttempt);
     this.shuffleWriteConfig = shuffleWriteConfig;
 
@@ -82,7 +82,7 @@ public abstract class RecordSyncWriteClientBase implements RecordSyncWriteClient
   }
 
   @Override
-  abstract public void sendRecord(int partition, ByteBuffer value);
+  abstract public void writeDataBlock(int partition, ByteBuffer value);
 
   @Override
   public void finishUpload() {

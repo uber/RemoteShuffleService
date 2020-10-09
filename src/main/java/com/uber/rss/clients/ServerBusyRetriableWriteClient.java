@@ -105,8 +105,8 @@ public class ServerBusyRetriableWriteClient implements SingleServerWriteClient {
     }
 
     @Override
-    public void sendRecord(int partition, ByteBuffer value) {
-        delegate.sendRecord(partition, value);
+    public void writeDataBlock(int partition, ByteBuffer value) {
+        delegate.writeDataBlock(partition, value);
     }
 
     @Override

@@ -71,20 +71,20 @@ public class MultiServerSocketReadClientTest {
         writeClient.connect();
         writeClient.startUpload(appTaskAttemptId, numMaps, numPartitions);
 
-        writeClient.sendRecord(1, null);
-        writeClient.sendRecord(1,
+        writeClient.writeDataBlock(1, null);
+        writeClient.writeDataBlock(1,
             ByteBuffer.wrap(new byte[0]));
-        writeClient.sendRecord(1,
+        writeClient.writeDataBlock(1,
             ByteBuffer.wrap("".getBytes(StandardCharsets.UTF_8)));
-        writeClient.sendRecord(1,
+        writeClient.writeDataBlock(1,
             ByteBuffer.wrap("value1".getBytes(StandardCharsets.UTF_8)));
-        writeClient.sendRecord(1,
+        writeClient.writeDataBlock(1,
             ByteBuffer.wrap("value1".getBytes(StandardCharsets.UTF_8)));
 
-        writeClient.sendRecord(2,
+        writeClient.writeDataBlock(2,
             ByteBuffer.wrap(new byte[0]));
 
-        writeClient.sendRecord(3,
+        writeClient.writeDataBlock(3,
             ByteBuffer.wrap("value1".getBytes(StandardCharsets.UTF_8)));
 
         writeClient.finishUpload();
@@ -102,27 +102,27 @@ public class MultiServerSocketReadClientTest {
         readClient.connect();
         Assert.assertEquals(readClient.getShuffleReadBytes(), 0);
 
-        TaskByteArrayDataBlock record = readClient.readRecord();
+        TaskDataBlock record = readClient.readDataBlock();
         Assert.assertNotNull(record);
-        Assert.assertEquals(record.getValue(), new byte[0]);
+        Assert.assertEquals(record.getPayload(), new byte[0]);
 
-        record = readClient.readRecord();
+        record = readClient.readDataBlock();
         Assert.assertNotNull(record);
-        Assert.assertEquals(record.getValue(), new byte[0]);
+        Assert.assertEquals(record.getPayload(), new byte[0]);
 
-        record = readClient.readRecord();
+        record = readClient.readDataBlock();
         Assert.assertNotNull(record);
-        Assert.assertEquals(new String(record.getValue(), StandardCharsets.UTF_8), "");
+        Assert.assertEquals(new String(record.getPayload(), StandardCharsets.UTF_8), "");
 
-        record = readClient.readRecord();
+        record = readClient.readDataBlock();
         Assert.assertNotNull(record);
-        Assert.assertEquals(new String(record.getValue(), StandardCharsets.UTF_8), "value1");
+        Assert.assertEquals(new String(record.getPayload(), StandardCharsets.UTF_8), "value1");
 
-        record = readClient.readRecord();
+        record = readClient.readDataBlock();
         Assert.assertNotNull(record);
-        Assert.assertEquals(new String(record.getValue(), StandardCharsets.UTF_8), "value1");
+        Assert.assertEquals(new String(record.getPayload(), StandardCharsets.UTF_8), "value1");
 
-        record = readClient.readRecord();
+        record = readClient.readDataBlock();
         Assert.assertNull(record);
 
         long shuffleReadBytes = readClient.getShuffleReadBytes();
@@ -180,20 +180,20 @@ public class MultiServerSocketReadClientTest {
         writeClient.connect();
         writeClient.startUpload(appTaskAttemptId, numMaps, numPartitions);
 
-        writeClient.sendRecord(1, null);
-        writeClient.sendRecord(1,
+        writeClient.writeDataBlock(1, null);
+        writeClient.writeDataBlock(1,
             ByteBuffer.wrap(new byte[0]));
-        writeClient.sendRecord(1,
+        writeClient.writeDataBlock(1,
             ByteBuffer.wrap("".getBytes(StandardCharsets.UTF_8)));
-        writeClient.sendRecord(1,
+        writeClient.writeDataBlock(1,
             ByteBuffer.wrap("value1".getBytes(StandardCharsets.UTF_8)));
-        writeClient.sendRecord(1,
+        writeClient.writeDataBlock(1,
             ByteBuffer.wrap("value1".getBytes(StandardCharsets.UTF_8)));
 
-        writeClient.sendRecord(2,
+        writeClient.writeDataBlock(2,
             ByteBuffer.wrap(new byte[0]));
 
-        writeClient.sendRecord(3,
+        writeClient.writeDataBlock(3,
             ByteBuffer.wrap("value1".getBytes(StandardCharsets.UTF_8)));
 
         writeClient.finishUpload();
@@ -256,27 +256,27 @@ public class MultiServerSocketReadClientTest {
         readClient.connect();
         Assert.assertEquals(readClient.getShuffleReadBytes(), 0);
 
-        TaskByteArrayDataBlock record = readClient.readRecord();
+        TaskDataBlock record = readClient.readDataBlock();
         Assert.assertNotNull(record);
-        Assert.assertEquals(record.getValue(), new byte[0]);
+        Assert.assertEquals(record.getPayload(), new byte[0]);
 
-        record = readClient.readRecord();
+        record = readClient.readDataBlock();
         Assert.assertNotNull(record);
-        Assert.assertEquals(record.getValue(), new byte[0]);
+        Assert.assertEquals(record.getPayload(), new byte[0]);
 
-        record = readClient.readRecord();
+        record = readClient.readDataBlock();
         Assert.assertNotNull(record);
-        Assert.assertEquals(new String(record.getValue(), StandardCharsets.UTF_8), "");
+        Assert.assertEquals(new String(record.getPayload(), StandardCharsets.UTF_8), "");
 
-        record = readClient.readRecord();
+        record = readClient.readDataBlock();
         Assert.assertNotNull(record);
-        Assert.assertEquals(new String(record.getValue(), StandardCharsets.UTF_8), "value1");
+        Assert.assertEquals(new String(record.getPayload(), StandardCharsets.UTF_8), "value1");
 
-        record = readClient.readRecord();
+        record = readClient.readDataBlock();
         Assert.assertNotNull(record);
-        Assert.assertEquals(new String(record.getValue(), StandardCharsets.UTF_8), "value1");
+        Assert.assertEquals(new String(record.getPayload(), StandardCharsets.UTF_8), "value1");
 
-        record = readClient.readRecord();
+        record = readClient.readDataBlock();
         Assert.assertNull(record);
 
         long shuffleReadBytes = readClient.getShuffleReadBytes();
@@ -337,20 +337,20 @@ public class MultiServerSocketReadClientTest {
         writeClient.connect();
         writeClient.startUpload(appTaskAttemptId, numMaps, numPartitions);
 
-        writeClient.sendRecord(1, null);
-        writeClient.sendRecord(1,
+        writeClient.writeDataBlock(1, null);
+        writeClient.writeDataBlock(1,
             ByteBuffer.wrap(new byte[0]));
-        writeClient.sendRecord(1,
+        writeClient.writeDataBlock(1,
             ByteBuffer.wrap("".getBytes(StandardCharsets.UTF_8)));
-        writeClient.sendRecord(1,
+        writeClient.writeDataBlock(1,
             ByteBuffer.wrap("value1".getBytes(StandardCharsets.UTF_8)));
-        writeClient.sendRecord(1,
+        writeClient.writeDataBlock(1,
             ByteBuffer.wrap("value1".getBytes(StandardCharsets.UTF_8)));
 
-        writeClient.sendRecord(2,
+        writeClient.writeDataBlock(2,
             ByteBuffer.wrap(new byte[0]));
 
-        writeClient.sendRecord(3,
+        writeClient.writeDataBlock(3,
             ByteBuffer.wrap("value1".getBytes(StandardCharsets.UTF_8)));
 
         writeClient.finishUpload();
@@ -369,10 +369,10 @@ public class MultiServerSocketReadClientTest {
         writeClient.connect();
         writeClient.startUpload(appTaskAttemptId, numMaps, numPartitions);
 
-        writeClient.sendRecord(1,
+        writeClient.writeDataBlock(1,
             ByteBuffer.wrap("value2".getBytes(StandardCharsets.UTF_8)));
 
-        writeClient.sendRecord(1,
+        writeClient.writeDataBlock(1,
             ByteBuffer.wrap("value3".getBytes(StandardCharsets.UTF_8)));
 
         writeClient.finishUpload();
@@ -421,35 +421,35 @@ public class MultiServerSocketReadClientTest {
         readClient.connect();
         Assert.assertEquals(readClient.getShuffleReadBytes(), 0);
 
-        TaskByteArrayDataBlock record = readClient.readRecord();
+        TaskDataBlock record = readClient.readDataBlock();
         Assert.assertNotNull(record);
-        Assert.assertEquals(record.getValue(), new byte[0]);
+        Assert.assertEquals(record.getPayload(), new byte[0]);
 
-        record = readClient.readRecord();
+        record = readClient.readDataBlock();
         Assert.assertNotNull(record);
-        Assert.assertEquals(record.getValue(), new byte[0]);
+        Assert.assertEquals(record.getPayload(), new byte[0]);
 
-        record = readClient.readRecord();
+        record = readClient.readDataBlock();
         Assert.assertNotNull(record);
-        Assert.assertEquals(new String(record.getValue(), StandardCharsets.UTF_8), "");
+        Assert.assertEquals(new String(record.getPayload(), StandardCharsets.UTF_8), "");
 
-        record = readClient.readRecord();
+        record = readClient.readDataBlock();
         Assert.assertNotNull(record);
-        Assert.assertEquals(new String(record.getValue(), StandardCharsets.UTF_8), "value1");
+        Assert.assertEquals(new String(record.getPayload(), StandardCharsets.UTF_8), "value1");
 
-        record = readClient.readRecord();
+        record = readClient.readDataBlock();
         Assert.assertNotNull(record);
-        Assert.assertEquals(new String(record.getValue(), StandardCharsets.UTF_8), "value1");
+        Assert.assertEquals(new String(record.getPayload(), StandardCharsets.UTF_8), "value1");
 
-        record = readClient.readRecord();
+        record = readClient.readDataBlock();
         Assert.assertNotNull(record);
-        Assert.assertEquals(new String(record.getValue(), StandardCharsets.UTF_8), "value2");
+        Assert.assertEquals(new String(record.getPayload(), StandardCharsets.UTF_8), "value2");
 
-        record = readClient.readRecord();
+        record = readClient.readDataBlock();
         Assert.assertNotNull(record);
-        Assert.assertEquals(new String(record.getValue(), StandardCharsets.UTF_8), "value3");
+        Assert.assertEquals(new String(record.getPayload(), StandardCharsets.UTF_8), "value3");
 
-        record = readClient.readRecord();
+        record = readClient.readDataBlock();
         Assert.assertNull(record);
 
         long shuffleReadBytes = readClient.getShuffleReadBytes();
@@ -474,11 +474,11 @@ public class MultiServerSocketReadClientTest {
         readClient.connect();
         Assert.assertEquals(readClient.getShuffleReadBytes(), 0);
 
-        TaskByteArrayDataBlock record = readClient.readRecord();
+        TaskDataBlock record = readClient.readDataBlock();
         Assert.assertNotNull(record);
-        Assert.assertEquals(record.getValue(), new byte[0]);
+        Assert.assertEquals(record.getPayload(), new byte[0]);
 
-        record = readClient.readRecord();
+        record = readClient.readDataBlock();
         Assert.assertNull(record);
 
         long shuffleReadBytes = readClient.getShuffleReadBytes();
@@ -503,10 +503,10 @@ public class MultiServerSocketReadClientTest {
         readClient.connect();
         Assert.assertEquals(readClient.getShuffleReadBytes(), 0);
 
-        TaskByteArrayDataBlock record = readClient.readRecord();
-        Assert.assertEquals(new String(record.getValue(), StandardCharsets.UTF_8), "value1");
+        TaskDataBlock record = readClient.readDataBlock();
+        Assert.assertEquals(new String(record.getPayload(), StandardCharsets.UTF_8), "value1");
 
-        record = readClient.readRecord();
+        record = readClient.readDataBlock();
         Assert.assertNull(record);
 
         long shuffleReadBytes = readClient.getShuffleReadBytes();
@@ -531,7 +531,7 @@ public class MultiServerSocketReadClientTest {
         readClient.connect();
         Assert.assertEquals(readClient.getShuffleReadBytes(), 0);
 
-        TaskByteArrayDataBlock record = readClient.readRecord();
+        TaskDataBlock record = readClient.readDataBlock();
         Assert.assertNull(record);
 
         Assert.assertEquals(readClient.getShuffleReadBytes(), 0);
@@ -582,20 +582,20 @@ public class MultiServerSocketReadClientTest {
         writeClient.connect();
         writeClient.startUpload(appTaskAttemptId, numMaps, numPartitions);
 
-        writeClient.sendRecord(1, null);
-        writeClient.sendRecord(1,
+        writeClient.writeDataBlock(1, null);
+        writeClient.writeDataBlock(1,
             ByteBuffer.wrap(new byte[0]));
-        writeClient.sendRecord(1,
+        writeClient.writeDataBlock(1,
             ByteBuffer.wrap("".getBytes(StandardCharsets.UTF_8)));
-        writeClient.sendRecord(1,
+        writeClient.writeDataBlock(1,
             ByteBuffer.wrap("value1".getBytes(StandardCharsets.UTF_8)));
-        writeClient.sendRecord(1,
+        writeClient.writeDataBlock(1,
             ByteBuffer.wrap("value1".getBytes(StandardCharsets.UTF_8)));
 
-        writeClient.sendRecord(2,
+        writeClient.writeDataBlock(2,
             ByteBuffer.wrap(new byte[0]));
 
-        writeClient.sendRecord(3,
+        writeClient.writeDataBlock(3,
             ByteBuffer.wrap("value1".getBytes(StandardCharsets.UTF_8)));
 
         writeClient.finishUpload();
@@ -612,7 +612,7 @@ public class MultiServerSocketReadClientTest {
           new ReadClientDataOptions(Arrays.asList(appTaskAttemptId.getTaskAttemptId()), TestConstants.DATA_AVAILABLE_POLL_INTERVAL, dataAvailableMaxWaitTime),
           checkShuffleReplicaConsistency)) {
         readClient.connect();
-        readClient.readRecord();
+        readClient.readDataBlock();
       }
     } finally {
       testServer1.shutdown();
@@ -654,20 +654,20 @@ public class MultiServerSocketReadClientTest {
         writeClient.connect();
         writeClient.startUpload(appTaskAttemptId, numMaps, numPartitions);
 
-        writeClient.sendRecord(1, null);
-        writeClient.sendRecord(1,
+        writeClient.writeDataBlock(1, null);
+        writeClient.writeDataBlock(1,
             ByteBuffer.wrap(new byte[0]));
-        writeClient.sendRecord(1,
+        writeClient.writeDataBlock(1,
             ByteBuffer.wrap("".getBytes(StandardCharsets.UTF_8)));
-        writeClient.sendRecord(1,
+        writeClient.writeDataBlock(1,
             ByteBuffer.wrap("value1".getBytes(StandardCharsets.UTF_8)));
-        writeClient.sendRecord(1,
+        writeClient.writeDataBlock(1,
             ByteBuffer.wrap("value1".getBytes(StandardCharsets.UTF_8)));
 
-        writeClient.sendRecord(2,
+        writeClient.writeDataBlock(2,
             ByteBuffer.wrap(new byte[0]));
 
-        writeClient.sendRecord(3,
+        writeClient.writeDataBlock(3,
             ByteBuffer.wrap("value1".getBytes(StandardCharsets.UTF_8)));
 
         writeClient.finishUpload();
@@ -684,9 +684,9 @@ public class MultiServerSocketReadClientTest {
           new ReadClientDataOptions(Arrays.asList(appTaskAttemptId.getTaskAttemptId()), TestConstants.DATA_AVAILABLE_POLL_INTERVAL, dataAvailableMaxWaitTime),
           checkShuffleReplicaConsistency)) {
         readClient.connect();
-        TaskByteArrayDataBlock record = readClient.readRecord();
+        TaskDataBlock record = readClient.readDataBlock();
         while (record != null) {
-          record = readClient.readRecord();
+          record = readClient.readDataBlock();
         }
       }
     } finally {

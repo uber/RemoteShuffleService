@@ -71,7 +71,7 @@ public class ReplicatedWriteClient implements MultiServerWriteClient {
   }
 
   @Override
-  public synchronized void sendRecord(int partition, ByteBuffer value) {
+  public synchronized void writeDataBlock(int partition, ByteBuffer value) {
     if (value != null) {
       value.mark();
     }
@@ -79,7 +79,7 @@ public class ReplicatedWriteClient implements MultiServerWriteClient {
       if (value != null) {
         value.reset();
       }
-      t.sendRecord(partition, value);
+      t.writeDataBlock(partition, value);
     });
   }
 

@@ -24,16 +24,16 @@ import java.nio.ByteBuffer;
 /***
  * Shuffle write client to upload data (uncompressed records) to shuffle server.
  */
-public class PlainRecordSyncWriteClient extends RecordSyncWriteClientBase {
+public class PlainShuffleDataSyncWriteClient extends ShuffleDataSyncWriteClientBase {
   private static final Logger logger =
-      LoggerFactory.getLogger(PlainRecordSyncWriteClient.class);
+      LoggerFactory.getLogger(PlainShuffleDataSyncWriteClient.class);
 
-  public PlainRecordSyncWriteClient(String host, int port, int timeoutMillis, boolean finishUploadAck, String user, String appId, String appAttempt, ShuffleWriteConfig shuffleWriteConfig) {
+  public PlainShuffleDataSyncWriteClient(String host, int port, int timeoutMillis, boolean finishUploadAck, String user, String appId, String appAttempt, ShuffleWriteConfig shuffleWriteConfig) {
     super(host, port, timeoutMillis, finishUploadAck, user, appId, appAttempt, shuffleWriteConfig);
   }
 
   @Override
-  public void sendRecord(int partition, ByteBuffer value) {
+  public void writeDataBlock(int partition, ByteBuffer value) {
     int totalRecordBytes = getRecordSerializedSize(value);
     ByteBuf recordSerializedByteBuf = Unpooled.buffer(totalRecordBytes);
     writeRecordToBuffer(recordSerializedByteBuf, value);

@@ -115,13 +115,13 @@ public class MultiServerSyncWriteClient implements MultiServerWriteClient {
     }
 
     @Override
-    public void sendRecord(int partition, ByteBuffer value) {
+    public void writeDataBlock(int partition, ByteBuffer value) {
         int clientIndex = partition % clients.length;
         if (partitionFanout > 1) {
             clientIndex = ((int)(clientIndex + taskAttemptId % partitionFanout)) % clients.length;
         }
         ReplicatedWriteClient writeClient = clients[clientIndex];
-        writeClient.sendRecord(partition, value);
+        writeClient.writeDataBlock(partition, value);
     }
 
     @Override

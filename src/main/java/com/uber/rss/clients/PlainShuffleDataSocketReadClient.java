@@ -23,11 +23,11 @@ import java.util.Collection;
 /***
  * Shuffle read client to download data (uncompressed records) from shuffle server.
  */
-public class PlainRecordSocketReadClient extends RecordSocketReadClient {
+public class PlainShuffleDataSocketReadClient extends ShuffleDataSocketReadClient {
   private static final Logger logger =
-      LoggerFactory.getLogger(PlainRecordSocketReadClient.class);
+      LoggerFactory.getLogger(PlainShuffleDataSocketReadClient.class);
 
-  public PlainRecordSocketReadClient(String host, int port, int timeoutMillis, String user, AppShufflePartitionId appShufflePartitionId, Collection<Long> fetchTaskAttemptIds, long dataAvailablePollInterval, long dataAvailableWaitTime) {
+  public PlainShuffleDataSocketReadClient(String host, int port, int timeoutMillis, String user, AppShufflePartitionId appShufflePartitionId, Collection<Long> fetchTaskAttemptIds, long dataAvailablePollInterval, long dataAvailableWaitTime) {
     super(host, port, timeoutMillis, user, appShufflePartitionId, fetchTaskAttemptIds, dataAvailablePollInterval, dataAvailableWaitTime);
   }
 
