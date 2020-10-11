@@ -39,7 +39,7 @@ class RssShuffleWriter[K, V, C](
                                  bufferOptions: BufferManagerOptions,
                                  shuffleDependency: ShuffleDependency[K, V, C],
                                  stageMetrics: ShuffleClientStageMetrics,
-                                 shuffleWriteMetrics: ShuffleWriteMetrics)
+                                 shuffleWriteMetrics: ShuffleWriteMetricsReporter)
     extends ShuffleWriter[K, V] with Logging {
 
   logInfo(s"Using ShuffleWriter: ${this.getClass.getSimpleName}, map task: $mapInfo, buffer: $bufferOptions")

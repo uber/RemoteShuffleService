@@ -31,7 +31,7 @@ import org.apache.commons.lang3.StringUtils
 import org.apache.spark.executor.ShuffleWriteMetrics
 import org.apache.spark.internal.Logging
 import org.apache.spark.serializer.KryoSerializer
-import org.apache.spark.shuffle.{MockTaskContext, RssOpts, RssShuffleReader, RssShuffleWriter}
+import org.apache.spark.shuffle.{MockTaskContext, RssOpts, RssShuffleReader, RssShuffleWriter, ShuffleReadMetricsReporter}
 import org.apache.spark.{HashPartitioner, MapOutputTrackerMaster, ShuffleDependency, SparkConf, SparkContext, SparkEnv}
 
 import scala.collection.JavaConverters._
@@ -372,7 +372,16 @@ class RssStressTool extends Logging {
       dataAvailablePollInterval = 1000,
       dataAvailableWaitTime = 30000,
       shuffleReplicas = 1,
-      checkShuffleReplicaConsistency = true
+      checkShuffleReplicaConsistency = true,
+      shuffleMetrics = new ShuffleReadMetricsReporter() {
+        override private[spark] def incRemoteBlocksFetched(v: Long): Unit = {}
+        override private[spark] def incLocalBlocksFetched(v: Long): Unit = {}
+        override private[spark] def incRemoteBytesRead(v: Long): Unit = {}
+        override private[spark] def incRemoteBytesReadToDisk(v: Long): Unit = {}
+        override private[spark] def incLocalBytesRead(v: Long): Unit = {}
+        override private[spark] def incFetchWaitTime(v: Long): Unit = {}
+        override private[spark] def incRecordsRead(v: Long): Unit = {}
+      }
     )
 
     val shuffleReaderIterator = shuffleReader.read()

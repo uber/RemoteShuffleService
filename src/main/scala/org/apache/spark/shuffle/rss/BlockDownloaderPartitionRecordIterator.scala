@@ -25,14 +25,14 @@ import net.jpountz.lz4.{LZ4Factory, LZ4FastDecompressor}
 import org.apache.spark.executor.ShuffleReadMetrics
 import org.apache.spark.internal.Logging
 import org.apache.spark.serializer.{DeserializationStream, Serializer}
-import org.apache.spark.shuffle.FetchFailedException
+import org.apache.spark.shuffle.{FetchFailedException, ShuffleReadMetricsReporter}
 
 class BlockDownloaderPartitionRecordIterator[K, C](
                                                     shuffleId: Int,
                                                     partition: Int,
                                                     serializer: Serializer,
                                                     downloader: ShuffleDataReader,
-                                                    shuffleReadMetrics: ShuffleReadMetrics) extends Iterator[Product2[K, C]] with Logging {
+                                                    shuffleReadMetrics: ShuffleReadMetricsReporter) extends Iterator[Product2[K, C]] with Logging {
 
   private val decompressor: LZ4FastDecompressor = LZ4Factory.fastestInstance.fastDecompressor()
 

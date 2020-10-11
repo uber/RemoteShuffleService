@@ -26,7 +26,7 @@ import com.uber.rss.util.{ExceptionUtils, ThreadUtils}
 import org.apache.spark.executor.ShuffleReadMetrics
 import org.apache.spark.internal.Logging
 import org.apache.spark.serializer.Serializer
-import org.apache.spark.shuffle.FetchFailedException
+import org.apache.spark.shuffle.{FetchFailedException, ShuffleReadMetricsReporter}
 
 import scala.collection.JavaConverters
 
@@ -51,7 +51,7 @@ class BlockDownloaderPartitionRangeRecordIterator[K, C](
     dataAvailableWaitTime: Long,
     shuffleReplicas: Int,
     checkShuffleReplicaConsistency: Boolean,
-    shuffleReadMetrics: ShuffleReadMetrics) extends Iterator[Product2[K, C]] with Logging {
+    shuffleReadMetrics: ShuffleReadMetricsReporter) extends Iterator[Product2[K, C]] with Logging {
 
   private var currentPartition = startPartition
 

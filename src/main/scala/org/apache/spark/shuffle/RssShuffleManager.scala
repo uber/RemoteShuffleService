@@ -279,7 +279,7 @@ class RssShuffleManager(conf: SparkConf) extends ShuffleManager with Logging {
                 bufferOptions,
                 rssShuffleHandle.dependency,
                 shuffleClientStageMetrics,
-                context.taskMetrics().shuffleWriteMetrics)
+                metrics)
             } catch {
               case ex: Throwable => {
                 ExceptionUtils.closeWithoutException(writeClient)
@@ -332,7 +332,8 @@ class RssShuffleManager(conf: SparkConf) extends ShuffleManager with Logging {
       dataAvailablePollInterval = pollInterval,
       dataAvailableWaitTime = dataAvailableWaitTime,
       shuffleReplicas = rssReplicas,
-      checkShuffleReplicaConsistency = rssCheckReplicaConsistency)
+      checkShuffleReplicaConsistency = rssCheckReplicaConsistency,
+      shuffleMetrics = metrics)
   }
 
   override def unregisterShuffle(shuffleId: Int): Boolean = {

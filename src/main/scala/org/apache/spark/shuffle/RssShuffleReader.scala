@@ -43,7 +43,8 @@ class RssShuffleReader[K, C](
                               dataAvailablePollInterval: Long,
                               dataAvailableWaitTime: Long,
                               shuffleReplicas: Int,
-                              checkShuffleReplicaConsistency: Boolean) extends ShuffleReader[K, C] with Logging {
+                              checkShuffleReplicaConsistency: Boolean,
+                              shuffleMetrics: ShuffleReadMetricsReporter) extends ShuffleReader[K, C] with Logging {
 
   logInfo(s"Using ShuffleReader: ${this.getClass.getSimpleName}")
 
@@ -71,7 +72,7 @@ class RssShuffleReader[K, C](
       dataAvailableWaitTime = dataAvailableWaitTime,
       shuffleReplicas = shuffleReplicas,
       checkShuffleReplicaConsistency = checkShuffleReplicaConsistency,
-      shuffleReadMetrics = context.taskMetrics().shuffleReadMetrics
+      shuffleReadMetrics = shuffleMetrics
     )
 
     val dep = shuffleDependency
