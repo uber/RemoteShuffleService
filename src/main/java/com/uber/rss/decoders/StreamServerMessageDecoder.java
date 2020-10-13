@@ -29,6 +29,8 @@ import com.uber.rss.messages.ConnectUploadResponse;
 import com.uber.rss.messages.FinishApplicationAttemptRequestMessage;
 import com.uber.rss.messages.FinishApplicationJobRequestMessage;
 import com.uber.rss.messages.FinishUploadMessage;
+import com.uber.rss.messages.GetBusyStatusRequest;
+import com.uber.rss.messages.GetBusyStatusResponse;
 import com.uber.rss.messages.GetDataAvailabilityRequest;
 import com.uber.rss.messages.GetDataAvailabilityResponse;
 import com.uber.rss.messages.GetServersRequestMessage;
@@ -335,6 +337,12 @@ public class StreamServerMessageDecoder extends ByteToMessageDecoder {
       case MessageConstants.MESSAGE_HeartbeatMessage:
         HeartbeatMessage heartbeatMessage = HeartbeatMessage.deserialize(in);
         return heartbeatMessage;
+      case MessageConstants.MESSAGE_GetBusyStatusRequest:
+        GetBusyStatusRequest getBusyStatusRequest = GetBusyStatusRequest.deserialize(in);
+        return getBusyStatusRequest;
+      case MessageConstants.MESSAGE_GetBusyStatusResponse:
+        GetBusyStatusResponse getBusyStatusResponse = GetBusyStatusResponse.deserialize(in);
+        return getBusyStatusResponse;
       case MessageConstants.MESSAGE_ConnectDownloadRequest:
         ConnectDownloadRequest connectDownloadRequest = ConnectDownloadRequest.deserialize(in);
         metricGroupContainer.removeMetricGroup(user);
