@@ -15,9 +15,13 @@
 package com.uber.rss.metadata;
 
 import com.uber.m3.tally.Scope;
+import com.uber.rss.clients.BusyStatusSocketClient;
+import com.uber.rss.common.ServerCandidate;
 import com.uber.rss.exceptions.RssException;
 import com.uber.rss.common.ServerDetail;
 import com.uber.rss.exceptions.RssServerDownException;
+import com.uber.rss.messages.GetBusyStatusResponse;
+import com.uber.rss.messages.MessageConstants;
 import com.uber.rss.metrics.M3Stats;
 import com.uber.rss.util.NetworkUtils;
 import com.uber.rss.util.RetryUtils;
@@ -28,10 +32,12 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 public class ServiceRegistryUtils {
@@ -47,14 +53,22 @@ public class ServiceRegistryUtils {
      * @return servers
      */
     public static List<ServerDetail> getReachableServers(ServiceRegistry serviceRegistry, int maxServerCount, long maxTryMillis, String dataCenter, String cluster, Collection<String> excludeHosts) {
+        // TODO make following configurable
+        // get extra servers in case there are bad servers, will remove those extra servers in the final server list
+        final int extraServerCount = Math.min(5, maxServerCount);
+        // max shuffle data flush delay when choose server candidate
+        final long maxFlushDelay = TimeUnit.MINUTES.toMillis(5);
+
+        final int serverCandidateCount = maxServerCount + extraServerCount;
+
         int retryIntervalMillis = 100;
         List<ServerDetail> serverInfos = RetryUtils.retryUntilNotNull(
                 retryIntervalMillis,
                 maxTryMillis,
                 () -> {
                     try {
-                        logger.info(String.format("Trying to get max %s RSS servers, data center: %s, cluster: %s, exclude hosts: %s", maxServerCount, dataCenter, cluster, StringUtils.join(excludeHosts, ",")));
-                        return serviceRegistry.getServers(dataCenter, cluster, maxServerCount, excludeHosts);
+                        logger.info(String.format("Trying to get max %s RSS servers, data center: %s, cluster: %s, exclude hosts: %s", serverCandidateCount, dataCenter, cluster, StringUtils.join(excludeHosts, ",")));
+                        return serviceRegistry.getServers(dataCenter, cluster, serverCandidateCount, excludeHosts);
                     } catch (Throwable ex) {
                         logger.warn("Failed to call ServiceRegistry.getServers", ex);
                         return null;
@@ -67,22 +81,40 @@ public class ServiceRegistryUtils {
         // some hosts may get UnknowHostException sometimes, exclude those hosts
         logger.info(String.format("Got %s RSS servers from service registry, checking their connectivity", serverInfos.size()));
         ConcurrentLinkedQueue<String> unreachableHosts = new ConcurrentLinkedQueue<>();
-        serverInfos = serverInfos.parallelStream().filter(t -> {
+        List<ServerCandidate> serverCandidates = serverInfos.parallelStream().map(t -> {
           ServerHostAndPort hostAndPort = ServerHostAndPort.fromString(t.getConnectionString());
           String host = hostAndPort.getHost();
-          boolean reachable =  NetworkUtils.isReachable(host, NetworkUtils.DEFAULT_REACHABLE_TIMEOUT);
-          if (!reachable) {
-            logger.warn(String.format("Detected unreachable host %s", host));
+          int port = hostAndPort.getPort();
+          long startTime = System.currentTimeMillis();
+          try (BusyStatusSocketClient busyStatusSocketClient = new BusyStatusSocketClient(host, port, NetworkUtils.DEFAULT_REACHABLE_TIMEOUT, "")) {
+            GetBusyStatusResponse getBusyStatusResponse = busyStatusSocketClient.getBusyStatus();
+            long requestLatency = System.currentTimeMillis() - startTime;
+            long flushDelay = getBusyStatusResponse.getMetrics().getOrDefault(MessageConstants.MAP_ATTEMPT_FLUSH_DELAY, 0L);
+            return new ServerCandidate(t, requestLatency, flushDelay);
+          } catch (Throwable ex) {
+            logger.warn(String.format("Detected unreachable host %s", host), ex);
             unreachableHosts.add(host);
+            return null;
           }
-          return reachable;
-        }).collect(Collectors.toList());
+        })
+            .filter(t -> t != null && t.getShuffleDataFlushDelay() < maxFlushDelay)
+            .sorted(Comparator.comparingLong(ServerCandidate::getShuffleDataFlushDelay))
+            .collect(Collectors.toList());
 
         for (String unreachableHost : unreachableHosts) {
           Map<String, String> tags = new HashMap<>();
           tags.put("remote", unreachableHost);
           Scope scope = M3Stats.createSubScope(tags);
           scope.counter("unreachableHosts").inc(1);
+        }
+
+        serverInfos = serverCandidates.stream().limit(maxServerCount).map(ServerCandidate::getServerDetail).collect(Collectors.toList());
+
+        if (serverInfos.size() < serverCandidates.size()) {
+          for (int i = serverInfos.size(); i < serverCandidates.size(); i++) {
+            ServerCandidate ignoredServerCandidate = serverCandidates.get(i);
+            logger.info("Ignore RSS server candidate: {}", ignoredServerCandidate);
+          }
         }
 
         return serverInfos;

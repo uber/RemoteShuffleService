@@ -65,6 +65,8 @@ public class DataBlockSocketReadClient extends com.uber.rss.clients.ClientBase {
   private static final Logger logger =
       LoggerFactory.getLogger(DataBlockSocketReadClient.class);
 
+  private static final int POLL_INTERVAL_MAX_MULTIPLIER = 100;
+
   private final String user;
   private final AppShufflePartitionId appShufflePartitionId;
   private final List<Long> fetchTaskAttemptIds;
@@ -121,20 +123,20 @@ public class DataBlockSocketReadClient extends com.uber.rss.clients.ClientBase {
 
     ExceptionWrapper<RssException> exceptionWrapper = new ExceptionWrapper<>();
 
-    boolean succeeded = RetryUtils.retryUntilTrue(dataAvailablePollInterval, dataAvailableWaitTime, () -> {
+    Boolean succeeded = RetryUtils.retryUntilNotNull(dataAvailablePollInterval, dataAvailablePollInterval * POLL_INTERVAL_MAX_MULTIPLIER, dataAvailableWaitTime, () -> {
       try {
         writeControlMessageAndWaitResponseStatus(connectRequest);
+        return Boolean.TRUE;
       } catch (RssShuffleCorruptedException ex) {
         throw new RssShuffleCorruptedException("Shuffle data corrupted for: " + appShufflePartitionId, ex);
       } catch (RssMissingShuffleWriteConfigException | RssShuffleStageNotStartedException ex) {
         exceptionWrapper.setException(ex);
         logger.warn(String.format("Did not find data in server side, server may not run fast enough to get data from client or server hits some issue, %s", appShufflePartitionId), ex);
-        return false;
+        return null;
       }
-      return true;
     });
 
-    if (!succeeded) {
+    if (succeeded == null || !succeeded.booleanValue()) {
       if (exceptionWrapper.getException() != null) {
         throw exceptionWrapper.getException();
       } else {
@@ -178,7 +180,7 @@ public class DataBlockSocketReadClient extends com.uber.rss.clients.ClientBase {
     Stopwatch reducerWaitTimeStopwatch = metrics.getReducerWaitTime().start();
     final ObjectWrapper<GetDataAvailabilityResponse> getDataAvailabilityRetryLastResult = new ObjectWrapper<>();
     try {
-      RetryUtils.retryUntilNotNull(dataAvailablePollInterval, dataAvailablePollInterval*10, dataAvailableWaitTime, () -> {
+      RetryUtils.retryUntilNotNull(dataAvailablePollInterval, dataAvailablePollInterval * POLL_INTERVAL_MAX_MULTIPLIER, dataAvailableWaitTime, () -> {
         GetDataAvailabilityResponse getDataAvailabilityResponse = getDataAvailability();
         getDataAvailabilityRetryLastResult.setObject(getDataAvailabilityResponse);
         if (getDataAvailabilityResponse.isDataAvailable()) {

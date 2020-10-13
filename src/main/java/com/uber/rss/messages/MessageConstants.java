@@ -57,6 +57,8 @@ public class MessageConstants {
     public final static int MESSAGE_ConnectNotifyResponse = -312;
     public final static int MESSAGE_ConnectRegistryRequest = -313;
     public final static int MESSAGE_ConnectRegistryResponse = -314;
+    public final static int MESSAGE_GetBusyStatusRequest = -320;
+    public final static int MESSAGE_GetBusyStatusResponse = -321;
 
     // State store data item
     public final static int MESSAGE_StageInfoStateItem = -401;
@@ -64,6 +66,9 @@ public class MessageConstants {
     public final static int MESSAGE_StageCorruptionStateItem = -405;
     public final static int MESSAGE_TaskAttemptCommitStateItem = -407;
     public final static int MESSAGE_CommitMarkerStateItem = -420;
+
+    // Busy status key
+    public final static long MAP_ATTEMPT_FLUSH_DELAY = 1;
 
     // Other constants
 
