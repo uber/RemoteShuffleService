@@ -26,7 +26,7 @@ import java.net.UnknownHostException;
 import java.util.Map;
 
 public class NetworkUtils {
-    public static final int DEFAULT_REACHABLE_TIMEOUT = 10000;
+    public static final int DEFAULT_REACHABLE_TIMEOUT = 30000;
 
     private static final Logger logger = LoggerFactory.getLogger(NetworkUtils.class);
 

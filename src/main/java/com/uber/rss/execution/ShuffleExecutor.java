@@ -33,6 +33,7 @@ import com.uber.rss.storage.ShuffleFileStorage;
 import com.uber.rss.storage.ShuffleFileUtils;
 import com.uber.rss.storage.ShuffleStorage;
 import com.uber.rss.util.ExceptionUtils;
+import com.uber.rss.util.MovingAverageCalculator;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.DefaultEventLoop;
 import org.apache.commons.lang3.StringUtils;
@@ -110,6 +111,8 @@ public class ShuffleExecutor {
 
     // a background executor service doing clean up work
     private final ScheduledExecutorService lowPriorityExecutorService = new DefaultEventLoop();
+
+    private final MovingAverageCalculator mapAttemptFlushDelayAverage = new MovingAverageCalculator(100);
 
     /***
      * Create an instance.
@@ -464,6 +467,10 @@ public class ShuffleExecutor {
             throw new RuntimeException("AppTaskAttemptId not finished: "
                     + appTaskAttemptId);
         }
+    }
+
+    public long getAverageMapAttemptFlushDelay() {
+      return mapAttemptFlushDelayAverage.getAverage();
     }
 
     public void checkAppMaxWriteBytes(String appId) {

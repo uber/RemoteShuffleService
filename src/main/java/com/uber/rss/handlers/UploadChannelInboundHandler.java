@@ -25,6 +25,8 @@ import com.uber.rss.exceptions.RssMaxConnectionsException;
 import com.uber.rss.exceptions.RssTooMuchDataException;
 import com.uber.rss.execution.ShuffleExecutor;
 import com.uber.rss.messages.FinishUploadMessage;
+import com.uber.rss.messages.GetBusyStatusRequest;
+import com.uber.rss.messages.GetBusyStatusResponse;
 import com.uber.rss.messages.HeartbeatMessage;
 import com.uber.rss.messages.MessageConstants;
 import com.uber.rss.messages.ShuffleDataWrapper;
@@ -36,6 +38,7 @@ import com.uber.rss.metrics.M3Stats;
 import com.uber.rss.util.ExceptionUtils;
 import com.uber.rss.util.NettyUtils;
 import io.netty.buffer.ByteBuf;
+import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
@@ -43,6 +46,8 @@ import io.netty.util.ReferenceCountUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -197,6 +202,14 @@ public class UploadChannelInboundHandler extends ChannelInboundHandlerAdapter {
                 if (!heartbeatKeepLive) {
                     ctx.close();
                 }
+            } else if (msg instanceof GetBusyStatusRequest) {
+                GetBusyStatusRequest getBusyStatusRequest = (GetBusyStatusRequest)msg;
+                // TODO ideally clients should send some information to tell server what status they are interested
+                Map<Long, Long> metricsMap = new HashMap<>();
+                metricsMap.put(MessageConstants.MAP_ATTEMPT_FLUSH_DELAY, uploadServerHandler.getAverageMapAttemptFlushDelay());
+                GetBusyStatusResponse getBusyStatusResponse = new GetBusyStatusResponse(metricsMap, new HashMap<>());
+                ChannelFuture channelFuture = HandlerUtil.writeResponseMsg(ctx, MessageConstants.RESPONSE_STATUS_OK, getBusyStatusResponse, true);
+                channelFuture.addListener(ChannelFutureListener.CLOSE);
             } else {
                 throw new RssInvalidDataException(String.format("Unsupported message: %s, %s", msg, connectionInfo));
             }
