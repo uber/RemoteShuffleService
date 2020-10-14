@@ -750,9 +750,6 @@ public class StreamServerStressTool {
     private void shutdownServer(StreamServer server) {
         logger.info(String.format("Shutting down server: %s", server));
         server.shutdown(true);
-
-        logger.info(String.format("Waiting file closed in server: %s", server));
-        server.pollAndWaitShuffleFilesClosed(appShuffleId, maxWait);
     }
 
     private void deleteDirectories(List<String> directories) {

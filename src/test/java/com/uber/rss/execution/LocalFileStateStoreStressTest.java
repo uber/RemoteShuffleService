@@ -17,7 +17,6 @@ package com.uber.rss.execution;
 import com.uber.rss.clients.ShuffleWriteConfig;
 import com.uber.rss.common.AppShuffleId;
 import com.uber.rss.common.AppTaskAttemptId;
-import com.uber.rss.common.MapTaskAttemptId;
 import com.uber.rss.common.PartitionFilePathAndLength;
 import com.uber.rss.messages.ShuffleStageStatus;
 import com.uber.rss.util.FileUtils;
@@ -77,11 +76,11 @@ public class LocalFileStateStoreStressTest {
           switch (randomInt) {
             case 0:
               stateStore.storeStageInfo(appShuffleId,
-                  new StagePersistentInfo(1, 2, 3, shuffleWriteConfig,  ShuffleStageStatus.FILE_STATUS_OK));
+                  new StagePersistentInfo(2, 3, shuffleWriteConfig,  ShuffleStageStatus.FILE_STATUS_OK));
               break;
             case 1:
               stateStore.storeTaskAttemptCommit(appShuffleId,
-                  Arrays.asList(new MapTaskAttemptId(1, 2)),
+                  Arrays.asList(2L),
                   Arrays.asList(partitionFilePathAndLength));
               break;
             case 2:

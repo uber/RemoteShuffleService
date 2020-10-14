@@ -18,6 +18,7 @@ import com.uber.rss.StreamServer;
 import com.uber.rss.StreamServerConfig;
 import com.uber.rss.clients.RegistryClient;
 import com.uber.rss.metadata.*;
+import com.uber.rss.util.ExceptionUtils;
 import com.uber.rss.util.RetryUtils;
 import org.apache.curator.test.TestingServer;
 import org.slf4j.Logger;
@@ -97,8 +98,11 @@ public class TestStreamServer extends StreamServer {
             try (Socket socket = new Socket()) {
                 int timeout = 200;
                 socket.connect(new InetSocketAddress("localhost", getShufflePort()), timeout);
+                logger.info("Server still connectable on port {}", getShufflePort());
                 return false;
             } catch (Throwable e) {
+                logger.info("Server not connectable on port {} which is expected due to server shutdown, exception: {}",
+                    getShufflePort(), ExceptionUtils.getSimpleMessage(e));
                 return true;
             }
         });

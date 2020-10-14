@@ -43,7 +43,6 @@ public class BusyStatusSocketClientTest {
         "localhost", testServer1.getShufflePort(), TestConstants.NETWORK_TIMEOUT, "user1")) {
       GetBusyStatusResponse response = client.getBusyStatus();
       Assert.assertNotNull(response);
-      Assert.assertEquals(response.getMetrics().get(MessageConstants.MAP_ATTEMPT_FLUSH_DELAY), new Long(0));
     }
 
     testServer1.shutdown();

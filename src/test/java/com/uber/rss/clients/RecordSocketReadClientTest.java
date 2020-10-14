@@ -241,6 +241,7 @@ public class RecordSocketReadClientTest {
       writeClient.finishUpload();
     }
 
+    // read data to make sure data is flushed in server side
     AppShufflePartitionId appShufflePartitionId = new AppShufflePartitionId(appId, appAttempt, shuffleId, 1);
     try (ShuffleDataSocketReadClient readClient = new PlainShuffleDataSocketReadClient("localhost", testServer1.getShufflePort(), TestConstants.NETWORK_TIMEOUT, "user1", appShufflePartitionId, Arrays.asList(appTaskAttemptId.getTaskAttemptId()), TestConstants.DATA_AVAILABLE_POLL_INTERVAL, TestConstants.DATA_AVAILABLE_TIMEOUT)) {
       readClient.connect();

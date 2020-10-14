@@ -110,41 +110,18 @@ public class ShufflePartitionWriter {
             isDirty = true;
             outputStream.write(byteArray);
 
+            streamPersistedBytesSnapshots.put(outputStream.getLocation(), outputStream.getWrittenBytes());
+
             numWriteFileBytes.inc(writtenBytes);
             return writtenBytes;
         } finally {
             bytes.release();
         }
     }
-    
-    public synchronized void flush() {
-        if (!isDirty) {
-            return;
-        }
-
-        if (closed) {
-            open();
-        }
-        
-        for (ShuffleOutputStream shuffleOutputStream: outputStreams) {
-            logger.debug("Flushing shuffle file: {}, fsync: {}", shuffleOutputStream, fsync);
-            shuffleOutputStream.flush();
-
-            streamPersistedBytesSnapshots.put(shuffleOutputStream.getLocation(), shuffleOutputStream.getWrittenBytes());
-
-            if (fsync) {
-                shuffleOutputStream.fsync();
-            }
-        }
-
-        isDirty = false;
-    }
 
     public synchronized void close() {
         if (!closed) {
             logger.info("Closing stream file: {}", filePathBase);
-
-            flush();
 
             for (ShuffleOutputStream shuffleOutputStream: outputStreams) {
                 logger.debug("Closing shuffle file: {}", shuffleOutputStream);

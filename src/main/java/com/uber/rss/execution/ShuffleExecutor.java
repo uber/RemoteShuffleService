@@ -33,7 +33,6 @@ import com.uber.rss.storage.ShuffleFileStorage;
 import com.uber.rss.storage.ShuffleFileUtils;
 import com.uber.rss.storage.ShuffleStorage;
 import com.uber.rss.util.ExceptionUtils;
-import com.uber.rss.util.MovingAverageCalculator;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.DefaultEventLoop;
 import org.apache.commons.lang3.StringUtils;
@@ -116,8 +115,6 @@ public class ShuffleExecutor {
 
     // a background executor service doing clean up work
     private final ScheduledExecutorService lowPriorityExecutorService = new DefaultEventLoop();
-
-    private final MovingAverageCalculator mapAttemptFlushDelayAverage = new MovingAverageCalculator(100);
 
     /***
      * Create an instance.
@@ -211,15 +208,9 @@ public class ShuffleExecutor {
         }
     }
 
-    public void registerShuffle(AppShuffleId appShuffleId, int numMaps, int numPartitions, ShuffleWriteConfig config) {
+    public void registerShuffle(AppShuffleId appShuffleId, int numPartitions, ShuffleWriteConfig config) {
         ExecutorShuffleStageState stageState = stageStates.get(appShuffleId);
         if (stageState != null) {
-          if (stageState.getNumMaps() != numMaps) {
-            stageState.setFileCorrupted();
-            throw new RssShuffleCorruptedException(String.format(
-                "Hit mismatched numMaps (%s vs %s) for %s",
-                numMaps, stageState.getNumMaps(), appShuffleId));
-          }
           if (stageState.getNumPartitions() != numPartitions) {
             stageState.setFileCorrupted();
             throw new RssShuffleCorruptedException(String.format(
@@ -236,12 +227,12 @@ public class ShuffleExecutor {
         }
 
         ExecutorShuffleStageState newState = new ExecutorShuffleStageState(appShuffleId, config);
-        newState.setNumMapsPartitions(numMaps, numPartitions);
+        newState.setNumMapsPartitions(numPartitions);
         ExecutorShuffleStageState oldState = stageStates.putIfAbsent(appShuffleId, newState);
 
         if (oldState == null) {
           // this is the first time to register this shuffle stage, add it to state store
-          StagePersistentInfo info = new StagePersistentInfo(numMaps, numPartitions, newState.getFileStartIndex(), newState.getWriteConfig(), newState.getFileStatus());
+          StagePersistentInfo info = new StagePersistentInfo(numPartitions, newState.getFileStartIndex(), newState.getWriteConfig(), newState.getFileStatus());
           stateStore.storeStageInfo(appShuffleId, info);
         }
     }
@@ -252,10 +243,10 @@ public class ShuffleExecutor {
         ExecutorAppState appState = updateLiveness(appTaskAttemptId.getAppId());
 
         long appWriteBytes = appState.getNumWriteBytes();
-        checkAppMaxWriteBytes(appTaskAttemptId, appWriteBytes);
+        checkAppMaxWriteBytes(appTaskAttemptId.getAppShuffleId(), appWriteBytes);
 
         ExecutorShuffleStageState stageState = getStageState(appTaskAttemptId.getAppShuffleId());
-        stageState.markMapAttemptStartUpload(appTaskAttemptId);
+        stageState.markMapAttemptStartUpload(appTaskAttemptId.getTaskAttemptId());
     }
     
     /***
@@ -276,7 +267,7 @@ public class ShuffleExecutor {
 
             ByteBuf bytes = writeOp.getBytes();
             long appWriteBytes = appState.addNumWriteBytes(bytes.readableBytes());
-            checkAppMaxWriteBytes(appTaskAttemptId, appWriteBytes);
+            checkAppMaxWriteBytes(appTaskAttemptId.getAppShuffleId(), appWriteBytes);
 
             int partition = writeOp.getPartition();
 
@@ -303,57 +294,31 @@ public class ShuffleExecutor {
 
     /***
      * Add an operation to indicate a map task finishing upload data.
-     * @param appTaskAttemptId
      * @return true when things are good, false when hitting stale task attempt (old task attempt tries
      * to finish upload, but there is a new task attempt uploading data, which may happen when there is
      * task retry);
      */
-    public void addFinishUploadOperation(AppTaskAttemptId appTaskAttemptId) {
-        try {
-            addFinishUploadOperationImpl(appTaskAttemptId);
-        } catch (Throwable ex) {
-            M3Stats.addException(ex, this.getClass().getSimpleName());
-            ExecutorShuffleStageState stageState = getStageState(appTaskAttemptId.getAppShuffleId());
-            stageState.setFileCorrupted();
-            stateStore.storeStageCorruption(stageState.getAppShuffleId());
-            logger.warn(String.format("Set file corrupted during finishing upload for shuffle stage %s", appTaskAttemptId.getAppShuffleId()), ex);
-            throw ex;
-        }
+    public void addFinishUploadOperation(AppShuffleId appShuffleId, long taskAttemptId) {
+      try {
+        addFinishUploadOperationImpl(appShuffleId, taskAttemptId);
+      } catch (Throwable ex) {
+        M3Stats.addException(ex, this.getClass().getSimpleName());
+        ExecutorShuffleStageState stageState = getStageState(appShuffleId);
+        stageState.setFileCorrupted();
+        stateStore.storeStageCorruption(stageState.getAppShuffleId());
+        logger.warn(String.format("Set file corrupted during finishing upload for shuffle stage %s", appShuffleId), ex);
+        throw ex;
+      }
     }
 
-    private void addFinishUploadOperationImpl(AppTaskAttemptId appTaskAttemptId) {
-        ExecutorAppState appState = getAppState(appTaskAttemptId.getAppId());
-        appState.updateLivenessTimestamp();
+    private void addFinishUploadOperationImpl(AppShuffleId appShuffleId, long taskAttemptId) {
+      ExecutorAppState appState = getAppState(appShuffleId.getAppId());
+      appState.updateLivenessTimestamp();
 
-        // ===================== TODO close all files if there are only stale attempts
-
-      final Collection<AppTaskAttemptId> pendingFlushMapAttempts;
-      ExecutorShuffleStageState stageState = getStageState(appTaskAttemptId.getAppShuffleId());
+      ExecutorShuffleStageState stageState = getStageState(appShuffleId);
       synchronized (stageState) {
-        stageState.markMapAttemptFinishUpload(appTaskAttemptId);
-        stageState.addPendingFlushMapAttempt(appTaskAttemptId);
-        pendingFlushMapAttempts = stageState.fetchFlushMapAttempts();
-
-        if (!pendingFlushMapAttempts.isEmpty()) {
-          final long flushScheduleTime = System.currentTimeMillis();
-          // Flush operation will flush all partition files, which may take long time, thus run it async
-          CompletableFuture.runAsync(() -> {
-            long delay = System.currentTimeMillis() - flushScheduleTime;
-            mapAttemptFlushDelay.update(delay);
-            mapAttemptFlushDelayAverage.addValue(delay);
-            long startTime = System.currentTimeMillis();
-            try {
-              flushPartitions(pendingFlushMapAttempts);
-            } catch (Throwable ex) {
-              M3Stats.addException(ex, this.getClass().getSimpleName());
-              logger.warn(String.format("Failed to flush files: %s", appTaskAttemptId), ex);
-              stageState.setFileCorrupted();
-              stateStore.storeStageCorruption(stageState.getAppShuffleId());
-            } finally {
-              mapAttemptFlushTime.update(System.currentTimeMillis() - startTime);
-            }
-          });
-        }
+        stageState.commitMapTask(taskAttemptId);
+        logger.info("CommitTask: {}, {}", appShuffleId, taskAttemptId);
       }
     }
 
@@ -382,40 +347,13 @@ public class ShuffleExecutor {
           lowPriorityExecutorService.shutdown();
         }
 
-        flushAllShufflePartitionsDuringShutdown();
+        stageStates.values().parallelStream().forEach(stageState -> saveShuffleStage(stageState));
 
         System.out.println(String.format("%s Close state store during shutdown", System.currentTimeMillis()));
 
         stateStore.close();
 
         System.out.println(String.format("%s Stopped shuffle executor during shutdown", System.currentTimeMillis()));
-    }
-
-    private void flushAllShufflePartitionsDuringShutdown() {
-        for (ExecutorShuffleStageState stageState: stageStates.values()) {
-            synchronized (stageState) {
-                try {
-                    Collection<AppTaskAttemptId> pendingFlushMapAttempts = stageState.getPendingFlushMapAttempts();
-                    // Logging mechanism (e.g. log4j, kafka) may not work in shutdown hook, thus use println() to log.
-                    System.out.println(String.format(
-                        "%s Flush partitions for %s during shutdown, task attempts: %s",
-                        System.currentTimeMillis(),
-                        stageState.getAppShuffleId(),
-                        StringUtils.join(pendingFlushMapAttempts, ',')));
-                    flushPartitions(pendingFlushMapAttempts);
-                    stageState.closeWriters();
-                } catch (Throwable ex) {
-                    M3Stats.addException(ex, this.getClass().getSimpleName());
-                    System.out.println(String.format(
-                        "%s Failed to flush partitions for %s during shutdown, exception: %s",
-                        System.currentTimeMillis(),
-                        stageState.getAppShuffleId(),
-                        ExceptionUtils.getSimpleMessage(ex)));
-                    stageState.setFileCorrupted();
-                    stateStore.storeStageCorruption(stageState.getAppShuffleId());
-                }
-            }
-        }
     }
 
     /**
@@ -425,15 +363,17 @@ public class ShuffleExecutor {
     public List<FilePathAndLength> getPersistedBytes(AppShuffleId appShuffleId, int partition) {
         updateLiveness(appShuffleId.getAppId());
 
-        return getStageState(appShuffleId).getPersistedBytesSnapshot(partition);
+        ExecutorShuffleStageState stageState = getStageState(appShuffleId);
+        List<FilePathAndLength>  persistedBytes = stageState.getPersistedBytesSnapshot(partition);
+        return persistedBytes;
     }
 
-    public void closePartitionFiles(AppShufflePartitionId appShufflePartitionId) {
-      ExecutorShuffleStageState stageState = getStageState(appShufflePartitionId.getAppShuffleId());
-      stageState.closeWriter(appShufflePartitionId.getPartitionId());
+    public void finishShuffleStage(AppShuffleId appShuffleId) {
+      ExecutorShuffleStageState stageState = getStageState(appShuffleId);
+      saveShuffleStage(stageState);
     }
 
-    /**
+  /**
      * Update liveness indicator for the given application.
      * @param appId
      */
@@ -482,7 +422,7 @@ public class ShuffleExecutor {
             printInternalState();
 
             ExecutorShuffleStageState stageState = getStageState(appTaskAttemptId.getAppShuffleId());
-            finished = stageState.isMapAttemptFinishedUpload(appTaskAttemptId) || stageState.isMapAttemptCommitted(appTaskAttemptId);
+            finished = stageState.isMapAttemptCommitted(appTaskAttemptId);
             if (finished) {
                 break;
             }
@@ -531,42 +471,6 @@ public class ShuffleExecutor {
                     + appTaskAttemptId);
         }
     }
-    
-    /***
-     * This is a test utility method to wait for all shuffle files closed.
-     * It prints out internal state. So make sure not use it in production 
-     * code.
-     * @param appShuffleId
-     * @param maxWaitMillis
-     */
-    public void pollAndWaitShuffleFilesClosed(AppShuffleId appShuffleId, 
-                                              long maxWaitMillis) {
-        long startTime = System.currentTimeMillis();
-        boolean closed = false;
-        while (System.currentTimeMillis() - startTime <= maxWaitMillis) {
-            closed = getStageState(appShuffleId).getNumOpenedWriters() == 0;
-            if (closed) {
-                break;
-            }
-            
-            printInternalState();
-            
-            try {
-                Thread.sleep(INTERNAL_WAKEUP_MILLIS);
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
-            }
-        }
-        
-        if (!closed) {
-            throw new RuntimeException("Not all shuffle files closed: " 
-                    + appShuffleId);
-        }
-    }
-
-    public long getAverageMapAttemptFlushDelay() {
-      return mapAttemptFlushDelayAverage.getAverage();
-    }
 
     public void checkAppMaxWriteBytes(String appId) {
         ExecutorAppState appState = getAppState(appId);
@@ -574,19 +478,18 @@ public class ShuffleExecutor {
         checkAppMaxWriteBytes(appId, appWriteBytes);
     }
 
-    private void checkAppMaxWriteBytes(AppTaskAttemptId appTaskAttemptId, long currentAppWriteBytes) {
-        if (currentAppWriteBytes > appMaxWriteBytes) {
-            numTruncatedApplications.inc(1);
-          AppShuffleId appShuffleId = appTaskAttemptId.getAppShuffleId();
-          ExecutorShuffleStageState stageState = stageStates.get(appShuffleId);
-          if (stageState != null) {
-            stageState.setFileCorrupted();
-            stateStore.storeStageCorruption(appShuffleId);
-          }
-          throw new RssTooMuchDataException(String.format(
-                "Application %s wrote too much data (%s bytes exceeding max allowed %s)",
-                appTaskAttemptId.getAppId(), currentAppWriteBytes, appMaxWriteBytes));
+    private void checkAppMaxWriteBytes(AppShuffleId appShuffleId, long currentAppWriteBytes) {
+      if (currentAppWriteBytes > appMaxWriteBytes) {
+        numTruncatedApplications.inc(1);
+        ExecutorShuffleStageState stageState = stageStates.get(appShuffleId);
+        if (stageState != null) {
+          stageState.setFileCorrupted();
+          stateStore.storeStageCorruption(appShuffleId);
         }
+        throw new RssTooMuchDataException(String.format(
+            "Application %s wrote too much data (%s bytes exceeding max allowed %s)",
+            appShuffleId.getAppId(), currentAppWriteBytes, appMaxWriteBytes));
+      }
     }
 
     private void checkAppMaxWriteBytes(String appId, long currentAppWriteBytes) {
@@ -620,46 +523,18 @@ public class ShuffleExecutor {
         }
     }
 
-    private void flushPartitions(Collection<AppTaskAttemptId> appTaskAttemptIds) {
-      if (appTaskAttemptIds.isEmpty()) {
-        return;
-      }
+    private void saveShuffleStage(ExecutorShuffleStageState stageState) {
+      synchronized (stageState) {
+        if (!stageState.isStateSaved()) {
+          stageState.closeWriters();
 
-      List<AppShuffleId> appShuffleIds = appTaskAttemptIds.stream().map(t->t.getAppShuffleId()).distinct().collect(Collectors.toList());
-      if (appShuffleIds.size() != 1) {
-        throw new RssInvalidStateException(
-            String.format("flushPartitions should be only for 1 shuffle stage, but has %s stages: %s", appShuffleIds.size(), appShuffleIds));
-      }
-        AppShuffleId appShuffleId = appShuffleIds.get(0);
-        ExecutorShuffleStageState stageState = getStageState(appShuffleId);
-        synchronized (stageState) {
-          try {
-              stageState.flushAllPartitions();
-              for (AppTaskAttemptId appTaskAttemptId: appTaskAttemptIds) {
-                  stageState.commitMapTask(appTaskAttemptId.getMapId(), appTaskAttemptId.getTaskAttemptId());
-                  logger.info("CommitTask, {}, task {}.{}", appShuffleId, appTaskAttemptId.getMapId(), appTaskAttemptId.getTaskAttemptId());
-              }
-              List<MapTaskAttemptId> mapTaskAttemptIds = appTaskAttemptIds.stream()
-                  .map(t->new MapTaskAttemptId(t.getMapId(), t.getTaskAttemptId())).collect(Collectors.toList());
-              stateStore.storeTaskAttemptCommit(appShuffleId, mapTaskAttemptIds, stageState.getPersistedBytesSnapshots());
-
-              if (stageState.allLatestTaskAttemptsCommitted()) {
-                  stageState.closeWriters();
-                  long persistedBytes = stageState.getPersistedBytes();
-              }
-          } catch (Throwable ex) {
-              M3Stats.addException(ex, this.getClass().getSimpleName());
-              logger.warn("Failed to flush partitions: " + appShuffleId, ex);
-              stageState.setFileCorrupted();
-              stateStore.storeStageCorruption(stageState.getAppShuffleId());
-          }
-        }
-
-        long currentTime = System.currentTimeMillis();
-        if (currentTime - stateStoreLastCommitTime >= stateCommitIntervalMillis) {
-          stateStoreLastCommitTime = currentTime;
+          List<PartitionFilePathAndLength> persistedBytes = stageState.getPersistedBytesSnapshots();
+          stateStore.storeTaskAttemptCommit(stageState.getAppShuffleId(), stageState.getCommittedTaskIds(), persistedBytes);
           stateStore.commit();
+
+          stageState.markStateSaved();
         }
+      }
     }
 
     private void printInternalState() {
@@ -685,7 +560,7 @@ public class ShuffleExecutor {
     private ShufflePartitionWriter getOrCreatePartitionWriter(
             AppShuffleId appShuffleId, 
             int partition) {
-        return getStageState(appShuffleId).getOrCreateWriter(partition, rootDir, storage, fsyncEnabled);
+        return getStageState(appShuffleId).getOrCreateWriter(partition, rootDir, storage);
     }
 
     private void removeExpiredApplications() {
@@ -805,7 +680,6 @@ public class ShuffleExecutor {
             AppShuffleId appShuffleId = stageInfoStateItem.getAppShuffleId();
             appIds.add(appShuffleId.getAppId());
             stages.add(appShuffleId);
-            int numMaps = stageInfoStateItem.getNumMaps();
             int numPartitions = stageInfoStateItem.getNumPartitions();
             ShuffleWriteConfig writeConfig = stageInfoStateItem.getWriteConfig();
             int newStartIndex = stageInfoStateItem.getFileStartIndex() + writeConfig.getNumSplits();
@@ -816,20 +690,12 @@ public class ShuffleExecutor {
             if (oldStageState == null) {
                 // stage state is not set, add stage state
                 ExecutorShuffleStageState newStageState = new ExecutorShuffleStageState(appShuffleId, writeConfig, newStartIndex);
-                newStageState.setNumMapsPartitions(stageInfoStateItem.getNumMaps(), stageInfoStateItem.getNumPartitions());
+                newStageState.setNumMapsPartitions(stageInfoStateItem.getNumPartitions());
                 stageStates.put(appShuffleId, newStageState);
                 effectiveStageState = newStageState;
             } else {
                 effectiveStageState = oldStageState;
                 // stage state is already set, check against values loaded from state
-                if (oldStageState.getNumMaps() != numMaps) {
-                    oldStageState.setFileCorrupted();
-                    stateLoadWarnings.inc(1);
-                    logger.warn(String.format(
-                        "Got different numMaps when loading state for %s, old value: %s, new value: %s",
-                        appShuffleId, oldStageState.getNumMaps(), numMaps));
-                    corruptedStages.add(appShuffleId);
-                }
                 if (oldStageState.getNumPartitions() != numPartitions) {
                     oldStageState.setFileCorrupted();
                     stateLoadWarnings.inc(1);
@@ -863,7 +729,7 @@ public class ShuffleExecutor {
                 effectiveStageState.setFileCorrupted();
             }
             // store stage info to make sure next time run will use new file start index
-            stateStore.storeStageInfo(appShuffleId, new StagePersistentInfo(effectiveStageState.getNumMaps(),
+            stateStore.storeStageInfo(appShuffleId, new StagePersistentInfo(
                 effectiveStageState.getNumPartitions(),
                 effectiveStageState.getFileStartIndex(),
                 effectiveStageState.getWriteConfig(),
@@ -886,10 +752,10 @@ public class ShuffleExecutor {
                     taskAttemptCommitStateItem, appShuffleId));
                 corruptedStages.add(appShuffleId);
             } else {
-                for (MapTaskAttemptId mapTaskAttemptId: taskAttemptCommitStateItem.getMapTaskAttemptIds()) {
-                    stageState.commitMapTask(mapTaskAttemptId.getMapId(), mapTaskAttemptId.getTaskAttemptId());
-                }
-                stageState.addFinalizedFiles(taskAttemptCommitStateItem.getPartitionFilePathAndLengths());
+              for (Long mapTaskAttemptId: taskAttemptCommitStateItem.getMapTaskAttemptIds()) {
+                stageState.commitMapTask(mapTaskAttemptId);
+              }
+              stageState.addFinalizedFiles(taskAttemptCommitStateItem.getPartitionFilePathAndLengths());
                 if (corruptedStages.contains(appShuffleId)) {
                     stageState.setFileCorrupted();
                 }

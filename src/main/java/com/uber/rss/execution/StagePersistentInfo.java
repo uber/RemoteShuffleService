@@ -17,7 +17,6 @@ package com.uber.rss.execution;
 import com.uber.rss.clients.ShuffleWriteConfig;
 
 public class StagePersistentInfo {
-  private final int numMaps;
   private final int numPartitions;
   private final int fileStartIndex;
 
@@ -25,16 +24,11 @@ public class StagePersistentInfo {
 
   private final byte fileStatus;
 
-  public StagePersistentInfo(int numMaps, int numPartitions, int fileStartIndex, ShuffleWriteConfig shuffleWriteConfig, byte fileStatus) {
-    this.numMaps = numMaps;
+  public StagePersistentInfo(int numPartitions, int fileStartIndex, ShuffleWriteConfig shuffleWriteConfig, byte fileStatus) {
     this.numPartitions = numPartitions;
     this.fileStartIndex = fileStartIndex;
     this.shuffleWriteConfig = shuffleWriteConfig;
     this.fileStatus = fileStatus;
-  }
-
-  public int getNumMaps() {
-    return numMaps;
   }
 
   public int getNumPartitions() {
@@ -56,7 +50,6 @@ public class StagePersistentInfo {
   @Override
   public String toString() {
     return "StagePersistentInfo{" +
-        "numMaps=" + numMaps +
         ", numPartitions=" + numPartitions +
         ", fileStartIndex=" + fileStartIndex +
         ", shuffleWriteConfig=" + shuffleWriteConfig +

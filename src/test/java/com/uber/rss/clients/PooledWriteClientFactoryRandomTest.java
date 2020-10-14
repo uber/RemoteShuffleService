@@ -21,6 +21,8 @@ import org.spark_project.jetty.util.ConcurrentArrayQueue;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
+import java.util.concurrent.ConcurrentLinkedQueue;
+
 public class PooledWriteClientFactoryRandomTest {
 
   @Test
@@ -36,7 +38,7 @@ public class PooledWriteClientFactoryRandomTest {
       String appId = "app1";
       String appAttempt = "attempt1";
 
-      ConcurrentArrayQueue<Throwable> threadExceptions = new ConcurrentArrayQueue<>();
+      ConcurrentLinkedQueue<Throwable> threadExceptions = new ConcurrentLinkedQueue<>();
 
       Thread[] threads = new Thread[numThreads];
       for (int i = 0; i < numThreads; i++) {

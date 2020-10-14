@@ -177,7 +177,7 @@ public class UploadChannelInboundHandler extends ChannelInboundHandlerAdapter {
                     startUploadMessage.getAttemptId());
 
                 ShuffleWriteConfig writeConfig = new ShuffleWriteConfig(startUploadMessage.getNumSplits());
-                uploadServerHandler.initializeAppTaskAttempt(appTaskAttemptId, startUploadMessage.getNumMaps(), startUploadMessage.getNumPartitions(), writeConfig, ctx);
+                uploadServerHandler.initializeAppTaskAttempt(appTaskAttemptId, startUploadMessage.getNumPartitions(), writeConfig, ctx);
             } else if (msg instanceof FinishUploadMessage) {
                 logger.info("FinishUploadMessage, {}, {}", msg, connectionInfo);
                 FinishUploadMessage finishUploadMessage = (FinishUploadMessage)msg;
@@ -206,7 +206,6 @@ public class UploadChannelInboundHandler extends ChannelInboundHandlerAdapter {
                 GetBusyStatusRequest getBusyStatusRequest = (GetBusyStatusRequest)msg;
                 // TODO ideally clients should send some information to tell server what status they are interested
                 Map<Long, Long> metricsMap = new HashMap<>();
-                metricsMap.put(MessageConstants.MAP_ATTEMPT_FLUSH_DELAY, uploadServerHandler.getAverageMapAttemptFlushDelay());
                 GetBusyStatusResponse getBusyStatusResponse = new GetBusyStatusResponse(metricsMap, new HashMap<>());
                 ChannelFuture channelFuture = HandlerUtil.writeResponseMsg(ctx, MessageConstants.RESPONSE_STATUS_OK, getBusyStatusResponse, true);
                 channelFuture.addListener(ChannelFutureListener.CLOSE);
