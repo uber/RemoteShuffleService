@@ -142,7 +142,7 @@ public class LocalFileStateStore implements StateStore {
         }
       })
           .map(Path::toString)
-      .collect(Collectors.toList());
+          .collect(Collectors.toList());
     } catch (IOException e) {
       logger.warn(String.format("Failed to load state from directory %s", stateDir), e);
       files = Collections.emptyList();

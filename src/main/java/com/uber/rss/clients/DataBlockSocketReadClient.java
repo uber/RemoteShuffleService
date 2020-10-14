@@ -77,7 +77,6 @@ public class DataBlockSocketReadClient extends com.uber.rss.clients.ClientBase {
 
   private String fileCompressionCodec;
   private MapTaskCommitStatus commitMapTaskCommitStatus;
-  // TODO remove commitTaskAttemptIds since it is no long needed
   private Set<Long> commitTaskAttemptIds;
 
   private boolean downloadStarted = false;
