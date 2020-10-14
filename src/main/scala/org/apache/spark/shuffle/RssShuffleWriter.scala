@@ -80,6 +80,8 @@ class RssShuffleWriter[K, V, C](
     var recordFetchStartTime = System.nanoTime()
     var recordFetchTime = 0L
 
+    val partitionLengths: Array[Long] = Array.fill[Long](numPartitions)(0L)
+
     while (records.hasNext) {
       val record = records.next()
       recordFetchTime += (System.nanoTime() - recordFetchStartTime)
@@ -102,7 +104,7 @@ class RssShuffleWriter[K, V, C](
         serializeTime += (System.nanoTime() - serializeStartTime)
       }
 
-      sendDataBlocks(spilledData)
+      sendDataBlocks(spilledData, partitionLengths)
 
       numRecords = numRecords + 1
       writeRecordTime += (System.nanoTime() - writeRecordStartTime)
@@ -111,7 +113,7 @@ class RssShuffleWriter[K, V, C](
     }
 
     val remainingData = bufferManager.clear()
-    sendDataBlocks(remainingData)
+    sendDataBlocks(remainingData, partitionLengths)
 
     val finishUploadStartTime = System.nanoTime()
     writeClient.finishUpload()
@@ -124,21 +126,23 @@ class RssShuffleWriter[K, V, C](
     shuffleWriteMetrics.incBytesWritten(totalBytes)
     shuffleWriteMetrics.incWriteTime(startUploadTime + writeRecordTime + finishUploadTime)
 
-    closeWriteClientAsync()
-
-    // fill partitionLengths with non zero dummy value so map output tracker could work correctly
-    val partitionLengths: Array[Long] = Array.fill(numPartitions)(1L)
+    // fill non-zero length
+    val nonZeroPartitionLengths = partitionLengths.map(x => if (x == 0) 1 else x)
     val blockManagerId = RssUtils.createMapTaskDummyBlockManagerId(mapInfo.getMapId, mapInfo.getTaskAttemptId, rssServers)
-    mapStatus = MapStatus(blockManagerId, partitionLengths, mapInfo.getMapId)
+    mapStatus = MapStatus(blockManagerId, nonZeroPartitionLengths, mapInfo.getMapId)
+
+    closeWriteClientAsync()
   }
 
-  private def sendDataBlocks(fullFilledData: Seq[(Int, Array[Byte])]) = {
+  private def sendDataBlocks(fullFilledData: Seq[(Int, Array[Byte])], partitionLengths: Array[Long]) = {
     fullFilledData.foreach(t => {
       val partitionId = t._1
       val bytes = t._2
       if (bytes != null && bytes.length > 0) {
         val dataBlock = createDataBlock(bytes)
         writeClient.writeDataBlock(partitionId, dataBlock)
+
+        partitionLengths(partitionId) += bytes.length
       }
     })
   }
