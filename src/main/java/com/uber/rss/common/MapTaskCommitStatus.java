@@ -14,14 +14,17 @@
 
 package com.uber.rss.common;
 
+import com.uber.rss.exceptions.RssInvalidDataException;
 import io.netty.buffer.ByteBuf;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+// TODO remove mapper count
 public class MapTaskCommitStatus {
     public void serialize(ByteBuf buf) {
         buf.writeInt(getMapperCount());
@@ -57,6 +60,7 @@ public class MapTaskCommitStatus {
         this.taskAttemptIds = taskAttemptIds;
     }
 
+    // TODO remove mapper count
     public int getMapperCount() {
         return mapperCount;
     }
@@ -65,26 +69,15 @@ public class MapTaskCommitStatus {
         return taskAttemptIds;
     }
 
-    public boolean isPartitionDataAvailable() {
-        return mapperCount != 0
-            && taskAttemptIds.size() == mapperCount;
-    }
-
     public boolean isPartitionDataAvailable(Collection<Long> fetchTaskAttemptIds) {
         // TODO need to verify fetchTaskAttemptIds non empty to make code safer
         if (fetchTaskAttemptIds.isEmpty()) {
-            return isPartitionDataAvailable();
-        }
-
-        boolean mapperCountMatches = mapperCount != 0
-            && getTaskAttemptIds().size() == mapperCount;
-        if (!mapperCountMatches) {
-            return false;
+            throw new RssInvalidDataException("fetchTaskAttemptIds cannot be empty");
         }
 
         // TODO improve performance in following
-        return taskAttemptIds.values().stream().sorted().collect(Collectors.toList())
-            .equals(fetchTaskAttemptIds.stream().sorted().collect(Collectors.toList()));
+        return new HashSet<>(taskAttemptIds.values())
+            .containsAll(fetchTaskAttemptIds);
     }
 
     public String toShortString() {

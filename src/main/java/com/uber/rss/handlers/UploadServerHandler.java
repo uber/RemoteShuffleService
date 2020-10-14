@@ -45,7 +45,6 @@ public class UploadServerHandler {
 
     private String connectionInfo;
 
-    private int numMaps;
     private int numPartitions;
     private ShuffleWriteConfig writeConfig;
 
@@ -58,14 +57,13 @@ public class UploadServerHandler {
         channelManager.incNumConnections();
     }
 
-    public void initializeAppTaskAttempt(AppTaskAttemptId appTaskAttemptId, int numMaps, int numPartitions, ShuffleWriteConfig writeConfig, ChannelHandlerContext ctx) {
-        initializeAppTaskAttemptImpl(appTaskAttemptId, numMaps, numPartitions, writeConfig, ctx, null);
+    public void initializeAppTaskAttempt(AppTaskAttemptId appTaskAttemptId, int numPartitions, ShuffleWriteConfig writeConfig, ChannelHandlerContext ctx) {
+        initializeAppTaskAttemptImpl(appTaskAttemptId, numPartitions, writeConfig, ctx, null);
     }
 
-    private void initializeAppTaskAttemptImpl(AppTaskAttemptId appTaskAttemptId, int numMaps, int numPartitions, ShuffleWriteConfig writeConfig, ChannelHandlerContext ctx, String networkCompressionCodecName) {
+    private void initializeAppTaskAttemptImpl(AppTaskAttemptId appTaskAttemptId, int numPartitions, ShuffleWriteConfig writeConfig, ChannelHandlerContext ctx, String networkCompressionCodecName) {
         this.connectionInfo = NettyUtils.getServerConnectionInfo(ctx.channel());
 
-        this.numMaps = numMaps;
         this.numPartitions = numPartitions;
         this.writeConfig = writeConfig;
 
@@ -118,10 +116,6 @@ public class UploadServerHandler {
             appMapId.getAppShuffleId(), appMapId.getMapId(), shuffleDataWrapper.getTaskAttemptId(), shuffleDataWrapper.getPartitionId(), Unpooled.wrappedBuffer(shuffleDataWrapper.getBytes())));
     }
 
-    public long getAverageMapAttemptFlushDelay() {
-        return executor.getAverageMapAttemptFlushDelay();
-    }
-
     public void finishUpload(long taskAttemptId) {
         AppMapId appMapId = getAppMapId(taskAttemptId);
         AppTaskAttemptId appTaskAttemptIdToFinishUpload = new AppTaskAttemptId(appMapId, taskAttemptId);
@@ -130,7 +124,7 @@ public class UploadServerHandler {
 
     private void finishUploadImpl(AppTaskAttemptId appTaskAttemptIdToFinishUpload) {
         lazyStartUpload(appTaskAttemptIdToFinishUpload);
-        executor.addFinishUploadOperation(appTaskAttemptIdToFinishUpload);
+        executor.addFinishUploadOperation(appTaskAttemptIdToFinishUpload.getAppShuffleId(), appTaskAttemptIdToFinishUpload.getTaskAttemptId());
         taskAttemptMap.remove(appTaskAttemptIdToFinishUpload.getTaskAttemptId());
         taskAttemptUploadStarted.remove(appTaskAttemptIdToFinishUpload.getTaskAttemptId());
     }
@@ -139,7 +133,7 @@ public class UploadServerHandler {
     // could retry connecting to the server without really start the upload
     private void lazyStartUpload(AppTaskAttemptId appTaskAttemptIdToStartUpload) {
         if (!taskAttemptUploadStarted.getOrDefault(appTaskAttemptIdToStartUpload.getTaskAttemptId(), false)) {
-            executor.registerShuffle(appTaskAttemptIdToStartUpload.getAppShuffleId(), numMaps, numPartitions, writeConfig);
+            executor.registerShuffle(appTaskAttemptIdToStartUpload.getAppShuffleId(), numPartitions, writeConfig);
             executor.startUpload(appTaskAttemptIdToStartUpload);
 
             taskAttemptUploadStarted.put(appTaskAttemptIdToStartUpload.getTaskAttemptId(), true);

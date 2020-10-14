@@ -269,15 +269,6 @@ public class StreamServer {
         return shuffleExecutor;
     }
 
-    /***
-     * This is a test utility method to wait for all shuffle files closed.
-     * It prints out internal state. So make sure not use it in production 
-     * code.
-     */
-    public void pollAndWaitShuffleFilesClosed(AppShuffleId appShuffleId, long maxWaitMillis) {
-        shuffleExecutor.pollAndWaitShuffleFilesClosed(appShuffleId, maxWaitMillis);
-    }
-
     public void shutdown() {
         shutdown(false);
     }

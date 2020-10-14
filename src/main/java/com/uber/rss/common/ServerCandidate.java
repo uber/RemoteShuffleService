@@ -17,12 +17,10 @@ package com.uber.rss.common;
 public class ServerCandidate {
   private ServerDetail serverDetail;
   private long requestLatency;
-  private long shuffleDataFlushDelay;
 
-  public ServerCandidate(ServerDetail serverDetail, long requestLatency, long shuffleDataFlushDelay) {
+  public ServerCandidate(ServerDetail serverDetail, long requestLatency) {
     this.serverDetail = serverDetail;
     this.requestLatency = requestLatency;
-    this.shuffleDataFlushDelay = shuffleDataFlushDelay;
   }
 
   public ServerDetail getServerDetail() {
@@ -33,16 +31,11 @@ public class ServerCandidate {
     return requestLatency;
   }
 
-  public long getShuffleDataFlushDelay() {
-    return shuffleDataFlushDelay;
-  }
-
   @Override
   public String toString() {
     return "ServerCandidate{" +
         "serverDetail=" + serverDetail +
         ", requestLatency=" + requestLatency +
-        ", shuffleDataFlushDelay=" + shuffleDataFlushDelay +
         '}';
   }
 }

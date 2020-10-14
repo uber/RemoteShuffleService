@@ -24,21 +24,14 @@ public class TaskAttemptIdAndState {
   private enum TaskAttemptState {
     NOT_STARTED,
     START_UPLOAD,
-    FINISH_UPLOAD,
     COMMITTED
   }
-  
-  private AppMapId appMapId;
+
   private long taskAttemptId;
   private TaskAttemptState state = TaskAttemptState.NOT_STARTED;
 
-  public TaskAttemptIdAndState(AppMapId appMapId, long taskAttemptId) {
-    this.appMapId = appMapId;
+  public TaskAttemptIdAndState(long taskAttemptId) {
     this.taskAttemptId = taskAttemptId;
-  }
-
-  public AppMapId getAppMapId() {
-    return appMapId;
   }
 
   public long getTaskAttemptId() {
@@ -49,26 +42,13 @@ public class TaskAttemptIdAndState {
     TaskAttemptState targetState = TaskAttemptState.START_UPLOAD;
     if (state != TaskAttemptState.NOT_STARTED) {
       throw new RssInvalidStateException(String.format(
-          "Cannot mark attempt to state %s from its current state %s, %s, %s", targetState, state, appMapId, taskAttemptId));
-    }
-    state = targetState;
-  }
-
-  public void markFinishUpload() {
-    TaskAttemptState targetState = TaskAttemptState.FINISH_UPLOAD;
-    if (state != TaskAttemptState.START_UPLOAD) {
-      throw new RssInvalidStateException(String.format(
-          "Cannot mark attempt to state %s from its current state %s, %s, %s", targetState, state, appMapId, taskAttemptId));
+          "Cannot mark attempt to state %s from its current state %s, %s", targetState, state, taskAttemptId));
     }
     state = targetState;
   }
 
   public void markCommitted() {
     TaskAttemptState targetState = TaskAttemptState.COMMITTED;
-    if (state != TaskAttemptState.NOT_STARTED && state != TaskAttemptState.FINISH_UPLOAD && state != TaskAttemptState.COMMITTED) {
-      throw new RssInvalidStateException(String.format(
-          "Cannot mark attempt to state %s from its current state %s, %s, %s", targetState, state, appMapId, taskAttemptId));
-    }
     state = targetState;
   }
 
@@ -76,14 +56,9 @@ public class TaskAttemptIdAndState {
     return state == TaskAttemptState.COMMITTED;
   }
 
-  public boolean isFinishedUpload() {
-    return state == TaskAttemptState.FINISH_UPLOAD;
-  }
-
   @Override
   public String toString() {
     return "TaskAttemptIdAndState{" +
-        "appMapId=" + appMapId +
         ", taskAttemptId=" + taskAttemptId +
         ", state=" + state +
         '}';

@@ -15,7 +15,6 @@
 package com.uber.rss.execution;
 
 import com.uber.rss.common.AppShuffleId;
-import com.uber.rss.common.MapTaskAttemptId;
 import com.uber.rss.common.PartitionFilePathAndLength;
 import com.uber.rss.exceptions.RssFileCorruptedException;
 import com.uber.rss.exceptions.RssInvalidStateException;
@@ -92,7 +91,6 @@ public class LocalFileStateStore implements StateStore {
 
   public void storeStageInfo(AppShuffleId appShuffleId, StagePersistentInfo info) {
     StageInfoStateItem item = new StageInfoStateItem(appShuffleId,
-        info.getNumMaps(),
         info.getNumPartitions(),
         info.getFileStartIndex(),
         info.getShuffleWriteConfig(),
@@ -100,7 +98,7 @@ public class LocalFileStateStore implements StateStore {
     writeState(item);
   }
 
-  public void storeTaskAttemptCommit(AppShuffleId appShuffleId, Collection<MapTaskAttemptId> committedTaskAttempts, Collection<PartitionFilePathAndLength> partitionFilePathAndLengths) {
+  public void storeTaskAttemptCommit(AppShuffleId appShuffleId, Collection<Long> committedTaskAttempts, Collection<PartitionFilePathAndLength> partitionFilePathAndLengths) {
     TaskAttemptCommitStateItem item = new TaskAttemptCommitStateItem(appShuffleId, committedTaskAttempts, partitionFilePathAndLengths);
     writeState(item);
   }
@@ -144,7 +142,7 @@ public class LocalFileStateStore implements StateStore {
         }
       })
           .map(Path::toString)
-      .collect(Collectors.toList());
+          .collect(Collectors.toList());
     } catch (IOException e) {
       logger.warn(String.format("Failed to load state from directory %s", stateDir), e);
       files = Collections.emptyList();
