@@ -307,7 +307,6 @@ public class ShuffleExecutor {
 
         ExecutorShuffleStageState stageState = getStageState(appShuffleId);
         synchronized (stageState) {
-          stageState.markMapAttemptFinishUpload(taskAttemptId);
           stageState.commitMapTask(taskAttemptId);
 
           logger.info("CommitTask: {}, {}", appShuffleId, taskAttemptId);
@@ -419,7 +418,7 @@ public class ShuffleExecutor {
             printInternalState();
 
             ExecutorShuffleStageState stageState = getStageState(appTaskAttemptId.getAppShuffleId());
-            finished = stageState.isMapAttemptFinishedUpload(appTaskAttemptId) || stageState.isMapAttemptCommitted(appTaskAttemptId);
+            finished = stageState.isMapAttemptCommitted(appTaskAttemptId);
             if (finished) {
                 break;
             }

@@ -138,15 +138,6 @@ public class ExecutorShuffleStageState {
         taskState.markStartUpload();
     }
 
-    public synchronized void markMapAttemptFinishUpload(long taskAttemptId) {
-        TaskAttemptIdAndState taskState = getTaskState(taskAttemptId);
-        taskState.markFinishUpload();
-    }
-
-    public synchronized boolean isMapAttemptFinishedUpload(AppTaskAttemptId appTaskAttemptId) {
-        return getTaskState(appTaskAttemptId.getTaskAttemptId()).isFinishedUpload();
-    }
-
     public synchronized boolean isMapAttemptCommitted(AppTaskAttemptId appTaskAttemptId) {
         return getTaskState(appTaskAttemptId.getTaskAttemptId()).isCommitted();
     }
