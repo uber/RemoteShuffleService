@@ -5,9 +5,9 @@ name: Java CI with Maven
 
 on:
   push:
-    branches: [ spark30 ]
+    branches: [ master, spark30, spark24 ]
   pull_request:
-    branches: [ spark30 ]
+    branches: [ master, spark30, spark24 ]
 
 jobs:
   build:
