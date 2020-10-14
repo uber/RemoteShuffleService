@@ -119,7 +119,7 @@ object RssUtils extends Logging {
       .map(_.getTaskAttemptId)
       .toArray
       .distinct
-    new MapOutputRssInfo(numMaps, numRssServers, mapTaskAttemptIds)
+    MapOutputRssInfo(numMaps, numRssServers, mapTaskAttemptIds)
   }
 
   /**

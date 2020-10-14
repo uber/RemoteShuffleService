@@ -186,6 +186,7 @@ class RssShuffleManagerTest {
       val records = (1 to numValuesInMap).map(t => (mapId*1000+t) -> (mapId*1000+t*2)).iterator
       shuffleWriter.write(records)
       val mapStatus = shuffleWriter.stop(true).get
+
       mapOutputTrackerMaster.registerMapOutput(shuffleId, mapId, mapStatus)
     })
 
