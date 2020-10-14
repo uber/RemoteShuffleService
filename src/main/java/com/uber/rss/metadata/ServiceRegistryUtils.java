@@ -56,8 +56,6 @@ public class ServiceRegistryUtils {
         // TODO make following configurable
         // get extra servers in case there are bad servers, will remove those extra servers in the final server list
         final int extraServerCount = Math.min(5, maxServerCount);
-        // max shuffle data flush delay when choose server candidate
-        final long maxFlushDelay = TimeUnit.MINUTES.toMillis(5);
 
         final int serverCandidateCount = maxServerCount + extraServerCount;
 
@@ -89,16 +87,14 @@ public class ServiceRegistryUtils {
           try (BusyStatusSocketClient busyStatusSocketClient = new BusyStatusSocketClient(host, port, NetworkUtils.DEFAULT_REACHABLE_TIMEOUT, "")) {
             GetBusyStatusResponse getBusyStatusResponse = busyStatusSocketClient.getBusyStatus();
             long requestLatency = System.currentTimeMillis() - startTime;
-            long flushDelay = getBusyStatusResponse.getMetrics().getOrDefault(MessageConstants.MAP_ATTEMPT_FLUSH_DELAY, 0L);
-            return new ServerCandidate(t, requestLatency, flushDelay);
+            return new ServerCandidate(t, requestLatency);
           } catch (Throwable ex) {
             logger.warn(String.format("Detected unreachable host %s", host), ex);
             unreachableHosts.add(host);
             return null;
           }
         })
-            .filter(t -> t != null && t.getShuffleDataFlushDelay() < maxFlushDelay)
-            .sorted(Comparator.comparingLong(ServerCandidate::getShuffleDataFlushDelay))
+            .sorted(Comparator.comparingLong(ServerCandidate::getRequestLatency))
             .collect(Collectors.toList());
 
         for (String unreachableHost : unreachableHosts) {

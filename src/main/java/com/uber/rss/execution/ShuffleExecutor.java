@@ -112,8 +112,6 @@ public class ShuffleExecutor {
     // a background executor service doing clean up work
     private final ScheduledExecutorService lowPriorityExecutorService = new DefaultEventLoop();
 
-    private final MovingAverageCalculator mapAttemptFlushDelayAverage = new MovingAverageCalculator(100);
-
     /***
      * Create an instance.
      * @param rootDir root directory.
@@ -357,15 +355,12 @@ public class ShuffleExecutor {
         return persistedBytes;
     }
 
-    public void closePartitionFiles(AppShufflePartitionId appShufflePartitionId) {
-      ExecutorShuffleStageState stageState = getStageState(appShufflePartitionId.getAppShuffleId());
-      stageState.closeWriter(appShufflePartitionId.getPartitionId());
-    }
-
     public void finishShuffleStage(AppShuffleId appShuffleId) {
       ExecutorShuffleStageState stageState = getStageState(appShuffleId);
       synchronized (stageState) {
         if (!stageState.isStateSaved()) {
+          stageState.closeWriters();
+
           List<PartitionFilePathAndLength> persistedBytes = stageState.getPersistedBytesSnapshots();
           stateStore.storeTaskAttemptCommit(appShuffleId, stageState.getCommittedTaskIds(), persistedBytes);
           stateStore.commit();
@@ -471,10 +466,6 @@ public class ShuffleExecutor {
             throw new RuntimeException("AppTaskAttemptId not finished: "
                     + appTaskAttemptId);
         }
-    }
-
-    public long getAverageMapAttemptFlushDelay() {
-      return mapAttemptFlushDelayAverage.getAverage();
     }
 
     public void checkAppMaxWriteBytes(String appId) {

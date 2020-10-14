@@ -166,7 +166,6 @@ public class DownloadChannelInboundHandler extends ChannelInboundHandlerAdapter 
         byte responseStatus = shuffleStageStatus.transformToMessageResponseStatus();
         if (dataAvailable) {
             // TODO optimize following and run them asynchronously and only run once for each stage
-            downloadServerHandler.closePartitionFiles(appShufflePartitionId);
             downloadServerHandler.finishShuffleStage(appShufflePartitionId.getAppShuffleId());
 
             List<FilePathAndLength> files = downloadServerHandler.getNonEmptyPartitionFiles(connectionInfo);

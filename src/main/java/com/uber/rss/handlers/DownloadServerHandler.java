@@ -130,10 +130,6 @@ public class DownloadServerHandler {
         return persistedBytes;
     }
 
-    public void closePartitionFiles(AppShufflePartitionId appShufflePartitionId) {
-        executor.closePartitionFiles(appShufflePartitionId);
-    }
-
     public void finishShuffleStage(AppShuffleId appShuffleId) {
         executor.finishShuffleStage(appShuffleId);
     }

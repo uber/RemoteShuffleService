@@ -116,10 +116,6 @@ public class UploadServerHandler {
             appShuffleId, shuffleDataWrapper.getTaskAttemptId(), shuffleDataWrapper.getPartitionId(), Unpooled.wrappedBuffer(shuffleDataWrapper.getBytes())));
     }
 
-    public long getAverageMapAttemptFlushDelay() {
-        return executor.getAverageMapAttemptFlushDelay();
-    }
-
     public void finishUpload(long taskAttemptId) {
         AppShuffleId appShuffleId = getAppShuffleId(taskAttemptId);
         finishUploadImpl(appShuffleId, taskAttemptId);
