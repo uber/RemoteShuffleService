@@ -523,46 +523,18 @@ public class ShuffleExecutor {
         }
     }
 
-    private void flushPartitions(Collection<AppTaskAttemptId> appTaskAttemptIds) {
-      if (appTaskAttemptIds.isEmpty()) {
-        return;
-      }
+    private void saveShuffleStage(ExecutorShuffleStageState stageState) {
+      synchronized (stageState) {
+        if (!stageState.isStateSaved()) {
+          stageState.closeWriters();
 
-      List<AppShuffleId> appShuffleIds = appTaskAttemptIds.stream().map(t->t.getAppShuffleId()).distinct().collect(Collectors.toList());
-      if (appShuffleIds.size() != 1) {
-        throw new RssInvalidStateException(
-            String.format("flushPartitions should be only for 1 shuffle stage, but has %s stages: %s", appShuffleIds.size(), appShuffleIds));
-      }
-        AppShuffleId appShuffleId = appShuffleIds.get(0);
-        ExecutorShuffleStageState stageState = getStageState(appShuffleId);
-        synchronized (stageState) {
-          try {
-              stageState.flushAllPartitions();
-              for (AppTaskAttemptId appTaskAttemptId: appTaskAttemptIds) {
-                  stageState.commitMapTask(appTaskAttemptId.getMapId(), appTaskAttemptId.getTaskAttemptId());
-                  logger.info("CommitTask, {}, task {}.{}", appShuffleId, appTaskAttemptId.getMapId(), appTaskAttemptId.getTaskAttemptId());
-              }
-              List<MapTaskAttemptId> mapTaskAttemptIds = appTaskAttemptIds.stream()
-                  .map(t->new MapTaskAttemptId(t.getMapId(), t.getTaskAttemptId())).collect(Collectors.toList());
-              stateStore.storeTaskAttemptCommit(appShuffleId, mapTaskAttemptIds, stageState.getPersistedBytesSnapshots());
-
-              if (stageState.allLatestTaskAttemptsCommitted()) {
-                  stageState.closeWriters();
-                  long persistedBytes = stageState.getPersistedBytes();
-              }
-          } catch (Throwable ex) {
-              M3Stats.addException(ex, this.getClass().getSimpleName());
-              logger.warn("Failed to flush partitions: " + appShuffleId, ex);
-              stageState.setFileCorrupted();
-              stateStore.storeStageCorruption(stageState.getAppShuffleId());
-          }
-        }
-
-        long currentTime = System.currentTimeMillis();
-        if (currentTime - stateStoreLastCommitTime >= stateCommitIntervalMillis) {
-          stateStoreLastCommitTime = currentTime;
+          List<PartitionFilePathAndLength> persistedBytes = stageState.getPersistedBytesSnapshots();
+          stateStore.storeTaskAttemptCommit(stageState.getAppShuffleId(), stageState.getCommittedTaskIds(), persistedBytes);
           stateStore.commit();
+
+          stageState.markStateSaved();
         }
+      }
     }
 
     private void printInternalState() {
