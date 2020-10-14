@@ -69,7 +69,7 @@ public class DataBlockSocketReadClient extends com.uber.rss.clients.ClientBase {
 
   private final String user;
   private final AppShufflePartitionId appShufflePartitionId;
-  private final List<Long> fetchTaskAttemptIds;
+  private final Set<Long> fetchTaskAttemptIds;
   private final long dataAvailablePollInterval;
   private final long dataAvailableWaitTime;
 
@@ -90,7 +90,7 @@ public class DataBlockSocketReadClient extends com.uber.rss.clients.ClientBase {
     super(host, port, timeoutMillis);
     this.user = user;
     this.appShufflePartitionId = appShufflePartitionId;
-    this.fetchTaskAttemptIds = new ArrayList<>(fetchTaskAttemptIds).stream().sorted().collect(Collectors.toList());
+    this.fetchTaskAttemptIds = new HashSet<>(fetchTaskAttemptIds);
     this.dataAvailablePollInterval = dataAvailablePollInterval;
     this.dataAvailableWaitTime = dataAvailableWaitTime;
 
@@ -156,10 +156,11 @@ public class DataBlockSocketReadClient extends com.uber.rss.clients.ClientBase {
         throw new RssInvalidDataException("MapTaskCommitStatus should not be null");
       }
       this.commitTaskAttemptIds = new HashSet<>(this.commitMapTaskCommitStatus.getTaskAttemptIds().values());
-
-      // TODO delete commitTaskAttemptIds field and following later
       if (!this.commitTaskAttemptIds.containsAll(fetchTaskAttemptIds)) {
-        throw new RssInvalidDataException(String.format("Task attempt ids not matched"));
+        throw new RssInvalidDataException(String.format(
+            "Task attempt ids not matched, committed: %s, fetching: %s",
+            this.commitTaskAttemptIds,
+            fetchTaskAttemptIds));
       }
     }
 
@@ -222,15 +223,11 @@ public class DataBlockSocketReadClient extends com.uber.rss.clients.ClientBase {
       throw new RssInvalidDataException("MapTaskCommitStatus should not be null");
     }
     this.commitTaskAttemptIds = new HashSet<>(this.commitMapTaskCommitStatus.getTaskAttemptIds().values());
-
-    // TODO delete commitTaskAttemptIds and following later
-    if (!this.fetchTaskAttemptIds.isEmpty()) {
-      if (!new HashSet<>(this.commitTaskAttemptIds).containsAll(this.fetchTaskAttemptIds)) {
-        throw new RssInvalidDataException(String.format(
-            "Task attempt ids not matched, committed: %s, fetching: %s",
-            this.commitTaskAttemptIds,
-            this.fetchTaskAttemptIds));
-      }
+    if (!this.commitTaskAttemptIds.containsAll(fetchTaskAttemptIds)) {
+      throw new RssInvalidDataException(String.format(
+          "Task attempt ids not matched, committed: %s, fetching: %s",
+          this.commitTaskAttemptIds,
+          fetchTaskAttemptIds));
     }
 
     return getDataAvailabilityRetryResult;

@@ -336,6 +336,8 @@ public class ShuffleExecutor {
           lowPriorityExecutorService.shutdown();
         }
 
+        stageStates.values().parallelStream().forEach(stageState -> saveShuffleStage(stageState));
+
         System.out.println(String.format("%s Close state store during shutdown", System.currentTimeMillis()));
 
         stateStore.close();
@@ -357,16 +359,7 @@ public class ShuffleExecutor {
 
     public void finishShuffleStage(AppShuffleId appShuffleId) {
       ExecutorShuffleStageState stageState = getStageState(appShuffleId);
-      synchronized (stageState) {
-        if (!stageState.isStateSaved()) {
-          stageState.closeWriters();
-
-          List<PartitionFilePathAndLength> persistedBytes = stageState.getPersistedBytesSnapshots();
-          stateStore.storeTaskAttemptCommit(appShuffleId, stageState.getCommittedTaskIds(), persistedBytes);
-          stateStore.commit();
-          stageState.markStateSaved();
-        }
-      }
+      saveShuffleStage(stageState);
     }
 
     /**
@@ -517,6 +510,20 @@ public class ShuffleExecutor {
         } else {
           throw new RssShuffleStageNotStartedException("No shuffle stage found: " + appShuffleId);
         }
+    }
+
+    private void saveShuffleStage(ExecutorShuffleStageState stageState) {
+      synchronized (stageState) {
+        if (!stageState.isStateSaved()) {
+          stageState.closeWriters();
+
+          List<PartitionFilePathAndLength> persistedBytes = stageState.getPersistedBytesSnapshots();
+          stateStore.storeTaskAttemptCommit(stageState.getAppShuffleId(), stageState.getCommittedTaskIds(), persistedBytes);
+          stateStore.commit();
+
+          stageState.markStateSaved();
+        }
+      }
     }
 
     private void printInternalState() {
