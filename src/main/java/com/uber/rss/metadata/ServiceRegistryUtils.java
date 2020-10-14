@@ -94,6 +94,7 @@ public class ServiceRegistryUtils {
             return null;
           }
         })
+            .filter(t -> t != null)
             .sorted(Comparator.comparingLong(ServerCandidate::getRequestLatency))
             .collect(Collectors.toList());
 
