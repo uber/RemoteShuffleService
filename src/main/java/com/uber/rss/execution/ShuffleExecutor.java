@@ -364,9 +364,14 @@ public class ShuffleExecutor {
 
     public void finishShuffleStage(AppShuffleId appShuffleId) {
       ExecutorShuffleStageState stageState = getStageState(appShuffleId);
-      List<PartitionFilePathAndLength> persistedBytes = stageState.getPersistedBytesSnapshots();
-      stateStore.storeTaskAttemptCommit(appShuffleId, stageState.getCommittedTaskIds(), persistedBytes);
-      stateStore.commit();
+      synchronized (stageState) {
+        if (!stageState.isStateSaved()) {
+          List<PartitionFilePathAndLength> persistedBytes = stageState.getPersistedBytesSnapshots();
+          stateStore.storeTaskAttemptCommit(appShuffleId, stageState.getCommittedTaskIds(), persistedBytes);
+          stateStore.commit();
+          stageState.markStateSaved();
+        }
+      }
     }
 
     /**

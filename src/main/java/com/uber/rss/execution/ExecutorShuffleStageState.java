@@ -62,6 +62,8 @@ public class ExecutorShuffleStageState {
 
     private final TaskAttemptCollection taskAttempts = new TaskAttemptCollection();
 
+    private boolean stateSaved = false;
+
     /***
      * Create an stage state instance
      * @param appShuffleId app shuffle id
@@ -294,7 +296,15 @@ public class ExecutorShuffleStageState {
         return fileStatus;
     }
 
-    @Override
+    public synchronized boolean isStateSaved() {
+      return stateSaved;
+    }
+
+    public synchronized void markStateSaved() {
+      this.stateSaved = true;
+    }
+
+  @Override
     public synchronized String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append(String.format("ExecutorShuffleStageState %s:", appShuffleId));
