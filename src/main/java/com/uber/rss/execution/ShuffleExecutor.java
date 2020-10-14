@@ -306,9 +306,9 @@ public class ShuffleExecutor {
         ExecutorShuffleStageState stageState = getStageState(appShuffleId);
         synchronized (stageState) {
           stageState.commitMapTask(taskAttemptId);
-
-          logger.info("CommitTask: {}, {}", appShuffleId, taskAttemptId);
         }
+
+        logger.info("CommitTask: {}, {}", appShuffleId, taskAttemptId);
     }
 
     /***
