@@ -15,20 +15,21 @@
 package com.uber.rss.common;
 
 import com.uber.rss.exceptions.RssInvalidDataException;
+import com.uber.rss.util.StringUtils;
 import io.netty.buffer.ByteBuf;
-import org.apache.commons.lang3.StringUtils;
 
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 public class MapTaskCommitStatus {
     public void serialize(ByteBuf buf) {
         buf.writeInt(getTaskAttemptIds().size());
-        getTaskAttemptIds().forEach((mapId, taskId) -> {
-            buf.writeInt(mapId);
+        taskAttemptIds.forEach(taskId -> {
             buf.writeLong(taskId);
         });
     }
@@ -36,25 +37,24 @@ public class MapTaskCommitStatus {
     public static MapTaskCommitStatus deserialize(ByteBuf buf) {
         int size = buf.readInt();
 
+        Set<Long> ids = new HashSet<>();
         Map<Integer, Long> hashMap = new HashMap<>();
         for (int i = 0; i < size; i++) {
-            int mapId = buf.readInt();
             long taskId = buf.readLong();
-            hashMap.put(mapId, taskId);
+            ids.add(taskId);
         }
 
-        return new MapTaskCommitStatus(hashMap);
+        return new MapTaskCommitStatus(ids);
     }
 
-    // Last successful attempt ids for each mapper id
-    private final Map<Integer, Long> taskAttemptIds;
+    // Last successful attempt ids
+    private final Set<Long> taskAttemptIds;
 
-    // TODO spark 3.0 remove key in taskAttemptIds map
-    public MapTaskCommitStatus(Map<Integer, Long> taskAttemptIds) {
-        this.taskAttemptIds = taskAttemptIds;
+    public MapTaskCommitStatus(Set<Long> taskAttemptIds) {
+        this.taskAttemptIds = new HashSet<>(taskAttemptIds);
     }
 
-    public Map<Integer, Long> getTaskAttemptIds() {
+    public Set<Long> getTaskAttemptIds() {
         return taskAttemptIds;
     }
 
@@ -64,9 +64,7 @@ public class MapTaskCommitStatus {
             throw new RssInvalidDataException("fetchTaskAttemptIds cannot be empty");
         }
 
-        // TODO improve performance in following
-        return new HashSet<>(taskAttemptIds.values())
-            .containsAll(fetchTaskAttemptIds);
+        return taskAttemptIds.containsAll(fetchTaskAttemptIds);
     }
 
     public String toShortString() {
@@ -78,7 +76,8 @@ public class MapTaskCommitStatus {
 
     @Override
     public String toString() {
-        String str = StringUtils.join(taskAttemptIds.values(), ',');
+        List<Long> sorted = taskAttemptIds.stream().sorted().collect(Collectors.toList());
+        String str = StringUtils.toString4SortedNumberList(sorted);
         return "MapTaskCommitStatus{" +
                 ", taskAttemptIds=" + str +
                 '}';

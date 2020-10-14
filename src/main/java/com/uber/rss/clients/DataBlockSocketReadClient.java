@@ -48,13 +48,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.InputStream;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -154,7 +151,7 @@ public class DataBlockSocketReadClient extends com.uber.rss.clients.ClientBase {
       if (this.commitMapTaskCommitStatus == null) {
         throw new RssInvalidDataException("MapTaskCommitStatus should not be null");
       }
-      this.commitTaskAttemptIds = new HashSet<>(this.commitMapTaskCommitStatus.getTaskAttemptIds().values());
+      this.commitTaskAttemptIds = this.commitMapTaskCommitStatus.getTaskAttemptIds();
       if (!this.commitTaskAttemptIds.containsAll(fetchTaskAttemptIds)) {
         throw new RssInvalidDataException(String.format(
             "Task attempt ids not matched, committed: %s, fetching: %s",
@@ -205,11 +202,11 @@ public class DataBlockSocketReadClient extends com.uber.rss.clients.ClientBase {
         if (mapTaskCommitStatus.getTaskAttemptIds().isEmpty()) {
           taskAttemptIdInfo = String.format("no task attempt committed");
         } else {
-          List<Long> taskAttemptIds = mapTaskCommitStatus.getTaskAttemptIds().values().stream().collect(Collectors.toList());
+          List<Long> taskAttemptIds = mapTaskCommitStatus.getTaskAttemptIds().stream().collect(Collectors.toList());
           Collections.sort(taskAttemptIds);
           taskAttemptIdInfo = String.format("committed task ids: %s, fetching tasks: %s",
-              StringUtils.toString4SortedIntList(taskAttemptIds),
-              StringUtils.toString4SortedIntList(fetchTaskAttemptIds.stream().sorted().collect(Collectors.toList())));
+              StringUtils.toString4SortedNumberList(taskAttemptIds),
+              StringUtils.toString4SortedNumberList(fetchTaskAttemptIds.stream().sorted().collect(Collectors.toList())));
         }
       }
       throw new RssShuffleDataNotAvailableException(String.format(
@@ -221,7 +218,7 @@ public class DataBlockSocketReadClient extends com.uber.rss.clients.ClientBase {
     if (this.commitMapTaskCommitStatus == null) {
       throw new RssInvalidDataException("MapTaskCommitStatus should not be null");
     }
-    this.commitTaskAttemptIds = new HashSet<>(this.commitMapTaskCommitStatus.getTaskAttemptIds().values());
+    this.commitTaskAttemptIds = this.commitMapTaskCommitStatus.getTaskAttemptIds();
     if (!this.commitTaskAttemptIds.containsAll(fetchTaskAttemptIds)) {
       throw new RssInvalidDataException(String.format(
           "Task attempt ids not matched, committed: %s, fetching: %s",

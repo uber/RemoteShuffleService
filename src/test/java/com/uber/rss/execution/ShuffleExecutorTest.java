@@ -219,7 +219,7 @@ public class ShuffleExecutorTest {
         ShuffleStageStatus status = executor.getShuffleStageStatus(appShuffleId);
         Assert.assertEquals(status.getFileStatus(), ShuffleStageStatus.FILE_STATUS_OK);
         Assert.assertEquals(status.getMapTaskCommitStatus().getTaskAttemptIds().size(), 1);
-        Assert.assertEquals(status.getMapTaskCommitStatus().getTaskAttemptIds().values().stream().findFirst().get(), (Long)taskAttemptId);
+        Assert.assertEquals(status.getMapTaskCommitStatus().getTaskAttemptIds().stream().findFirst().get(), (Long)taskAttemptId);
 
         List<FilePathAndLength> pathAndLengths = executor.getPersistedBytes(appShuffleId, partition);
         Assert.assertEquals(pathAndLengths, writtenPartitionFiles);

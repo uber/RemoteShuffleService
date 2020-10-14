@@ -276,15 +276,7 @@ public class ExecutorShuffleStageState {
    */
   public synchronized ShuffleStageStatus getShuffleStageStatus() {
     List<Long> committedMapTaskIds = taskAttempts.getCommittedTaskIds();
-    // TODO this is for backward compatibility, remove this later
-    Map<Integer, Long> legacyMap = new HashMap<>();
-    for (long entry: committedMapTaskIds) {
-      if (entry > Integer.MAX_VALUE) {
-        throw new RssInvalidDataException("Does not support large task attempt id: " + entry);
-      }
-      legacyMap.put((int)entry, entry);
-    }
-    MapTaskCommitStatus mapTaskCommitStatus = new MapTaskCommitStatus(legacyMap);
+    MapTaskCommitStatus mapTaskCommitStatus = new MapTaskCommitStatus(new HashSet<>(committedMapTaskIds));
     return new ShuffleStageStatus(fileStatus, mapTaskCommitStatus);
   }
 

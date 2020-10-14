@@ -72,7 +72,7 @@ public class StringUtils {
    * @param list
    * @return
    */
-    public static <T extends Number> String toString4SortedIntList(List<T> list) {
+    public static <T extends Number> String toString4SortedNumberList(List<T> list) {
       if (list == null || list.isEmpty()) {
         return "";
       }

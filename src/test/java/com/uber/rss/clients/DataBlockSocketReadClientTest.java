@@ -89,7 +89,7 @@ public class DataBlockSocketReadClientTest {
             try (DataBlockSocketReadClient readClient = new DataBlockSocketReadClient("localhost", testServer1.getShufflePort(), TestConstants.NETWORK_TIMEOUT, "user1", appShufflePartitionId, Arrays.asList(appTaskAttemptId.getTaskAttemptId()), TestConstants.DATA_AVAILABLE_POLL_INTERVAL, TestConstants.DATA_AVAILABLE_TIMEOUT)) {
                 ConnectDownloadResponse connectDownloadResponse = readClient.connect();
                 Assert.assertEquals(connectDownloadResponse.getMapTaskCommitStatus().getTaskAttemptIds().size(), 1);
-                Assert.assertEquals(connectDownloadResponse.getMapTaskCommitStatus().getTaskAttemptIds().values().stream().findFirst().get(), (Long)taskAttemptId);
+                Assert.assertEquals(connectDownloadResponse.getMapTaskCommitStatus().getTaskAttemptIds().stream().findFirst().get(), (Long)taskAttemptId);
                 Assert.assertTrue(connectDownloadResponse.isDataAvailable());
             }
         } finally {
@@ -156,7 +156,7 @@ public class DataBlockSocketReadClientTest {
             Assert.assertTrue(getDataAvailabilityResponse.isDataAvailable());
 
             Assert.assertEquals(getDataAvailabilityResponse.getMapTaskCommitStatus().getTaskAttemptIds().size(), 1);
-            Assert.assertEquals(getDataAvailabilityResponse.getMapTaskCommitStatus().getTaskAttemptIds().values().stream().findFirst().get(), (Long)taskAttemptId2);
+            Assert.assertEquals(getDataAvailabilityResponse.getMapTaskCommitStatus().getTaskAttemptIds().stream().findFirst().get(), (Long)taskAttemptId2);
 
             readClient.close();
         } finally {
