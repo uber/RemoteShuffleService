@@ -6,15 +6,9 @@ on remote servers. See more details on Spark community document:
 
 Please contact us (**remoteshuffleservice@googlegroups.com**) for any question or feedback.
 
-## Current Limitation
+## Supported Spark Version
 
-- To work with this Remote Shuffle Service, Spark applications need to keep following configures as false (or do not set them since their default values are false). We are still actively developing and may support those configures in the future.:
-```
-spark.shuffle.service.enabled=false
-spark.speculation=false
-```
-
-- The supported Spark version in master branch is Spark 2.4.x. We have a branch **spark30** to support Spark 3.0.x.
+- The **master** branch supports **Spark 2.4.x**. The **spark30** branch supports **Spark 3.0.x**.
 
 ## How to Build
 

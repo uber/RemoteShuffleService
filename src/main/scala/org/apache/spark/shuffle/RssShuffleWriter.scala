@@ -21,8 +21,7 @@ import com.uber.rss.clients.ShuffleDataWriter
 import com.uber.rss.common.{AppTaskAttemptId, ServerList}
 import com.uber.rss.exceptions.RssInvalidStateException
 import com.uber.rss.metrics.ShuffleClientStageMetrics
-import io.netty.buffer.Unpooled
-import net.jpountz.lz4.{LZ4Compressor, LZ4Factory}
+import net.jpountz.lz4.LZ4Factory
 import org.apache.spark.ShuffleDependency
 import org.apache.spark.executor.ShuffleWriteMetrics
 import org.apache.spark.internal.Logging
@@ -31,16 +30,16 @@ import org.apache.spark.serializer.Serializer
 import org.apache.spark.shuffle.rss.{BufferManagerOptions, RssUtils, WriteBufferManager}
 
 class RssShuffleWriter[K, V, C](
-                                 user: String,
-                                 rssServers: ServerList,
-                                 writeClient: ShuffleDataWriter,
-                                 mapInfo: AppTaskAttemptId,
-                                 serializer: Serializer,
-                                 bufferOptions: BufferManagerOptions,
-                                 shuffleDependency: ShuffleDependency[K, V, C],
-                                 stageMetrics: ShuffleClientStageMetrics,
-                                 shuffleWriteMetrics: ShuffleWriteMetricsReporter)
-    extends ShuffleWriter[K, V] with Logging {
+    user: String,
+    rssServers: ServerList,
+    writeClient: ShuffleDataWriter,
+    mapInfo: AppTaskAttemptId,
+    numMaps: Int,
+    serializer: Serializer,
+    bufferOptions: BufferManagerOptions,
+    shuffleDependency: ShuffleDependency[K, V, C],
+    stageMetrics: ShuffleClientStageMetrics,
+    shuffleWriteMetrics: ShuffleWriteMetrics) extends ShuffleWriter[K, V] with Logging {
 
   logInfo(s"Using ShuffleWriter: ${this.getClass.getSimpleName}, map task: $mapInfo, buffer: $bufferOptions")
 
@@ -49,6 +48,7 @@ class RssShuffleWriter[K, V, C](
   private val shouldPartition = numPartitions > 1
 
   private val writeClientCloseLock = new Object()
+  private var mapStatus: MapStatus = null
 
   private val bufferManager = new WriteBufferManager(
     serializer = serializer,
@@ -57,8 +57,6 @@ class RssShuffleWriter[K, V, C](
     spillSize = bufferOptions.bufferSpillThreshold)
 
   private val compressor = LZ4Factory.fastestInstance.fastCompressor
-
-  private var mapStatus: MapStatus = null
 
   private def getPartition(key: K): Int = {
     if (shouldPartition) partitioner.getPartition(key) else 0
@@ -70,7 +68,6 @@ class RssShuffleWriter[K, V, C](
     var numRecords = 0
 
     val startUploadStartTime = System.nanoTime()
-    val numMaps = Integer.MAX_VALUE // TODO hack for Spark 3.0, remove this later
     writeClient.startUpload(mapInfo, numMaps, numPartitions)
     val startUploadTime = System.nanoTime() - startUploadStartTime
 
@@ -103,7 +100,6 @@ class RssShuffleWriter[K, V, C](
         spilledData = bufferManager.addRecord(partition, record)
         serializeTime += (System.nanoTime() - serializeStartTime)
       }
-
       sendDataBlocks(spilledData, partitionLengths)
 
       numRecords = numRecords + 1
@@ -128,8 +124,9 @@ class RssShuffleWriter[K, V, C](
 
     // fill non-zero length
     val nonZeroPartitionLengths = partitionLengths.map(x => if (x == 0) 1 else x)
+
     val blockManagerId = RssUtils.createMapTaskDummyBlockManagerId(mapInfo.getMapId, mapInfo.getTaskAttemptId, rssServers)
-    mapStatus = MapStatus(blockManagerId, nonZeroPartitionLengths, mapInfo.getMapId)
+    mapStatus = MapStatus(blockManagerId, nonZeroPartitionLengths, mapInfo.getTaskAttemptId)
 
     closeWriteClientAsync()
   }
