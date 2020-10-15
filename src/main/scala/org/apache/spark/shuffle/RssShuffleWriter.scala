@@ -34,12 +34,11 @@ class RssShuffleWriter[K, V, C](
     rssServers: ServerList,
     writeClient: ShuffleDataWriter,
     mapInfo: AppTaskAttemptId,
-    numMaps: Int,
     serializer: Serializer,
     bufferOptions: BufferManagerOptions,
     shuffleDependency: ShuffleDependency[K, V, C],
     stageMetrics: ShuffleClientStageMetrics,
-    shuffleWriteMetrics: ShuffleWriteMetrics) extends ShuffleWriter[K, V] with Logging {
+    shuffleWriteMetrics: ShuffleWriteMetricsReporter) extends ShuffleWriter[K, V] with Logging {
 
   logInfo(s"Using ShuffleWriter: ${this.getClass.getSimpleName}, map task: $mapInfo, buffer: $bufferOptions")
 
@@ -68,6 +67,7 @@ class RssShuffleWriter[K, V, C](
     var numRecords = 0
 
     val startUploadStartTime = System.nanoTime()
+    val numMaps = Integer.MAX_VALUE // TODO remove this for Spark 3.0
     writeClient.startUpload(mapInfo, numMaps, numPartitions)
     val startUploadTime = System.nanoTime() - startUploadStartTime
 
