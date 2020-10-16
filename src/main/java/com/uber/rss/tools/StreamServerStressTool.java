@@ -131,9 +131,6 @@ public class StreamServerStressTool {
     // Total number of bytes for all map tasks to generate
     private long numBytes = 100*1024*1024;
 
-    // Whether to use fsyncEnabled in stream server
-    private boolean fsyncEnabled = true;
-
     private int writeClientQueueSize = 100;
     private int writeClientThreads = 4;
 
@@ -267,10 +264,6 @@ public class StreamServerStressTool {
 
     public void setNumBytes(long numBytes) {
         this.numBytes = numBytes;
-    }
-
-    public void setFsyncEnabled(boolean fsyncEnabled) {
-        this.fsyncEnabled = fsyncEnabled;
     }
 
     public void setWriteClientQueueSize(int writeClientQueueSize) {
@@ -545,7 +538,6 @@ public class StreamServerStressTool {
                 ", mapDelay=" + mapDelay +
                 ", mapSlowness=" + mapSlowness +
                 ", maxWait=" + maxWait +
-                ", fsyncEnabled=" + fsyncEnabled +
                 ", writeClientQueueSize=" + writeClientQueueSize +
                 ", writeClientThreads=" + writeClientThreads +
                 ", deleteFiles=" + deleteFiles +
@@ -725,7 +717,6 @@ public class StreamServerStressTool {
             serverConfig.setNettyAcceptThreads(numServerThreads);
             serverConfig.setNettyWorkerThreads(numServerThreads);
             serverConfig.setStorage(storage);
-            serverConfig.setFsyncEnabled(fsyncEnabled);
             serverConfig.setShufflePort(0);
             serverConfig.setHttpPort(0);
             serverConfig.setRootDirectory(serverDirFullPath);
@@ -786,8 +777,6 @@ public class StreamServerStressTool {
                 tool.numServers = Integer.parseInt(args[i++]);
             } else if (argName.equalsIgnoreCase("-numServerThreads")) {
                 tool.numServerThreads = Integer.parseInt(args[i++]);
-            } else if (argName.equalsIgnoreCase("-fsyncEnabled")) {
-                tool.fsyncEnabled = Boolean.parseBoolean(args[i++]);
             } else if (argName.equalsIgnoreCase("-writeClientQueueSize")) {
                 tool.writeClientQueueSize = Integer.parseInt(args[i++]);
             } else if (argName.equalsIgnoreCase("-writeClientThreads")) {
