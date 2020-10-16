@@ -83,8 +83,6 @@ public class ShuffleExecutor {
 
     public static final long DEFAULT_APP_MAX_WRITE_BYTES = 3*1024L*1024L*1024L*1024L; // 3TB
 
-    public static final long DEFAULT_STATE_COMMIT_INTERVAL_MILLIS = 0;
-
     private final int INTERNAL_WAKEUP_MILLIS = 1000;
 
     private final String rootDir;
@@ -98,14 +96,10 @@ public class ShuffleExecutor {
             = new ConcurrentHashMap<>();
 
     private final StateStore stateStore;
-    private final long stateCommitIntervalMillis;
-    private volatile long stateStoreLastCommitTime = 0;
 
     private final ShuffleStorage storage;
 
     private final long appRetentionMillis;
-
-    private final String fileCompressionCodec;
 
     private final long appMaxWriteBytes;
 
@@ -117,30 +111,24 @@ public class ShuffleExecutor {
      * @param rootDir root directory.
      */
     public ShuffleExecutor(String rootDir) {
-        this(rootDir, new ShuffleFileStorage(), false, DEFAULT_APP_MEMORY_RETENTION_MILLIS, null, DEFAULT_APP_MAX_WRITE_BYTES, DEFAULT_STATE_COMMIT_INTERVAL_MILLIS);
+        this(rootDir, new ShuffleFileStorage(), DEFAULT_APP_MEMORY_RETENTION_MILLIS, DEFAULT_APP_MAX_WRITE_BYTES);
     }
 
     /***
      * Create an instance.
      * @param rootDir
-     * @param useDaemonThread whether to use daemon thread
      */
     public ShuffleExecutor(String rootDir,
                            ShuffleStorage storage,
-                           boolean useDaemonThread,
                            long appRetentionMillis,
-                           String fileCompressionCodec,
-                           long appMaxWriteBytes,
-                           long stateCommitIntervalMillis) {
-        logger.info("Started with rootDir={}, storage={}, useDaemonThread={}, appRetentionMillis={}",
-                rootDir, storage, useDaemonThread, appRetentionMillis);
+                           long appMaxWriteBytes) {
+        logger.info("Started with rootDir={}, storage={}, appRetentionMillis={}",
+                rootDir, storage, appRetentionMillis);
         this.rootDir = rootDir;
         this.stateStore = new LocalFileStateStore(rootDir);
         this.storage = storage;
         this.appRetentionMillis = appRetentionMillis;
-        this.fileCompressionCodec = fileCompressionCodec;
         this.appMaxWriteBytes = appMaxWriteBytes;
-        this.stateCommitIntervalMillis = stateCommitIntervalMillis;
 
         loadStateStore();
 
@@ -172,14 +160,6 @@ public class ShuffleExecutor {
     public ScheduledExecutorService getLowPriorityExecutorService() {
         return lowPriorityExecutorService;
       }
-
-  /**
-     * Get shuffle file compression codec;
-     * @return
-     */
-    public String getFileCompressionCodec() {
-        return fileCompressionCodec;
-    }
 
     public void loadStateStore() {
         long startTime = System.currentTimeMillis();

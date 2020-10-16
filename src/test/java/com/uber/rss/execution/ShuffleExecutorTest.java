@@ -86,7 +86,7 @@ public class ShuffleExecutorTest {
 
         String rootDir = Files.createTempDirectory("ShuffleExecutorTest_").toString();
         ShuffleExecutor executor = new ShuffleExecutor(
-                rootDir, new ShuffleFileStorage(), false, 60*1000L, null, ShuffleExecutor.DEFAULT_APP_MAX_WRITE_BYTES, ShuffleExecutor.DEFAULT_STATE_COMMIT_INTERVAL_MILLIS);
+                rootDir, new ShuffleFileStorage(), 60*1000L, ShuffleExecutor.DEFAULT_APP_MAX_WRITE_BYTES);
         
         AppShuffleId appShuffleId = new AppShuffleId(String.valueOf(System.nanoTime()), "exec1", 10);
         int numMaps = 3;

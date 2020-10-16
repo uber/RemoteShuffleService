@@ -111,11 +111,8 @@ public class StreamServer {
 
         this.shuffleExecutor = new ShuffleExecutor(serverConfig.getRootDirectory(),
                 serverConfig.getStorage(),
-                serverConfig.isDaemonExecutorThread(),
                 serverConfig.getAppMemoryRetentionMillis(),
-                "",
-                serverConfig.getAppMaxWriteBytes(),
-                serverConfig.getStateCommitIntervalMillis());
+                serverConfig.getAppMaxWriteBytes());
 
         channelManager = new UploadChannelManager();
         channelManager.setMaxConnections(serverConfig.getMaxConnections());

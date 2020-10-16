@@ -136,6 +136,8 @@ public class ExecutorShuffleStageState {
   }
 
   public synchronized void markMapAttemptStartUpload(long taskAttemptId) {
+    stateSaved = false;
+
     TaskAttemptIdAndState taskState = getTaskState(taskAttemptId);
     taskState.markStartUpload();
   }
@@ -173,19 +175,6 @@ public class ExecutorShuffleStageState {
     for (ShufflePartitionWriter writer: writers.values()) {
       writer.close();
     }
-  }
-
-  public synchronized void closeWriter(int partitionId) {
-    ShufflePartitionWriter writer = writers.get(partitionId);
-    if (writer == null) {
-      logger.info("Did not find partition writer for shuffle {} partition {}", appShuffleId, partitionId);
-      return;
-    }
-    writer.close();
-  }
-
-  public synchronized int getNumOpenedWriters() {
-    return (int)writers.values().stream().filter(t->!t.isClosed()).count();
   }
 
   /**
