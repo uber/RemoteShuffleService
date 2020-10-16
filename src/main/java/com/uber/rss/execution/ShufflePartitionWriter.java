@@ -43,16 +43,11 @@ public class ShufflePartitionWriter {
     private static final AtomicInteger numConcurrentWriteFilesAtomicInteger = new AtomicInteger();
     private static final Gauge numConcurrentWriteFiles = M3Stats.getDefaultScope().gauge("numConcurrentWriteFiles");
     private static final Counter numWriteFileBytes = M3Stats.getDefaultScope().counter("numWriteFileBytes");
-
-    // TODO optimize how to use timer, M3 timer causes performance issue, need to figure out another way
-    // private static final Timer flushLatency = M3Stats.getDefaultScope().timer("flushLatency");
-    // private static final Timer fsyncLatency = M3Stats.getDefaultScope().timer("fsyncLatency");
     
     private final AppShufflePartitionId shufflePartitionId;
     private final String filePathBase;
     private final int fileStartIndex;
     private final ShuffleStorage storage;
-    private final boolean fsync;
     
     private final ShuffleOutputStream[] outputStreams;
     private boolean closed = true;
@@ -67,13 +62,11 @@ public class ShufflePartitionWriter {
             String filePathBase,
             int fileStartIndex,
             ShuffleStorage storage,
-            boolean fsync,
             int numSplits) {
         this.shufflePartitionId = shufflePartitionId;
         this.filePathBase = filePathBase;
         this.fileStartIndex = fileStartIndex;
         this.storage = storage;
-        this.fsync = fsync;
         this.outputStreams = new ShuffleOutputStream[numSplits];
     }
 

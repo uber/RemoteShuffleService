@@ -92,7 +92,6 @@ public class RssZookeeperCluster {
                 streamServerConfig.setShufflePort(0);
                 streamServerConfig.setHttpPort(0);
                 streamServerConfig.setRootDirectory(rootDir);
-                streamServerConfig.setStateCommitIntervalMillis(0);
                 StreamServer streamServer = new StreamServer(streamServerConfig);
                 streamServer.run();
 

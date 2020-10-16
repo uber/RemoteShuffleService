@@ -15,13 +15,14 @@
 package com.uber.rss.storage;
 
 import com.uber.rss.exceptions.RssException;
+import com.uber.rss.exceptions.RssFileCorruptedException;
 import com.uber.rss.metrics.M3Stats;
 import com.uber.rss.util.CountedOutputStream;
+import com.uber.rss.util.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
-import java.io.FileDescriptor;
 import java.io.FileOutputStream;
 import java.io.OutputStream;
 
@@ -35,14 +36,12 @@ public class ShuffleFileOutputStream implements ShuffleOutputStream {
     private OutputStream outputStream;
     private long initialFileSize = 0L;
     private CountedOutputStream internalCountedOutputStream;
-    private final FileDescriptor fileDescriptor;
 
     public ShuffleFileOutputStream(File file) {
         this.filePath = file.getAbsolutePath();
         try {
             FileOutputStream fileOutputStream = new FileOutputStream(file, true);
             initialFileSize = fileOutputStream.getChannel().position();
-            fileDescriptor = fileOutputStream.getFD();
             outputStream = fileOutputStream;
             internalCountedOutputStream = new CountedOutputStream(outputStream);
             outputStream = internalCountedOutputStream;
@@ -62,38 +61,22 @@ public class ShuffleFileOutputStream implements ShuffleOutputStream {
         try {
             outputStream.write(bytes);
         } catch (Throwable e) {
-            throw new RuntimeException(
-                    "Failed to write file: " + filePath 
-                            + ", number of bytes: " + bytes.length, e);
-        }
-    }
-
-    @Override
-    public void flush() {
-        try {
-            outputStream.flush();
-        } catch (Throwable e) {
-            throw new RuntimeException("Failed to flush file: " + filePath, e);
-        }
-    }
-
-    @Override
-    public void fsync() {
-        try {
-            flush();
-            fileDescriptor.sync();
-        } catch (Throwable e) {
-            throw new RuntimeException("Failed to fsync file: " + filePath, e);
+            throw new RssFileCorruptedException(String.format(
+                "Failed to write %s bytes to file %s with exception %s",
+                bytes.length, filePath, ExceptionUtils.getSimpleMessage(e)),
+                e);
         }
     }
 
     @Override
     public void close() {
         try {
-            flush();
             outputStream.close();
         } catch (Throwable e) {
-            throw new RuntimeException("Failed to close file: " + filePath, e);
+            throw new RssFileCorruptedException(String.format(
+                "Failed to close file %s with exception %s",
+                filePath, ExceptionUtils.getSimpleMessage(e)),
+                e);
         }
     }
 

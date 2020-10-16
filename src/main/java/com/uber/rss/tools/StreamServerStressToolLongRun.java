@@ -39,7 +39,6 @@ public class StreamServerStressToolLongRun {
     private int maxNumPartitions = 100;
     private int maxNumSplits = 10;
     private int maxNumReplicas = 1;
-    private boolean fsyncEnabled = true;
     
     public void run() {
         long startTime = System.currentTimeMillis();
@@ -85,7 +84,6 @@ public class StreamServerStressToolLongRun {
             tool.setNumReplicas(numReplicas);
             tool.setPartitionFanout(partitionFanout);
             tool.setUseConnectionPool(useConnectionPool);
-            tool.setFsyncEnabled(fsyncEnabled);
             
             try {
                 logger.info("Running tool: " + tool);
@@ -144,8 +142,6 @@ public class StreamServerStressToolLongRun {
                 longRun.maxNumSplits = Integer.parseInt(args[i++]);
             } else if (argName.equalsIgnoreCase("-maxNumReplicas")) {
                 longRun.maxNumReplicas = Integer.parseInt(args[i++]);
-            } else if (argName.equalsIgnoreCase("-fsyncEnabled")) {
-                longRun.fsyncEnabled = Boolean.parseBoolean(args[i++]);
             } else {
                 throw new IllegalArgumentException("Unsupported argument: " + argName);
             }

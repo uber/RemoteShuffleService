@@ -91,9 +91,7 @@ class RssStressTool extends Logging {
   private var mapDelay = 1000
   // Whether to use connection pool
   private var useConnectionPool = false
-  // Whether to use fsyncEnabled in stream server
-  private var fsyncEnabled = false
-  private var writeClientQueueSize = 100
+  private var writeClientQueueSize = 0
   private var writeClientThreads = 4
 
   // Total number of test values to use. This tool wil generate a list of test values and use them
@@ -274,7 +272,6 @@ class RssStressTool extends Logging {
     serverConfig.setNettyAcceptThreads(numServerThreads)
     serverConfig.setNettyWorkerThreads(numServerThreads)
     serverConfig.setStorage(storage)
-    serverConfig.setFsyncEnabled(fsyncEnabled)
     serverConfig.setShufflePort(0)
     serverConfig.setHttpPort(0)
     serverConfig.setRootDirectory(serverDirFullPath)

@@ -57,13 +57,9 @@ public class StreamServerConfig {
 
   private ShuffleStorage storage = new ShuffleFileStorage();
 
-  private boolean isFsyncEnabled = true;
-
   private int throttleMemoryPercentage = 80;
 
   private long maxUploadPauseMillis = 1000;
-
-  private boolean isDaemonExecutorThread = false;
 
   // How long milliseconds before clean up each application after its last liveness update
   private long appMemoryRetentionMillis = ShuffleExecutor.DEFAULT_APP_MEMORY_RETENTION_MILLIS;
@@ -84,8 +80,6 @@ public class StreamServerConfig {
   private String registryServer = null;
 
   private int maxConnections = UploadChannelManager.DEFAULT_MAX_CONNECTIONS;
-
-  private String networkCompressionCodec = "";
 
   // use client side idle timeout plus one extra minute as server side idle timeout. so client could close idle connection
   // before server side closes it. also make sure that the timeout is at least as long as
@@ -130,8 +124,6 @@ public class StreamServerConfig {
         serverConfig.networkTimeout = Integer.parseInt(args[i++]);
       } else if (argName.equalsIgnoreCase("-networkRetries")) {
         serverConfig.networkRetries = Integer.parseInt(args[i++]);
-      } else if (argName.equalsIgnoreCase("-fsync")) {
-        serverConfig.isFsyncEnabled = Boolean.parseBoolean(args[i++]);
       } else if (argName.equalsIgnoreCase("-appMemoryRetentionMillis")) {
         serverConfig.appMemoryRetentionMillis = Long.parseLong(args[i++]);
       } else if (argName.equalsIgnoreCase("-appFileRetentionMillis")) {
@@ -146,8 +138,6 @@ public class StreamServerConfig {
         serverConfig.principal = args[i++];
       } else if (argName.equalsIgnoreCase("-memoryPercentage")) {
         serverConfig.throttleMemoryPercentage = Integer.parseInt(args[i++]);
-      } else if (argName.equalsIgnoreCase("-daemonThread")) {
-        serverConfig.isDaemonExecutorThread = Boolean.parseBoolean(args[i++]);
       } else if (argName.equalsIgnoreCase("-serviceRegistry")) {
         serverConfig.serviceRegistryType = args[i++].toLowerCase();
       } else if (argName.equalsIgnoreCase("-dataCenter")) {
@@ -160,10 +150,6 @@ public class StreamServerConfig {
         serverConfig.zooKeeperServersBackup = args[i++];
       } else if (argName.equalsIgnoreCase("-registryServer")) {
         serverConfig.registryServer = args[i++];
-      } else if (argName.equalsIgnoreCase("-networkCompressionCodec")) {
-        serverConfig.networkCompressionCodec = args[i++];
-      } else if (argName.equalsIgnoreCase("-stateCommitIntervalMillis")) {
-        serverConfig.stateCommitIntervalMillis = Long.parseLong(args[i++]);
       } else {
         throw new IllegalArgumentException("Unsupported argument: " + argName);
       }
@@ -262,14 +248,6 @@ public class StreamServerConfig {
     this.storage = storage;
   }
 
-  public boolean isFsyncEnabled() {
-    return isFsyncEnabled;
-  }
-
-  public void setFsyncEnabled(boolean isFsyncEnabled) {
-    this.isFsyncEnabled = isFsyncEnabled;
-  }
-
   public int getThrottleMemoryPercentage() {
     return throttleMemoryPercentage;
   }
@@ -284,14 +262,6 @@ public class StreamServerConfig {
 
   public void setMaxUploadPauseMillis(long maxUploadPauseMillis) {
     this.maxUploadPauseMillis = maxUploadPauseMillis;
-  }
-
-  public boolean isDaemonExecutorThread() {
-    return isDaemonExecutorThread;
-  }
-
-  public void setDaemonExecutorThread(boolean isDaemonExecutorThread) {
-    this.isDaemonExecutorThread = isDaemonExecutorThread;
   }
 
   public long getAppMemoryRetentionMillis() {
@@ -374,10 +344,6 @@ public class StreamServerConfig {
     this.maxConnections = maxConnections;
   }
 
-  public void setNetworkCompressionCodec(String networkCompressionCodec) {
-    this.networkCompressionCodec = networkCompressionCodec;
-  }
-
   public long getIdleTimeoutMillis() {
     return idleTimeoutMillis;
   }
@@ -394,14 +360,6 @@ public class StreamServerConfig {
     this.appMaxWriteBytes = appMaxWriteBytes;
   }
 
-  public long getStateCommitIntervalMillis() {
-    return stateCommitIntervalMillis;
-  }
-
-  public void setStateCommitIntervalMillis(long stateCommitIntervalMillis) {
-    this.stateCommitIntervalMillis = stateCommitIntervalMillis;
-  }
-
   @Override
   public String toString() {
     return "StreamServerConfig{" +
@@ -414,10 +372,8 @@ public class StreamServerConfig {
         ", networkBacklog=" + networkBacklog +
         ", networkTimeout=" + networkTimeout +
         ", storage=" + storage +
-        ", isFsyncEnabled=" + isFsyncEnabled +
         ", throttleMemoryPercentage=" + throttleMemoryPercentage +
         ", maxUploadPauseMillis=" + maxUploadPauseMillis +
-        ", isDaemonExecutorThread=" + isDaemonExecutorThread +
         ", appMemoryRetentionMillis=" + appMemoryRetentionMillis +
         ", appFileRetentionMillis=" + appFileRetentionMillis +
         ", appMaxWriteBytes=" + appMaxWriteBytes +
@@ -426,7 +382,6 @@ public class StreamServerConfig {
         ", cluster='" + cluster + '\'' +
         ", zooKeeperServers='" + zooKeeperServers + '\'' +
         ", maxConnections=" + maxConnections +
-        ", networkCompressionCodec=" + networkCompressionCodec +
         ", idleTimeoutMillis=" + idleTimeoutMillis +
         ", keytab='" + keytab + '\'' +
         ", principal='" + principal + '\'' +
