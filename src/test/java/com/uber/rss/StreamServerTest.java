@@ -50,7 +50,10 @@ public class StreamServerTest {
         int numMaps = 1;
         AppTaskAttemptId appTaskAttemptId = new AppTaskAttemptId("app1", "exec1", 1, 2, 0L);
 
-        try (SingleServerWriteClient writeclient = ClientTestUtils.getOrCreateWriteClient(testServer.getShufflePort(), appTaskAttemptId.getAppId(), appTaskAttemptId.getAppAttempt())) {
+        try (SingleServerWriteClient writeclient = ClientTestUtils.
+                getOrCreateWriteClient(testServer.getShufflePort(),
+                                        appTaskAttemptId.getAppId(),
+                                        appTaskAttemptId.getAppAttempt())) {
             writeclient.connect();
             writeclient.startUpload(appTaskAttemptId, numMaps, 20);
             writeclient.writeDataBlock(1, null);

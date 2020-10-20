@@ -139,7 +139,7 @@ object RssOpts {
     ConfigBuilder("spark.shuffle.rss.maxSplits")
       .doc("max number of splits for each shuffle partition on each shuffle server.")
       .intConf
-      .createWithDefault(10)
+      .createWithDefault(5)
   val mapsPerSplit: ConfigEntry[Int] =
     ConfigBuilder("spark.shuffle.rss.mapsPerSplit")
       .doc("how many map tasks write to same shuffle partition split. Large value here will " +
