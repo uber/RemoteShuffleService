@@ -58,10 +58,13 @@ public class UploadServerHandler {
     }
 
     public void initializeAppTaskAttempt(AppTaskAttemptId appTaskAttemptId, int numPartitions, ShuffleWriteConfig writeConfig, ChannelHandlerContext ctx) {
-        initializeAppTaskAttemptImpl(appTaskAttemptId, numPartitions, writeConfig, ctx, null);
+        initializeAppTaskAttemptImpl(appTaskAttemptId, numPartitions, writeConfig, ctx);
     }
 
-    private void initializeAppTaskAttemptImpl(AppTaskAttemptId appTaskAttemptId, int numPartitions, ShuffleWriteConfig writeConfig, ChannelHandlerContext ctx, String networkCompressionCodecName) {
+    private void initializeAppTaskAttemptImpl(AppTaskAttemptId appTaskAttemptId,
+                                              int numPartitions,
+                                              ShuffleWriteConfig writeConfig,
+                                              ChannelHandlerContext ctx) {
         this.connectionInfo = NettyUtils.getServerConnectionInfo(ctx.channel());
 
         this.numPartitions = numPartitions;
@@ -74,15 +77,6 @@ public class UploadServerHandler {
                 throw new RssInvalidStateException(String.format(
                     "There was already value %s with task attempt %s, but trying to set a different value %s",
                     oldAppMapIdValue, appTaskAttemptId.getTaskAttemptId(), newAppMapIdValue));
-            }
-        }
-
-        if (networkCompressionCodecName != null && !networkCompressionCodecName.isEmpty()) {
-            if (networkCompressionCodecName.equals(Compression.COMPRESSION_CODEC_LZ4)) {
-                ctx.pipeline().addFirst(new Lz4FrameDecoder());
-                logger.debug("Added LZ4 decoder, {}", connectionInfo);
-            } else {
-                logger.warn(String.format("Invalid compression codec %s, will fallback to not compression, %s", networkCompressionCodecName, connectionInfo));
             }
         }
     }
