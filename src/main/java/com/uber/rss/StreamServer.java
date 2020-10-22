@@ -166,7 +166,8 @@ public class StreamServer {
         return Pair.of(channel, localAddress.getPort());
     }
 
-    private ServerBootstrap bootstrapChannel(EventLoopGroup bossGroup, EventLoopGroup workerGroup, int backlogSize, int timeoutMillis, Supplier<ChannelHandler[]> handlerSupplier) {
+    private ServerBootstrap bootstrapChannel(EventLoopGroup bossGroup, EventLoopGroup workerGroup, int backlogSize,
+                                             int timeoutMillis, Supplier<ChannelHandler[]> handlerSupplier) {
         ServerBootstrap serverBootstrap = bossGroup instanceof EpollEventLoopGroup ? 
                 new ServerBootstrap().group(bossGroup, workerGroup).channel(EpollServerSocketChannel.class)
                 : new ServerBootstrap().group(bossGroup, workerGroup).channel(NioServerSocketChannel.class);
@@ -190,18 +191,22 @@ public class StreamServer {
         String serverId = getServerId();
 
         Supplier<ChannelHandler[]> streamHandlers = () -> new ChannelHandler[]{
-            new StreamServerVersionDecoder(serverId, runningVersion, serverConfig.getIdleTimeoutMillis(), shuffleExecutor, channelManager, serverDetailCollection)
+            new StreamServerVersionDecoder(serverId, runningVersion, serverConfig.getIdleTimeoutMillis(),
+                    shuffleExecutor, channelManager, serverDetailCollection)
         };
-        ServerBootstrap streamServerBootstrap = bootstrapChannel(shuffleBossGroup, shuffleWorkerGroup, serverConfig.getNetworkBacklog(), serverConfig.getNetworkTimeout(), streamHandlers);
+        ServerBootstrap streamServerBootstrap = bootstrapChannel(shuffleBossGroup, shuffleWorkerGroup,
+                serverConfig.getNetworkBacklog(), serverConfig.getNetworkTimeout(), streamHandlers);
 
-        final int httpBacklog = 32; // HTTP is only used for health check, thus good with small value and not configurable
+        final int httpBacklog = 32; // HTTP is only used for health check, thus good with small
+                                    // value and not configurable
         Supplier<ChannelHandler[]> httpHandlers = () -> new ChannelHandler[]{
             new HttpServerCodec(),
             new HttpObjectAggregator(512 * 1024),
             new HttpChannelInboundHandler()
         };
         // increase http connection timeout for health check endpoint
-        ServerBootstrap httpBootstrap = bootstrapChannel(healthCheckEventLoopGroup, healthCheckEventLoopGroup, httpBacklog, serverConfig.getNetworkTimeout()*3, httpHandlers);
+        ServerBootstrap httpBootstrap = bootstrapChannel(healthCheckEventLoopGroup, healthCheckEventLoopGroup,
+                httpBacklog, serverConfig.getNetworkTimeout()*3, httpHandlers);
 
         // Bind the ports and save the results so that the channels can be closed later. If the second bind fails,
         // the first one gets cleaned up in the shutdown.
@@ -210,14 +215,18 @@ public class StreamServer {
         shufflePort = channelAndPort.getValue();
         logger.info(String.format("ShuffleServer: %s:%s", hostName, shufflePort));
 
-        if (this.serviceRegistry == null && serverConfig.getServiceRegistryType().equalsIgnoreCase(ServiceRegistry.TYPE_STANDALONE)) {
-            logger.info(String.format("Creating registry client connecting to local stream server: %s:%s", hostName, shufflePort));
-            this.serviceRegistry = new StandaloneServiceRegistryClient(this.hostName, shufflePort, serverConfig.getNetworkTimeout(), "streamServer");
+        if (this.serviceRegistry == null && serverConfig.getServiceRegistryType().
+                equalsIgnoreCase(ServiceRegistry.TYPE_STANDALONE)) {
+            logger.info(String.format("Creating registry client connecting to local stream server: %s:%s",
+                    hostName, shufflePort));
+            this.serviceRegistry = new StandaloneServiceRegistryClient(this.hostName, shufflePort,
+                    serverConfig.getNetworkTimeout(), "streamServer");
         }
         String dataCenter = serverConfig.getDataCenterOrDefault();
         String cluster = serverConfig.getClusterOrDefault();
         String hostAndPort = String.format("%s:%s", hostName, shufflePort);
-        logger.info(String.format("Registering shuffle server, data center: %s, cluster: %s, server id: %s, host and port: %s", dataCenter, cluster, serverId, hostAndPort));
+        logger.info(String.format("Registering shuffle server, data center: %s, cluster: %s, server id: %s, " +
+                "host and port: %s", dataCenter, cluster, serverId, hostAndPort));
         this.serviceRegistry.registerServer(dataCenter, cluster, serverId, runningVersion, hostAndPort);
 
         if (serverConfig.getHttpPort() != -1) {
@@ -231,7 +240,8 @@ public class StreamServer {
 
         if (serverConfig.getStorage() instanceof ShuffleFileStorage) {
             CompletableFuture.runAsync(() -> {
-                FileUtils.cleanupOldFiles(serverConfig.getRootDirectory(), System.currentTimeMillis() - serverConfig.getAppFileRetentionMillis());
+                FileUtils.cleanupOldFiles(serverConfig.getRootDirectory(), System.currentTimeMillis()
+                        - serverConfig.getAppFileRetentionMillis());
             });
         }
 
@@ -355,7 +365,8 @@ public class StreamServer {
 
     public static void main(String[] args) throws Exception {
         StreamServerConfig serverConfig = StreamServerConfig.buildFromArgs(args);
-        logger.info(String.format("Starting server (version: %s, revision: %s) with config: %s", RssBuildInfo.Version, RssBuildInfo.Revision, serverConfig));
+        logger.info(String.format("Starting server (version: %s, revision: %s) with config: %s",
+                RssBuildInfo.Version, RssBuildInfo.Revision, serverConfig));
         StreamServer server = new StreamServer(serverConfig);
         server.run();
         addShutdownHook(server);

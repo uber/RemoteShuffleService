@@ -57,7 +57,10 @@ public class UploadServerHandler {
         channelManager.incNumConnections();
     }
 
-    public void initializeAppTaskAttempt(AppTaskAttemptId appTaskAttemptId, int numPartitions, ShuffleWriteConfig writeConfig, ChannelHandlerContext ctx) {
+    public void initializeAppTaskAttempt(AppTaskAttemptId appTaskAttemptId,
+                                         int numPartitions,
+                                         ShuffleWriteConfig writeConfig,
+                                         ChannelHandlerContext ctx) {
         initializeAppTaskAttemptImpl(appTaskAttemptId, numPartitions, writeConfig, ctx);
     }
 
@@ -103,11 +106,13 @@ public class UploadServerHandler {
         lazyStartUpload(new AppTaskAttemptId(appMapId, shuffleDataWrapper.getTaskAttemptId()));
 
         if (shuffleDataWrapper.getPartitionId() < 0 || shuffleDataWrapper.getPartitionId() > numPartitions) {
-            throw new RssInvalidDataException(String.format("Invalid partition: %s, %s", shuffleDataWrapper.getPartitionId(), connectionInfo));
+            throw new RssInvalidDataException(String.format("Invalid partition: %s, %s",
+                    shuffleDataWrapper.getPartitionId(), connectionInfo));
         }
 
         executor.writeData(new ShuffleDataWrapper(
-            appMapId.getAppShuffleId(), appMapId.getMapId(), shuffleDataWrapper.getTaskAttemptId(), shuffleDataWrapper.getPartitionId(), Unpooled.wrappedBuffer(shuffleDataWrapper.getBytes())));
+            appMapId.getAppShuffleId(), appMapId.getMapId(), shuffleDataWrapper.getTaskAttemptId(),
+                shuffleDataWrapper.getPartitionId(), Unpooled.wrappedBuffer(shuffleDataWrapper.getBytes())));
     }
 
     public void finishUpload(long taskAttemptId) {
@@ -118,7 +123,8 @@ public class UploadServerHandler {
 
     private void finishUploadImpl(AppTaskAttemptId appTaskAttemptIdToFinishUpload) {
         lazyStartUpload(appTaskAttemptIdToFinishUpload);
-        executor.addFinishUploadOperation(appTaskAttemptIdToFinishUpload.getAppShuffleId(), appTaskAttemptIdToFinishUpload.getTaskAttemptId());
+        executor.addFinishUploadOperation(appTaskAttemptIdToFinishUpload.getAppShuffleId(),
+                                            appTaskAttemptIdToFinishUpload.getTaskAttemptId());
         taskAttemptMap.remove(appTaskAttemptIdToFinishUpload.getTaskAttemptId());
         taskAttemptUploadStarted.remove(appTaskAttemptIdToFinishUpload.getTaskAttemptId());
     }
@@ -137,7 +143,8 @@ public class UploadServerHandler {
     private AppMapId getAppMapId(long taskAttemptId) {
         AppMapId appMapId = taskAttemptMap.get(taskAttemptId);
         if (appMapId == null) {
-            throw new RssInvalidStateException(String.format("Did not get app map id for task attempt %s, %s", taskAttemptId, connectionInfo));
+            throw new RssInvalidStateException(String.format("Did not get app map id for task attempt %s, %s",
+                                                                taskAttemptId, connectionInfo));
         }
         return appMapId;
     }
