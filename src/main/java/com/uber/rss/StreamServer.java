@@ -141,10 +141,16 @@ public class StreamServer {
                 String registryServer = serverConfig.getRegistryServer();
                 if (registryServer != null && !registryServer.isEmpty()) {
                     ServerHostAndPort hostAndPort = ServerHostAndPort.fromString(registryServer);
-                    logger.info(String.format("Creating registry client connecting to registry server: %s:%s", hostAndPort.getHost(), hostAndPort.getPort()));
-                    this.serviceRegistry = new StandaloneServiceRegistryClient(hostAndPort.getHost(), hostAndPort.getPort(), serverConfig.getNetworkTimeout(), "streamServer");
+                    logger.info(String.format("Creating registry client connecting to registry server: %s:%s",
+                            hostAndPort.getHost(), hostAndPort.getPort()));
+                    this.serviceRegistry = new StandaloneServiceRegistryClient(hostAndPort.getHost(),
+                                                                                hostAndPort.getPort(),
+                                                                                serverConfig.getNetworkTimeout(),
+                                                                                "streamServer");
                 } else {
-                    logger.info("Registry server is not specified, will use localhost as registry server and create registry client when local stream server is started (need to get port at that time)");
+                    logger.info("Registry server is not specified, will use localhost as registry server" +
+                            " and create registry client when local stream server is " +
+                            "started (need to get port at that time)");
                 }
                 break;
             default:
