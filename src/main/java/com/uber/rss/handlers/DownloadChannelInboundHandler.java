@@ -170,27 +170,27 @@ public class DownloadChannelInboundHandler extends ChannelInboundHandlerAdapter 
 
             List<FilePathAndLength> files = downloadServerHandler.getNonEmptyPartitionFiles(connectionInfo);
 
-            ChannelFuture channelFuture = HandlerUtil.writeResponseMsg(ctx, responseStatus, responseMessage, true);
+            ChannelFuture responseMessageChannelFuture = HandlerUtil.writeResponseMsg(ctx, responseStatus, responseMessage, true);
 
             if (shuffleStageStatus.getFileStatus() == ShuffleStageStatus.FILE_STATUS_CORRUPTED) {
                 logger.warn("Partition file corrupted, partition {}, {}", appShufflePartitionId, connectionInfo);
-                channelFuture.addListener(ChannelFutureListener.CLOSE);
+                responseMessageChannelFuture.addListener(ChannelFutureListener.CLOSE);
                 return;
             }
 
             long dataLength = files.stream().mapToLong(t->t.getLength()).sum();
             ByteBuf dataLengthBuf = ctx.alloc().buffer(Long.BYTES);
             dataLengthBuf.writeLong(dataLength);
-            ctx.writeAndFlush(dataLengthBuf);
+            ChannelFuture dataLengthChannelFuture = ctx.writeAndFlush(dataLengthBuf);
 
             if (files.isEmpty()) {
                 logger.warn("No partition file, partition {}, {}", appShufflePartitionId, connectionInfo);
-                channelFuture.addListener(ChannelFutureListener.CLOSE);
+                dataLengthChannelFuture.addListener(ChannelFutureListener.CLOSE);
             } else {
                 ChannelFuture sendFileChannelFuture = downloadServerHandler.sendFiles(ctx, files);
                 if (sendFileChannelFuture == null) {
                     logger.warn("No file sent out, closing the connection, partition {}, {}", appShufflePartitionId, connectionInfo);
-                    channelFuture.addListener(ChannelFutureListener.CLOSE);
+                    dataLengthChannelFuture.addListener(ChannelFutureListener.CLOSE);
                 } else {
                     sendFileChannelFuture.addListener(ChannelFutureListener.CLOSE);
                 }

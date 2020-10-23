@@ -81,9 +81,9 @@ public class StreamServerConfig {
 
   private int maxConnections = UploadChannelManager.DEFAULT_MAX_CONNECTIONS;
 
-  // use client side idle timeout plus one extra minute as server side idle timeout. so client could close idle connection
-  // before server side closes it. also make sure that the timeout is at least as long as
-  // DEFAULT_SERVER_SIDE_CONNECTION_IDLE_TIMEOUT_MILLIS.
+  // use client side idle timeout plus one extra minute as server side idle timeout.
+  // so client could close idle connection before server side closes it.
+  // also make sure that the timeout is at least as long as DEFAULT_SERVER_SIDE_CONNECTION_IDLE_TIMEOUT_MILLIS.
   private long idleTimeoutMillis = Math.max(
       ClientConstants.DEFAULT_CONNECTION_IDLE_TIMEOUT_MILLIS + TimeUnit.MINUTES.toMillis(1),
       DEFAULT_SERVER_SIDE_CONNECTION_IDLE_TIMEOUT_MILLIS);

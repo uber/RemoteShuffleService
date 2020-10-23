@@ -205,7 +205,8 @@ public class ShuffleExecutor {
 
         if (oldState == null) {
           // this is the first time to register this shuffle stage, add it to state store
-          StagePersistentInfo info = new StagePersistentInfo(numPartitions, newState.getFileStartIndex(), newState.getWriteConfig(), newState.getFileStatus());
+          StagePersistentInfo info = new StagePersistentInfo(numPartitions, newState.getFileStartIndex(),
+                                                                newState.getWriteConfig(), newState.getFileStatus());
           stateStore.storeStageInfo(appShuffleId, info);
         }
     }
@@ -254,7 +255,8 @@ public class ShuffleExecutor {
             ExecutorShuffleStageState stageState = getStageState(writeOp.getShuffleId());
             stageState.setFileCorrupted();
             stateStore.storeStageCorruption(stageState.getAppShuffleId());
-            logger.warn(String.format("Set file corrupted in during writing data for shuffle stage %s", writeOp.getShuffleId()), ex);
+            logger.warn(String.format("Set file corrupted in during writing data for shuffle stage %s",
+                    writeOp.getShuffleId()), ex);
             throw ex;
         } finally {
             if (!byteBufReleased) {

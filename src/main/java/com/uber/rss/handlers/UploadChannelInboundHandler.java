@@ -155,8 +155,9 @@ public class UploadChannelInboundHandler extends ChannelInboundHandlerAdapter {
                     uploadServerHandler.checkAppMaxWriteBytes(appId);
                 } catch (RssTooMuchDataException e) {
                     logger.info(
-                        "Cannot handle new connection due to writing too much data from app (%s). Closing current connection: {}. {}",
-                        appId, connectionInfo, ExceptionUtils.getSimpleMessage(e));
+                        "Cannot handle new connection due to writing too much data from app (%s). " +
+                                "Closing current connection: {}. {}", appId, connectionInfo,
+                                ExceptionUtils.getSimpleMessage(e));
                     M3Stats.addException(e, M3Stats.TAG_VALUE_SERVER_HANDLER);
                     ByteBuf buf = ctx.alloc().buffer(1);
                     buf.writeByte(MessageConstants.RESPONSE_STATUS_APP_TOO_MUCH_DATA);
@@ -165,8 +166,10 @@ public class UploadChannelInboundHandler extends ChannelInboundHandlerAdapter {
 
                 uploadServerHandler.updateLiveness(appId);
 
-                ConnectUploadResponse connectUploadResponse = new ConnectUploadResponse(serverId, RssBuildInfo.Version, runningVersion);
-                HandlerUtil.writeResponseMsg(ctx, MessageConstants.RESPONSE_STATUS_OK, connectUploadResponse, true);
+                ConnectUploadResponse connectUploadResponse = new ConnectUploadResponse(
+                                                                    serverId, RssBuildInfo.Version, runningVersion);
+                HandlerUtil.writeResponseMsg(ctx, MessageConstants.RESPONSE_STATUS_OK,
+                                                connectUploadResponse, true);
             } else if (msg instanceof StartUploadMessage) {
                 startUploadMessage = (StartUploadMessage)msg;
 
@@ -177,7 +180,8 @@ public class UploadChannelInboundHandler extends ChannelInboundHandlerAdapter {
                     startUploadMessage.getAttemptId());
 
                 ShuffleWriteConfig writeConfig = new ShuffleWriteConfig(startUploadMessage.getNumSplits());
-                uploadServerHandler.initializeAppTaskAttempt(appTaskAttemptId, startUploadMessage.getNumPartitions(), writeConfig, ctx);
+                uploadServerHandler.initializeAppTaskAttempt(appTaskAttemptId, startUploadMessage.getNumPartitions(),
+                                                                writeConfig, ctx);
             } else if (msg instanceof FinishUploadMessage) {
                 logger.debug("FinishUploadMessage, {}, {}", msg, connectionInfo);
                 FinishUploadMessage finishUploadMessage = (FinishUploadMessage)msg;
@@ -207,7 +211,8 @@ public class UploadChannelInboundHandler extends ChannelInboundHandlerAdapter {
                 // TODO ideally clients should send some information to tell server what status they are interested
                 Map<Long, Long> metricsMap = new HashMap<>();
                 GetBusyStatusResponse getBusyStatusResponse = new GetBusyStatusResponse(metricsMap, new HashMap<>());
-                ChannelFuture channelFuture = HandlerUtil.writeResponseMsg(ctx, MessageConstants.RESPONSE_STATUS_OK, getBusyStatusResponse, true);
+                ChannelFuture channelFuture = HandlerUtil.writeResponseMsg(ctx, MessageConstants.RESPONSE_STATUS_OK,
+                                                                            getBusyStatusResponse, true);
                 channelFuture.addListener(ChannelFutureListener.CLOSE);
             } else {
                 throw new RssInvalidDataException(String.format("Unsupported message: %s, %s", msg, connectionInfo));
