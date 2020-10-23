@@ -58,11 +58,11 @@ public class UploadServerHandler {
         channelManager.incNumConnections();
     }
 
-    public void initializeAppTaskAttempt(AppShuffleId appShuffleId, long taskAttemptId, int numPartitions, ShuffleWriteConfig writeConfig, ChannelHandlerContext ctx) {
-        initializeAppTaskAttemptImpl(appShuffleId, taskAttemptId, numPartitions, writeConfig, ctx, null);
-    }
-
-    private void initializeAppTaskAttemptImpl(AppShuffleId appShuffleId, long taskAttemptId, int numPartitions, ShuffleWriteConfig writeConfig, ChannelHandlerContext ctx, String networkCompressionCodecName) {
+    public void initializeAppTaskAttempt(AppShuffleId appShuffleId,
+                                              long taskAttemptId,
+                                              int numPartitions,
+                                              ShuffleWriteConfig writeConfig,
+                                              ChannelHandlerContext ctx) {
         this.connectionInfo = NettyUtils.getServerConnectionInfo(ctx.channel());
 
         this.numPartitions = numPartitions;
@@ -74,15 +74,6 @@ public class UploadServerHandler {
                 throw new RssInvalidStateException(String.format(
                     "There was already value %s with task attempt %s, but trying to set a different value %s",
                     oldAppShuffleIdValue, taskAttemptId, appShuffleId));
-            }
-        }
-
-        if (networkCompressionCodecName != null && !networkCompressionCodecName.isEmpty()) {
-            if (networkCompressionCodecName.equals(Compression.COMPRESSION_CODEC_LZ4)) {
-                ctx.pipeline().addFirst(new Lz4FrameDecoder());
-                logger.debug("Added LZ4 decoder, {}", connectionInfo);
-            } else {
-                logger.warn(String.format("Invalid compression codec %s, will fallback to not compression, %s", networkCompressionCodecName, connectionInfo));
             }
         }
     }
@@ -109,11 +100,13 @@ public class UploadServerHandler {
         lazyStartUpload(appShuffleId, shuffleDataWrapper.getTaskAttemptId());
 
         if (shuffleDataWrapper.getPartitionId() < 0 || shuffleDataWrapper.getPartitionId() > numPartitions) {
-            throw new RssInvalidDataException(String.format("Invalid partition: %s, %s", shuffleDataWrapper.getPartitionId(), connectionInfo));
+            throw new RssInvalidDataException(String.format("Invalid partition: %s, %s",
+                    shuffleDataWrapper.getPartitionId(), connectionInfo));
         }
 
         executor.writeData(new ShuffleDataWrapper(
-            appShuffleId, shuffleDataWrapper.getTaskAttemptId(), shuffleDataWrapper.getPartitionId(), Unpooled.wrappedBuffer(shuffleDataWrapper.getBytes())));
+            appShuffleId, shuffleDataWrapper.getTaskAttemptId(),
+                shuffleDataWrapper.getPartitionId(), Unpooled.wrappedBuffer(shuffleDataWrapper.getBytes())));
     }
 
     public void finishUpload(long taskAttemptId) {

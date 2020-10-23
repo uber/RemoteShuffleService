@@ -33,9 +33,6 @@ public class UploadChannelManager {
     public static final int DEFAULT_MAX_CONNECTIONS = 60000;
 
     private static final Logger logger = LoggerFactory.getLogger(UploadChannelManager.class);
-    
-    // TODO monitor and clean up channels
-    private ConcurrentHashMap<AppTaskAttemptId, UploadChannel> uploadChannels = new ConcurrentHashMap<>();
 
     private AtomicInteger numConnections = new AtomicInteger();
 
@@ -49,36 +46,9 @@ public class UploadChannelManager {
     }
 
     public void checkMaxConnections() throws RssMaxConnectionsException {
-        int currentSize = uploadChannels.size();
-        if (currentSize > maxConnections) {
-            throw new RssMaxConnectionsException(currentSize, maxConnections, "Stream server connections exceed upper limit");
-        }
-
         if (numConnections.get() > maxConnections) {
-            throw new RssMaxConnectionsException(currentSize, maxConnections, "Stream server connections exceed upper limit");
-        }
-    }
-    
-    public void addUploadChannel(AppTaskAttemptId appTaskAttemptId, UploadChannel channel) {
-        logger.info(String.format("Adding channel from channel manager for %s", appTaskAttemptId));
-        UploadChannel oldValue = uploadChannels.put(appTaskAttemptId, channel);
-        // TODO handle error (retry?) better
-        if (oldValue != null) {
-            throw new RssDuplicateAppTaskAttemptException(String.format(
-                    "There is already upload channel for %s, something must be wrong", appTaskAttemptId));
-        }
-    }
-    
-    public void removeUploadChannel(AppTaskAttemptId appTaskAttemptId, UploadChannel channel) {
-        logger.debug(String.format("Removing channel from channel manager for %s", appTaskAttemptId));
-        UploadChannel oldValue = uploadChannels.remove(appTaskAttemptId);
-        if (oldValue == null) {
-            throw new RssInvalidStateException(String.format(
-                    "There is no upload channel for %s, cannot remove channel", appTaskAttemptId));
-        }
-        if (channel != null && oldValue != channel) {
-            throw new RssInvalidStateException(String.format(
-                    "There is another upload channel for %s which is different from the channel to remove", appTaskAttemptId));
+            throw new RssMaxConnectionsException(numConnections.get(), maxConnections,
+                    "Stream server connections exceed upper limit");
         }
     }
 

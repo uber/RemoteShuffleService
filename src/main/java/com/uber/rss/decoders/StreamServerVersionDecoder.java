@@ -70,22 +70,28 @@ public class StreamServerVersionDecoder extends ByteToMessageDecoder {
         if (type == MessageConstants.UPLOAD_UPLINK_MAGIC_BYTE && version == MessageConstants.UPLOAD_UPLINK_VERSION_3) {
             ByteBuf shuffleDataBuffer = ctx.alloc().buffer(MessageConstants.DEFAULT_SHUFFLE_DATA_MESSAGE_SIZE);
             newDecoder = new StreamServerMessageDecoder(shuffleDataBuffer);
-            UploadChannelInboundHandler channelInboundHandler = new UploadChannelInboundHandler(serverId, runningVersion, idleTimeoutMillis, executor, channelManager);
+            UploadChannelInboundHandler channelInboundHandler = new UploadChannelInboundHandler(
+                    serverId, runningVersion, idleTimeoutMillis, executor, channelManager);
             channelInboundHandler.processChannelActive(ctx);
             newHandler = channelInboundHandler;
-        } else if (type == MessageConstants.DOWNLOAD_UPLINK_MAGIC_BYTE && version == MessageConstants.DOWNLOAD_UPLINK_VERSION_3) {
+        } else if (type == MessageConstants.DOWNLOAD_UPLINK_MAGIC_BYTE &&
+                version == MessageConstants.DOWNLOAD_UPLINK_VERSION_3) {
             newDecoder = new StreamServerMessageDecoder(null);
-            DownloadChannelInboundHandler channelInboundHandler = new DownloadChannelInboundHandler(serverId, runningVersion, executor);
+            DownloadChannelInboundHandler channelInboundHandler = new DownloadChannelInboundHandler(serverId,
+                                                                            runningVersion, executor);
             channelInboundHandler.processChannelActive(ctx);
             newHandler = channelInboundHandler;
-        } else if (type == MessageConstants.NOTIFY_UPLINK_MAGIC_BYTE && version == MessageConstants.NOTIFY_UPLINK_VERSION_3) {
+        } else if (type == MessageConstants.NOTIFY_UPLINK_MAGIC_BYTE &&
+                version == MessageConstants.NOTIFY_UPLINK_VERSION_3) {
             newDecoder = new StreamServerMessageDecoder(null);
             NotifyChannelInboundHandler channelInboundHandler = new NotifyChannelInboundHandler(serverId);
             channelInboundHandler.processChannelActive(ctx);
             newHandler = channelInboundHandler;
-        } else if (type == MessageConstants.REGISTRY_UPLINK_MAGIC_BYTE && version == MessageConstants.REGISTRY_UPLINK_VERSION_3) {
+        } else if (type == MessageConstants.REGISTRY_UPLINK_MAGIC_BYTE &&
+                version == MessageConstants.REGISTRY_UPLINK_VERSION_3) {
             newDecoder = new StreamServerMessageDecoder(null);
-            RegistryChannelInboundHandler channelInboundHandler = new RegistryChannelInboundHandler(serverDetailCollection, serverId);
+            RegistryChannelInboundHandler channelInboundHandler = new RegistryChannelInboundHandler(
+                                                                        serverDetailCollection, serverId);
             channelInboundHandler.processChannelActive(ctx);
             newHandler = channelInboundHandler;
         } else {
@@ -97,7 +103,8 @@ public class StreamServerVersionDecoder extends ByteToMessageDecoder {
             logger.info(String.format("Closed connection to client %s", clientInfo));
             return;
         }
-        logger.debug(String.format("Using version %d protocol for client %s", version, NettyUtils.getServerConnectionInfo(ctx)));
+        logger.debug(String.format("Using version %d protocol for client %s",
+                version, NettyUtils.getServerConnectionInfo(ctx)));
         ctx.pipeline().replace(this, decoderName, newDecoder);
         ctx.pipeline().addAfter(decoderName, handlerName, newHandler);
     }
