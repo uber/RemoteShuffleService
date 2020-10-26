@@ -25,6 +25,7 @@ import com.uber.rss.exceptions.RssInvalidDataException;
 import com.uber.rss.exceptions.RssShuffleStageNotStartedException;
 import com.uber.rss.execution.ShuffleExecutor;
 import com.uber.rss.messages.BaseMessage;
+import com.uber.rss.messages.CloseConnectionMessage;
 import com.uber.rss.messages.ConnectDownloadRequest;
 import com.uber.rss.messages.ConnectDownloadResponse;
 import com.uber.rss.messages.GetDataAvailabilityRequest;
@@ -55,8 +56,12 @@ public class DownloadChannelInboundHandler extends ChannelInboundHandlerAdapter 
     private static AtomicInteger concurrentChannelsAtomicInteger = new AtomicInteger();
     private static Gauge numConcurrentChannels = M3Stats.getDefaultScope().gauge("numConcurrentDownloadChannels");
 
+    private static Counter closedIdleDownloadChannels = M3Stats.getDefaultScope().counter("closedIdleDownloadChannels");
+
     private final String serverId;
     private final String runningVersion;
+
+    private final long idleTimeoutMillis;
 
     private final DownloadServerHandler downloadServerHandler;
 
@@ -64,11 +69,15 @@ public class DownloadChannelInboundHandler extends ChannelInboundHandlerAdapter 
     private AppShufflePartitionId appShufflePartitionId = null;
     private List<Long> fetchTaskAttemptIds = new ArrayList<>();
 
+    private ChannelIdleCheck idleCheck;
+
     public DownloadChannelInboundHandler(String serverId,
                                          String runningVersion,
+                                         long idleTimeoutMillis,
                                          ShuffleExecutor executor) {
         this.serverId = serverId;
         this.runningVersion = runningVersion;
+        this.idleTimeoutMillis = idleTimeoutMillis;
         this.downloadServerHandler = new DownloadServerHandler(executor);
     }
 
@@ -84,6 +93,9 @@ public class DownloadChannelInboundHandler extends ChannelInboundHandlerAdapter 
         numConcurrentChannels.update(concurrentChannelsAtomicInteger.incrementAndGet());
         connectionInfo = NettyUtils.getServerConnectionInfo(ctx);
         logger.debug("Channel active: {}", connectionInfo);
+
+        idleCheck = new ChannelIdleCheck(ctx, idleTimeoutMillis, closedIdleDownloadChannels);
+        idleCheck.schedule();
     }
 
     @Override
@@ -93,12 +105,20 @@ public class DownloadChannelInboundHandler extends ChannelInboundHandlerAdapter 
         numChannelInactive.inc(1);
         numConcurrentChannels.update(concurrentChannelsAtomicInteger.decrementAndGet());
         logger.debug("Channel inactive: {}", connectionInfo);
+
+        if (idleCheck != null) {
+            idleCheck.cancel();
+        }
     }
 
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) {
         try {
             logger.debug("Got incoming message: {}, {}", msg, connectionInfo);
+
+            if (idleCheck != null) {
+                idleCheck.updateLastReadTime();
+            }
 
             // Process other messages. We assume the header messages are already processed, thus some fields of this
             // class are already populated with proper values, e.g. user field.
@@ -122,29 +142,23 @@ public class DownloadChannelInboundHandler extends ChannelInboundHandlerAdapter 
                     return;
                 }
 
-                ShuffleWriteConfig config;
-                try {
-                    config = downloadServerHandler.getShuffleWriteConfig(appShufflePartitionId.getAppShuffleId());
-                } catch (RssShuffleStageNotStartedException ex) {
-                    logger.warn(String.format("Shuffle stage not started for %s, %s", appShufflePartitionId.getAppShuffleId(), connectionInfo));
-                    HandlerUtil.writeResponseStatus(ctx, MessageConstants.RESPONSE_STATUS_SHUFFLE_STAGE_NOT_STARTED);
-                    return;
-                }
-
                 downloadServerHandler.initialize(connectRequest);
 
                 MapTaskCommitStatus mapTaskCommitStatus = shuffleStageStatus.getMapTaskCommitStatus();
                 boolean dataAvailable = mapTaskCommitStatus != null && mapTaskCommitStatus.isPartitionDataAvailable(fetchTaskAttemptIds);
                 String fileCompressionCodec = ""; // TODO delete this
                 ConnectDownloadResponse connectResponse = new ConnectDownloadResponse(serverId, RssBuildInfo.Version, runningVersion, fileCompressionCodec, mapTaskCommitStatus, dataAvailable);
-                sendResponseAndFiles2(ctx, dataAvailable, shuffleStageStatus, connectResponse);
+                sendResponseAndFiles(ctx, dataAvailable, shuffleStageStatus, connectResponse, idleCheck);
             } else if (msg instanceof GetDataAvailabilityRequest) {
                 ShuffleStageStatus shuffleStageStatus = downloadServerHandler.getShuffleStageStatus(appShufflePartitionId.getAppShuffleId());
                 MapTaskCommitStatus mapTaskCommitStatus = shuffleStageStatus.getMapTaskCommitStatus();
                 boolean dataAvailable;
                 dataAvailable = mapTaskCommitStatus != null && mapTaskCommitStatus.isPartitionDataAvailable(fetchTaskAttemptIds);
                 GetDataAvailabilityResponse getDataAvailabilityResponse = new GetDataAvailabilityResponse(mapTaskCommitStatus, dataAvailable);
-                sendResponseAndFiles2(ctx, dataAvailable, shuffleStageStatus, getDataAvailabilityResponse);
+                sendResponseAndFiles(ctx, dataAvailable, shuffleStageStatus, getDataAvailabilityResponse, idleCheck);
+            } else if (msg instanceof CloseConnectionMessage) {
+                logger.info("Closing connection on client request {} {}", connectionInfo, System.nanoTime());
+                ctx.close();
             } else {
                 throw new RssInvalidDataException(String.format("Unsupported message: %s, %s", msg, connectionInfo));
             }
@@ -162,7 +176,7 @@ public class DownloadChannelInboundHandler extends ChannelInboundHandlerAdapter 
     }
 
     // send response to client, also send files if data is available
-    private void sendResponseAndFiles2(ChannelHandlerContext ctx, boolean dataAvailable, ShuffleStageStatus shuffleStageStatus, BaseMessage responseMessage) {
+    private void sendResponseAndFiles(ChannelHandlerContext ctx, boolean dataAvailable, ShuffleStageStatus shuffleStageStatus, BaseMessage responseMessage, ChannelIdleCheck idleCheck) {
         byte responseStatus = shuffleStageStatus.transformToMessageResponseStatus();
         if (dataAvailable) {
             // TODO optimize following and run them asynchronously and only run once for each stage
@@ -174,7 +188,7 @@ public class DownloadChannelInboundHandler extends ChannelInboundHandlerAdapter 
 
             if (shuffleStageStatus.getFileStatus() == ShuffleStageStatus.FILE_STATUS_CORRUPTED) {
                 logger.warn("Partition file corrupted, partition {}, {}", appShufflePartitionId, connectionInfo);
-                responseMessageChannelFuture.addListener(ChannelFutureListener.CLOSE);
+                responseMessageChannelFuture.addListener(new ChannelFutureCloseListener(connectionInfo));
                 return;
             }
 
@@ -185,21 +199,19 @@ public class DownloadChannelInboundHandler extends ChannelInboundHandlerAdapter 
 
             if (files.isEmpty()) {
                 logger.warn("No partition file, partition {}, {}", appShufflePartitionId, connectionInfo);
-                dataLengthChannelFuture.addListener(ChannelFutureListener.CLOSE);
+                dataLengthChannelFuture.addListener(new ChannelFutureCloseListener(connectionInfo));
             } else {
-                ChannelFuture sendFileChannelFuture = downloadServerHandler.sendFiles(ctx, files);
+                ChannelFuture sendFileChannelFuture = downloadServerHandler.sendFiles(ctx, files, idleCheck);
                 if (sendFileChannelFuture == null) {
                     logger.warn("No file sent out, closing the connection, partition {}, {}", appShufflePartitionId, connectionInfo);
-                    dataLengthChannelFuture.addListener(ChannelFutureListener.CLOSE);
-                } else {
-                    sendFileChannelFuture.addListener(ChannelFutureListener.CLOSE);
+                    dataLengthChannelFuture.addListener(new ChannelFutureCloseListener(connectionInfo));
                 }
             }
         } else {
             ChannelFuture channelFuture = HandlerUtil.writeResponseMsg(ctx, responseStatus, responseMessage, true);
             if (shuffleStageStatus.getFileStatus() == ShuffleStageStatus.FILE_STATUS_CORRUPTED) {
                 logger.warn("Partition file corrupted, partition {}, {}", appShufflePartitionId, connectionInfo);
-                channelFuture.addListener(ChannelFutureListener.CLOSE);
+                channelFuture.addListener(new ChannelFutureCloseListener(connectionInfo));
             }
         }
     }
