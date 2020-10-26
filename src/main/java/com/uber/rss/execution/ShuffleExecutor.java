@@ -18,7 +18,6 @@ import com.uber.m3.tally.Counter;
 import com.uber.m3.tally.Gauge;
 import com.uber.rss.clients.ShuffleWriteConfig;
 import com.uber.rss.common.*;
-import com.uber.rss.exceptions.RssInvalidStateException;
 import com.uber.rss.exceptions.RssShuffleCorruptedException;
 import com.uber.rss.exceptions.RssShuffleStageNotStartedException;
 import com.uber.rss.exceptions.RssTooMuchDataException;
@@ -32,21 +31,17 @@ import com.uber.rss.metrics.M3Stats;
 import com.uber.rss.storage.ShuffleFileStorage;
 import com.uber.rss.storage.ShuffleFileUtils;
 import com.uber.rss.storage.ShuffleStorage;
-import com.uber.rss.util.ExceptionUtils;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.DefaultEventLoop;
-import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -273,9 +268,9 @@ public class ShuffleExecutor {
      * to finish upload, but there is a new task attempt uploading data, which may happen when there is
      * task retry);
      */
-    public void addFinishUploadOperation(AppShuffleId appShuffleId, long taskAttemptId) {
+    public void finishUpload(AppShuffleId appShuffleId, long taskAttemptId) {
       try {
-        addFinishUploadOperationImpl(appShuffleId, taskAttemptId);
+        finishUploadImpl(appShuffleId, taskAttemptId);
       } catch (Throwable ex) {
         M3Stats.addException(ex, this.getClass().getSimpleName());
         ExecutorShuffleStageState stageState = getStageState(appShuffleId);
@@ -286,7 +281,7 @@ public class ShuffleExecutor {
       }
     }
 
-    private void addFinishUploadOperationImpl(AppShuffleId appShuffleId, long taskAttemptId) {
+    private void finishUploadImpl(AppShuffleId appShuffleId, long taskAttemptId) {
       ExecutorAppState appState = getAppState(appShuffleId.getAppId());
       appState.updateLivenessTimestamp();
 
