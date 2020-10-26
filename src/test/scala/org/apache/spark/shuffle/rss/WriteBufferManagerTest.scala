@@ -39,6 +39,7 @@ class WriteBufferManagerTest {
 
     val partition1 = 1
     spilledData = bufferManager.addRecord(partition1, record).toList
+    spilledData ++= bufferManager.clear()
     Assert.assertEquals(spilledData.size, 1)
     Assert.assertEquals(bufferManager.filledBytes, 0)
 
@@ -58,6 +59,7 @@ class WriteBufferManagerTest {
     Assert.assertEquals(spilledData.size, 0)
 
     spilledData = bufferManager.addRecord(partition1, record).toList
+    spilledData ++= bufferManager.clear()
     Assert.assertEquals(spilledData.size, 1)
 
     Assert.assertEquals(bufferManager.filledBytes, 0)
@@ -70,6 +72,7 @@ class WriteBufferManagerTest {
     Assert.assertEquals(spilledData.size, 0)
 
     spilledData = bufferManager.addRecord(partition1, record).toList
+    spilledData ++= bufferManager.clear()
     Assert.assertEquals(spilledData.size, 1)
 
     Assert.assertEquals(bufferManager.filledBytes, 0)
@@ -89,28 +92,38 @@ class WriteBufferManagerTest {
 
     val partition1 = 1
     val partition2 = 2
-    val record = (1, "123") // it is 7 bytes after serialization
-    spilledData = bufferManager.addRecord(partition1, record).toList
+    val record1 = (1, "123")  // it is 7 bytes after serialization
+    val record2 = (1, "124")
+    val record3 = (1, "125")
+    spilledData = bufferManager.addRecord(partition1, record1).toList
     Assert.assertEquals(spilledData.size, 0)
     Assert.assertTrue(bufferManager.filledBytes > 0)
 
-    spilledData = bufferManager.addRecord(partition2, record).toList
+    spilledData = bufferManager.addRecord(partition2, record2).toList
     Assert.assertEquals(spilledData.size, 0)
 
-    spilledData = bufferManager.addRecord(partition1, record).toList
+    spilledData = bufferManager.addRecord(partition1, record2).toList
     Assert.assertEquals(spilledData.size, 0)
 
-    val filledBytes1 = bufferManager.filledBytes
+    spilledData = bufferManager.addRecord(partition1, record3).toList
+    spilledData ++= bufferManager.clear().toList
+    spilledData = spilledData.sortBy(_._1)
+    Assert.assertEquals(spilledData.size, 2)
 
-    spilledData = bufferManager.addRecord(partition1, record).toList
-    Assert.assertEquals(spilledData.size, 1)
-    Assert.assertTrue(bufferManager.filledBytes < filledBytes1)
-    Assert.assertTrue(bufferManager.filledBytes > 0)
+    Assert.assertEquals(spilledData(0)._1, partition1)
+    var deserializedData = deserializeData(spilledData(0)._2).toList
+    Assert.assertEquals(deserializedData, List(record1, record2, record3))
+
+    Assert.assertEquals(spilledData(1)._1, partition2)
+    deserializedData = deserializeData(spilledData(1)._2).toList
+    Assert.assertEquals(deserializedData, List(record2))
+
+    Assert.assertEquals(bufferManager.filledBytes, 0)
   }
 
   @Test
   def totalSizeExceedSpillSize(): Unit = {
-    val bufferSize = 10
+    val bufferSize = 1000000
     val spillSize = 20
     val bufferManager = new WriteBufferManager(serializer, bufferSize, maxBufferSize, spillSize)
 
@@ -125,10 +138,17 @@ class WriteBufferManagerTest {
     spilledData = bufferManager.addRecord(partition2, record).toList
     Assert.assertEquals(spilledData.size, 0)
 
-    spilledData = bufferManager.addRecord(partition3, record).toList
+    spilledData = null
+    (0 until 1000000).foreach(_ => {
+      val addRecordResult = bufferManager.addRecord(partition3, record)
+      if (addRecordResult.size > 0 && spilledData == null) {
+        spilledData = addRecordResult.toList
+      }
+    })
+
     Assert.assertEquals(spilledData.size, 3)
     Assert.assertEquals(spilledData.map(_._1).sorted, Seq(partition1, partition2, partition3))
-    Assert.assertEquals(bufferManager.filledBytes, 0)
+    Assert.assertNotEquals(bufferManager.filledBytes, 0)
   }
 
   @Test
@@ -149,7 +169,6 @@ class WriteBufferManagerTest {
       val record = records(random.nextInt(records.size))
       val spilledData = bufferManager.addRecord(partition, record)
 
-      Assert.assertTrue(bufferManager.filledBytes < spillSize)
       Assert.assertTrue(bufferManager.filledBytes >= 0)
 
       val deserializedRecords = spilledData.flatMap(t => deserializeData(t._2)).toList

@@ -76,7 +76,7 @@ public class UploadChannelInboundHandler extends ChannelInboundHandlerAdapter {
 
     private StartUploadMessage startUploadMessage = null;
 
-    private IdleCheck idleCheck;
+    private ChannelIdleCheck idleCheck;
 
     public UploadChannelInboundHandler(String serverId,
                                        String runningVersion,
@@ -102,8 +102,8 @@ public class UploadChannelInboundHandler extends ChannelInboundHandlerAdapter {
         numConcurrentChannels.update(concurrentChannelsAtomicInteger.incrementAndGet());
         connectionInfo = NettyUtils.getServerConnectionInfo(ctx);
 
-        idleCheck = new IdleCheck(ctx, idleTimeoutMillis);
-        schedule(ctx, idleCheck, idleTimeoutMillis);
+        idleCheck = new ChannelIdleCheck(ctx, idleTimeoutMillis, closedIdleUploadChannels);
+        idleCheck.schedule();
     }
 
     @Override
@@ -228,59 +228,5 @@ public class UploadChannelInboundHandler extends ChannelInboundHandlerAdapter {
         String msg = "Got exception " + connectionInfo;
         logger.warn(msg, cause);
         ctx.close();
-    }
-
-    private static void schedule(ChannelHandlerContext ctx, Runnable task, long delayMillis) {
-        ctx.executor().schedule(task, delayMillis, TimeUnit.MILLISECONDS);
-    }
-
-    private static class IdleCheck implements Runnable {
-
-        private final ChannelHandlerContext ctx;
-        private final long idleTimeoutMillis;
-
-        private volatile long lastReadTime = System.currentTimeMillis();
-        private volatile boolean canceled = false;
-
-        public IdleCheck(ChannelHandlerContext ctx, long idleTimeoutMillis) {
-            this.ctx = ctx;
-            this.idleTimeoutMillis = idleTimeoutMillis;
-        }
-
-        @Override
-        public void run() {
-            try {
-                if (canceled) {
-                    return;
-                }
-
-                if (!ctx.channel().isOpen()) {
-                    return;
-                }
-
-                checkIdle(ctx);
-            } catch (Throwable ex) {
-                logger.warn(String.format("Failed to run idle check, %s", NettyUtils.getServerConnectionInfo(ctx)), ex);
-            }
-        }
-
-        public void updateLastReadTime() {
-            lastReadTime = System.currentTimeMillis();
-        }
-
-        public void cancel() {
-            canceled = true;
-        }
-
-        private void checkIdle(ChannelHandlerContext ctx) {
-            if (System.currentTimeMillis() - lastReadTime >= idleTimeoutMillis) {
-                closedIdleUploadChannels.inc(1);
-                logger.info("Closing idle connection {}", NettyUtils.getServerConnectionInfo(ctx));
-                ctx.close();
-                return;
-            }
-
-            schedule(ctx, this, idleTimeoutMillis);
-        }
     }
 }

@@ -22,7 +22,7 @@ import org.slf4j.LoggerFactory;
 import java.nio.ByteBuffer;
 
 /***
- * Shuffle write client to upload data (uncompressed records) to shuffle server.
+ * Shuffle write client to upload data to shuffle server.
  */
 public class PlainShuffleDataSyncWriteClient extends ShuffleDataSyncWriteClientBase {
   private static final Logger logger =

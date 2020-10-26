@@ -37,16 +37,20 @@ class WriteBufferManager(serializer: Serializer,
   private val serializerInstance = serializer.newInstance()
 
   def addRecord(partitionId: Int, record: Product2[Any, Any]): Seq[(Int, Array[Byte])] = {
-    val result = mutable.Buffer[(Int, Array[Byte])]()
+    var result: mutable.Buffer[(Int, Array[Byte])] = null
     map.get(partitionId) match {
       case Some(v) =>
         val stream = v.serializeStream
         val oldSize = v.output.position()
         stream.writeKey(record._1)
         stream.writeValue(record._2)
-        stream.flush()
         val newSize = v.output.position()
         if (newSize >= bufferSize) {
+          // partition buffer is full, add it to the result as spill data
+          if (result == null) {
+            result = mutable.Buffer[(Int, Array[Byte])]()
+          }
+          v.serializeStream.flush()
           result.append((partitionId, v.output.toBytes))
           v.serializeStream.close()
           map.remove(partitionId)
@@ -59,9 +63,13 @@ class WriteBufferManager(serializer: Serializer,
         val stream = serializerInstance.serializeStream(output)
         stream.writeKey(record._1)
         stream.writeValue(record._2)
-        stream.flush()
         val newSize = output.position()
         if (newSize >= bufferSize) {
+          // partition buffer is full, add it to the result as spill data
+          if (result == null) {
+            result = mutable.Buffer[(Int, Array[Byte])]()
+          }
+          stream.flush()
           result.append((partitionId, output.toBytes))
           stream.close()
         } else {
@@ -71,16 +79,26 @@ class WriteBufferManager(serializer: Serializer,
     }
 
     if (totalBytes >= spillSize) {
+      // data for all partitions exceeds threshold, add all data to the result as spill data
+      if (result == null) {
+        result = mutable.Buffer[(Int, Array[Byte])]()
+      }
+      map.values.foreach(_.serializeStream.flush())
       result.appendAll(map.map(t=>(t._1, t._2.output.toBytes)))
       map.foreach(t => t._2.serializeStream.close())
       map.clear()
       totalBytes = 0
     }
 
-    result
+    if (result == null) {
+      Nil
+    } else {
+      result
+    }
   }
 
   def filledBytes = {
+    map.values.foreach(t => flushStream(t.serializeStream, t.output))
     val sum = map.map(_._2.output.position()).sum
     if (sum != totalBytes) {
       throw new RssInvalidDataException(s"Inconsistent internal state, total bytes is $totalBytes, but should be $sum")
@@ -89,10 +107,18 @@ class WriteBufferManager(serializer: Serializer,
   }
 
   def clear(): Seq[(Int, Array[Byte])] = {
+    map.values.foreach(_.serializeStream.flush())
     val result = map.map(t=>(t._1, t._2.output.toBytes)).toSeq
-    map.foreach(t => t._2.serializeStream.close())
+    map.values.foreach(_.serializeStream.close())
     map.clear()
     totalBytes = 0
     result
+  }
+
+  private def flushStream(serializeStream: SerializationStream, output: Output) = {
+    val oldPosition = output.position()
+    serializeStream.flush()
+    val numBytes = output.position() - oldPosition
+    totalBytes += numBytes
   }
 }

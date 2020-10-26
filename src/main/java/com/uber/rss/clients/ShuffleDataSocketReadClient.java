@@ -28,9 +28,9 @@ import org.slf4j.LoggerFactory;
 import java.util.Collection;
 
 /***
- * Shuffle read client to download data (records) from shuffle server.
+ * Shuffle read client to download data from shuffle server.
  */
-public abstract class ShuffleDataSocketReadClient implements AutoCloseable, SingleServerReadClient {
+public class ShuffleDataSocketReadClient implements AutoCloseable, SingleServerReadClient {
   private static final Logger logger =
       LoggerFactory.getLogger(ShuffleDataSocketReadClient.class);
 
@@ -47,12 +47,18 @@ public abstract class ShuffleDataSocketReadClient implements AutoCloseable, Sing
 
   @Override
   public DownloadServerVerboseInfo connect() {
-    ConnectDownloadResponse connectDownloadResponse = dataBlockSocketReadClient.connect();
-    DownloadServerVerboseInfo downloadServerVerboseInfo = new DownloadServerVerboseInfo();
-    downloadServerVerboseInfo.setId(connectDownloadResponse.getServerId());
-    downloadServerVerboseInfo.setRunningVersion(connectDownloadResponse.getRunningVersion());
-    downloadServerVerboseInfo.setMapTaskCommitStatus(connectDownloadResponse.getMapTaskCommitStatus());
-    return downloadServerVerboseInfo;
+    try {
+      ConnectDownloadResponse connectDownloadResponse = dataBlockSocketReadClient.connect();
+      DownloadServerVerboseInfo downloadServerVerboseInfo = new DownloadServerVerboseInfo();
+      downloadServerVerboseInfo.setId(connectDownloadResponse.getServerId());
+      downloadServerVerboseInfo.setRunningVersion(connectDownloadResponse.getRunningVersion());
+      downloadServerVerboseInfo.setMapTaskCommitStatus(connectDownloadResponse.getMapTaskCommitStatus());
+      return downloadServerVerboseInfo;
+    } catch (RuntimeException ex) {
+      logger.warn(String.format("Failed to connect %s", this), ex);
+      close();
+      throw ex;
+    }
   }
 
   @Override
@@ -68,12 +74,18 @@ public abstract class ShuffleDataSocketReadClient implements AutoCloseable, Sing
 
   @Override
   public TaskDataBlock readDataBlock() {
-    DataBlock dataBlock = dataBlockSocketReadClient.readDataBlock();
-    if (dataBlock == null) {
-      return null;
+    try {
+      DataBlock dataBlock = dataBlockSocketReadClient.readDataBlock();
+      if (dataBlock == null) {
+        return null;
+      }
+      shuffleReadBytes += DataBlockHeader.NUM_BYTES + dataBlock.getPayload().length;
+      return new TaskDataBlock(dataBlock.getPayload(), dataBlock.getHeader().getTaskAttemptId());
+    } catch (RuntimeException ex) {
+      logger.warn(String.format("Failed to read shuffle data %s", this), ex);
+      close();
+      throw ex;
     }
-    shuffleReadBytes += DataBlockHeader.NUM_BYTES + dataBlock.getPayload().length;
-    return new TaskDataBlock(dataBlock.getPayload(), dataBlock.getHeader().getTaskAttemptId());
   }
 
   @Override
