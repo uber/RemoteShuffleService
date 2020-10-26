@@ -134,8 +134,10 @@ public class DownloadServerHandler {
         executor.finishShuffleStage(appShuffleId);
     }
 
-    public ChannelFuture sendFiles(ChannelHandlerContext ctx, List<FilePathAndLength> nonEmptyFiles) {
+    public ChannelFuture sendFiles(ChannelHandlerContext ctx, List<FilePathAndLength> nonEmptyFiles, ChannelIdleCheck idleCheck) {
         String connectionInfo = NettyUtils.getServerConnectionInfo(ctx);
+
+        idleCheck.updateLastReadTime();
 
         ChannelFuture lastSendFileFuture = null;
         for (int i = 0; i < nonEmptyFiles.size(); i++) {
@@ -159,6 +161,7 @@ public class DownloadServerHandler {
                 @Override
                 public void operationComplete(ChannelProgressiveFuture future) throws Exception {
                     executor.updateLiveness(appShuffleId.getAppId());
+                    idleCheck.updateLastReadTime();
                     int numConcurrentReadFilesValue = numConcurrentReadFilesAtomicInteger.decrementAndGet();
                     numConcurrentReadFiles.update(numConcurrentReadFilesValue);
                     numReadFileBytes.inc(fileLength);
@@ -173,8 +176,8 @@ public class DownloadServerHandler {
                     }
                     double dataSpeed = LogUtils.calculateMegaBytesPerSecond(System.currentTimeMillis() - sendFileStartTime, fileLength);
                     logger.info(
-                        "Finished sending file: {} ({} of {}), success: {} ({} mbs, total {} bytes), connection: {} {}",
-                        splitFile, fileIndex + 1, nonEmptyFiles.size(), future.isSuccess(), dataSpeed, fileLength, connectionInfo, exceptionInfo);
+                        "Finished sending file: {} ({} of {}), success: {} ({} mbs, total {} bytes), connection: {} {} {}",
+                        splitFile, fileIndex + 1, nonEmptyFiles.size(), future.isSuccess(), dataSpeed, fileLength, connectionInfo, System.nanoTime(), exceptionInfo);
                 }
 
                 @Override
@@ -184,6 +187,7 @@ public class DownloadServerHandler {
                         "Sending file: {}, progress: {} out of {} bytes, {} mbs, {}",
                         splitFile, progress, total, dataSpeed, connectionInfo);
                     executor.updateLiveness(appShuffleId.getAppId());
+                    idleCheck.updateLastReadTime();
                 }
             });
             lastSendFileFuture = sendFileFuture;

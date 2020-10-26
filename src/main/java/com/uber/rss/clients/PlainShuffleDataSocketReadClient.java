@@ -21,7 +21,7 @@ import org.slf4j.LoggerFactory;
 import java.util.Collection;
 
 /***
- * Shuffle read client to download data (uncompressed records) from shuffle server.
+ * Shuffle read client to download data from shuffle server.
  */
 public class PlainShuffleDataSocketReadClient extends ShuffleDataSocketReadClient {
   private static final Logger logger =

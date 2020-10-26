@@ -121,6 +121,7 @@ public class TestStreamServer extends StreamServer {
         config.setServiceRegistryType(ServiceRegistry.TYPE_INMEMORY);
         config.setDataCenter(ServiceRegistry.DEFAULT_DATA_CENTER);
         config.setCluster(ServiceRegistry.DEFAULT_TEST_CLUSTER);
+        config.setJFxDebugProfilerEnable(false);
 
         if (configModifier != null) {
             configModifier.accept(config);

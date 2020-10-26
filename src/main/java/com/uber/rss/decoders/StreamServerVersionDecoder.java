@@ -77,8 +77,8 @@ public class StreamServerVersionDecoder extends ByteToMessageDecoder {
         } else if (type == MessageConstants.DOWNLOAD_UPLINK_MAGIC_BYTE &&
                 version == MessageConstants.DOWNLOAD_UPLINK_VERSION_3) {
             newDecoder = new StreamServerMessageDecoder(null);
-            DownloadChannelInboundHandler channelInboundHandler = new DownloadChannelInboundHandler(serverId,
-                                                                            runningVersion, executor);
+            DownloadChannelInboundHandler channelInboundHandler = new DownloadChannelInboundHandler(
+                serverId, runningVersion, idleTimeoutMillis, executor);
             channelInboundHandler.processChannelActive(ctx);
             newHandler = channelInboundHandler;
         } else if (type == MessageConstants.NOTIFY_UPLINK_MAGIC_BYTE &&
