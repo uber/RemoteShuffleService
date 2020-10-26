@@ -64,7 +64,7 @@ public class ShuffleExecutorTest {
             executor.writeData(writeOp);
         }
 
-        executor.addFinishUploadOperation(appTaskAttemptId.getAppShuffleId(), appTaskAttemptId.getTaskAttemptId());
+        executor.finishUpload(appTaskAttemptId.getAppShuffleId(), appTaskAttemptId.getTaskAttemptId());
 
         executor.pollAndWaitMapAttemptCommitted(new AppTaskAttemptId(appShuffleId, mapId1, 0L), 10000);
 
@@ -115,7 +115,7 @@ public class ShuffleExecutorTest {
                     appShuffleId, mapId1, 0L,1, serialize(str));
             executor.writeData(writeOp);
 
-            executor.addFinishUploadOperation(appTaskAttemptId.getAppShuffleId(), appTaskAttemptId.getTaskAttemptId());
+            executor.finishUpload(appTaskAttemptId.getAppShuffleId(), appTaskAttemptId.getTaskAttemptId());
 
             appMapIds.add(appTaskAttemptId.getAppMapId());
         }
@@ -132,7 +132,7 @@ public class ShuffleExecutorTest {
                     appShuffleId, mapId2, 0L,1, serialize(str));
             executor.writeData(writeOp);
 
-            executor.addFinishUploadOperation(appTaskAttemptId.getAppShuffleId(), appTaskAttemptId.getTaskAttemptId());
+            executor.finishUpload(appTaskAttemptId.getAppShuffleId(), appTaskAttemptId.getTaskAttemptId());
 
             appMapIds.add(appTaskAttemptId.getAppMapId());
         }
@@ -149,7 +149,7 @@ public class ShuffleExecutorTest {
                     appShuffleId, mapId3, 0L,2, serialize(str));
             executor.writeData(writeOp);
 
-            executor.addFinishUploadOperation(appTaskAttemptId.getAppShuffleId(), appTaskAttemptId.getTaskAttemptId());
+            executor.finishUpload(appTaskAttemptId.getAppShuffleId(), appTaskAttemptId.getTaskAttemptId());
 
             appMapIds.add(appTaskAttemptId.getAppMapId());
         }
@@ -205,7 +205,7 @@ public class ShuffleExecutorTest {
             executor.writeData(writeOp);
         }
 
-        executor.addFinishUploadOperation(appTaskAttemptId.getAppShuffleId(), appTaskAttemptId.getTaskAttemptId());
+        executor.finishUpload(appTaskAttemptId.getAppShuffleId(), appTaskAttemptId.getTaskAttemptId());
 
         executor.pollAndWaitMapAttemptCommitted(new AppTaskAttemptId(appShuffleId, mapId1, taskAttemptId), 10000);
 

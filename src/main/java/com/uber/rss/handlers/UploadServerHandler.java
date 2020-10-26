@@ -17,7 +17,6 @@ package com.uber.rss.handlers;
 import com.uber.rss.clients.ShuffleWriteConfig;
 import com.uber.rss.common.AppMapId;
 import com.uber.rss.common.AppTaskAttemptId;
-import com.uber.rss.common.Compression;
 import com.uber.rss.exceptions.RssInvalidDataException;
 import com.uber.rss.exceptions.RssInvalidStateException;
 import com.uber.rss.exceptions.RssMaxConnectionsException;
@@ -26,7 +25,6 @@ import com.uber.rss.execution.ShuffleExecutor;
 import com.uber.rss.util.NettyUtils;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
-import io.netty.handler.codec.compression.Lz4FrameDecoder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -123,7 +121,7 @@ public class UploadServerHandler {
 
     private void finishUploadImpl(AppTaskAttemptId appTaskAttemptIdToFinishUpload) {
         lazyStartUpload(appTaskAttemptIdToFinishUpload);
-        executor.addFinishUploadOperation(appTaskAttemptIdToFinishUpload.getAppShuffleId(),
+        executor.finishUpload(appTaskAttemptIdToFinishUpload.getAppShuffleId(),
                                             appTaskAttemptIdToFinishUpload.getTaskAttemptId());
         taskAttemptMap.remove(appTaskAttemptIdToFinishUpload.getTaskAttemptId());
         taskAttemptUploadStarted.remove(appTaskAttemptIdToFinishUpload.getTaskAttemptId());
