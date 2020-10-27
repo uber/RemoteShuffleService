@@ -52,7 +52,7 @@ public class ServerHandlerMetrics extends MetricGroup<NettyServerSideMetricsKey>
     @Override
     protected Scope createScope(NettyServerSideMetricsKey key) {
         Map<String, String> tags = new HashMap<>();
-        tags.put(M3Stats.TAG_NAME_SOURCE, M3Stats.TAG_VALUE_SERVER_HANDLER);
+        tags.put(M3Stats.TAG_NAME_SOURCE, this.getClass().getSimpleName());
         tags.put(M3Stats.TAG_NAME_USER, key.getUser());
         return M3Stats.createSubScope(tags);
     }

@@ -140,7 +140,7 @@ public class UploadChannelInboundHandler extends ChannelInboundHandlerAdapter {
                     logger.info(
                         "Cannot handle new connection due to server capacity. Closing current connection: {}. {}",
                         connectionInfo, ExceptionUtils.getSimpleMessage(e));
-                    M3Stats.addException(e, M3Stats.TAG_VALUE_SERVER_HANDLER);
+                    M3Stats.addException(e, this.getClass().getSimpleName());
                     ByteBuf buf = ctx.alloc().buffer(1);
                     buf.writeByte(MessageConstants.RESPONSE_STATUS_SERVER_BUSY);
                     ctx.writeAndFlush(buf).addListener(ChannelFutureListener.CLOSE);
@@ -158,7 +158,7 @@ public class UploadChannelInboundHandler extends ChannelInboundHandlerAdapter {
                         "Cannot handle new connection due to writing too much data from app (%s). " +
                                 "Closing current connection: {}. {}", appId, connectionInfo,
                                 ExceptionUtils.getSimpleMessage(e));
-                    M3Stats.addException(e, M3Stats.TAG_VALUE_SERVER_HANDLER);
+                    M3Stats.addException(e, this.getClass().getSimpleName());
                     ByteBuf buf = ctx.alloc().buffer(1);
                     buf.writeByte(MessageConstants.RESPONSE_STATUS_APP_TOO_MUCH_DATA);
                     ctx.writeAndFlush(buf).addListener(ChannelFutureListener.CLOSE);

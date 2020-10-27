@@ -306,7 +306,7 @@ public class StreamServerMessageDecoder extends ByteToMessageDecoder {
 
   @Override
   public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
-    M3Stats.addException(cause, M3Stats.TAG_VALUE_SERVER_DECODER);
+    M3Stats.addException(cause, this.getClass().getSimpleName());
 
     String connectionInfo = NettyUtils.getServerConnectionInfo(ctx);
     String msg = "Got exception " + connectionInfo;
