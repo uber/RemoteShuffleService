@@ -423,7 +423,7 @@ public class StreamServerStressTool {
             try {
                 t.join();
             } catch (InterruptedException e) {
-                M3Stats.addException(e, M3Stats.TAG_VALUE_STRESS_TOOL);
+                M3Stats.addException(e, this.getClass().getSimpleName());
                 throw new RuntimeException(e);
             }
         });
@@ -473,7 +473,7 @@ public class StreamServerStressTool {
                 streamReadClientVerify.verifyRecords(usedPartitionIds.keySet(), fetchTaskAttemptIds);
                 logger.info(String.format("Verifying reading from servers: %s", StringUtils.join(serverDetails, ", ")));
             } catch (Throwable ex) {
-                M3Stats.addException(ex, M3Stats.TAG_VALUE_STRESS_TOOL);
+                M3Stats.addException(ex, this.getClass().getSimpleName());
                 logger.error(String.format("Failed to verify reading from servers: %s", StringUtils.join(serverDetails, ", ")), ex);
                 throw ex;
             } finally {
@@ -493,7 +493,7 @@ public class StreamServerStressTool {
                         deleteDirectories(serverRootDirs);
                         logger.info(String.format("Deleted files: %s", StringUtils.join(serverRootDirs, ", ")));
                     } catch (Throwable ex) {
-                        M3Stats.addException(ex, M3Stats.TAG_VALUE_STRESS_TOOL);
+                        M3Stats.addException(ex, this.getClass().getSimpleName());
                         logger.info("Got some error when deleting files: %s, ignored them");
                     }
                 }
@@ -562,7 +562,7 @@ public class StreamServerStressTool {
             try {
                 Thread.sleep(delayMillis);
             } catch (InterruptedException e) {
-                M3Stats.addException(e, M3Stats.TAG_VALUE_STRESS_TOOL);
+                M3Stats.addException(e, this.getClass().getSimpleName());
                 throw new RuntimeException(e);
             }
         }
@@ -643,7 +643,7 @@ public class StreamServerStressTool {
                     try {
                         Thread.sleep(mapSlowness);
                     } catch (InterruptedException e) {
-                        M3Stats.addException(e, M3Stats.TAG_VALUE_STRESS_TOOL);
+                        M3Stats.addException(e, this.getClass().getSimpleName());
                         throw new RuntimeException(e);
                     }
                 }
@@ -683,12 +683,12 @@ public class StreamServerStressTool {
                 logger.info(String.format("Closing write client: %s", writeClient));
                 writeClient.close();
             } catch (Exception e) {
-                M3Stats.addException(e, M3Stats.TAG_VALUE_STRESS_TOOL);
+                M3Stats.addException(e, this.getClass().getSimpleName());
                 throw new RuntimeException(e);
             }
         } catch (Throwable ex) {
             writeClient.close();
-            M3Stats.addException(ex, M3Stats.TAG_VALUE_STRESS_TOOL);
+            M3Stats.addException(ex, this.getClass().getSimpleName());
             if (isLastTaskAttempt) {
                 throw ex;
             } else {
@@ -733,7 +733,7 @@ public class StreamServerStressTool {
             serverDetails.add(new ServerDetail(server.getServerId(), server.getRunningVersion(), String.format("localhost:%s",server.getShufflePort())));
             logger.info(String.format("Started server, port: %s, rootDir: %s, %s", server.getShufflePort(), serverDirFullPath, serverConfig));
         } catch (Throwable e) {
-            M3Stats.addException(e, M3Stats.TAG_VALUE_STRESS_TOOL);
+            M3Stats.addException(e, this.getClass().getSimpleName());
             throw new RuntimeException("Failed to start stream server", e);
         }
     }

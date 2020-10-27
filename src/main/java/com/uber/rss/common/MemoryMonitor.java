@@ -69,7 +69,7 @@ public class MemoryMonitor {
                         try {
                             memoryMXBean = ManagementFactory.getMemoryMXBean();
                         } catch (Throwable ex) {
-                            M3Stats.addException(ex, M3Stats.TAG_VALUE_MEMORY_MONITOR);
+                            M3Stats.addException(ex, this.getClass().getSimpleName());
                             throw new RssException("Failed to run getMemoryMXBean", ex);
                         }
 
