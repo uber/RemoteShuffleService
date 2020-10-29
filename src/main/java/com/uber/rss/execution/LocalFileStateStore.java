@@ -20,7 +20,6 @@ import com.uber.rss.exceptions.RssFileCorruptedException;
 import com.uber.rss.exceptions.RssInvalidStateException;
 import com.uber.rss.messages.AppDeletionStateItem;
 import com.uber.rss.messages.BaseMessage;
-import com.uber.rss.messages.CommitMarkerStateItem;
 import com.uber.rss.messages.StageCorruptionStateItem;
 import com.uber.rss.messages.StageInfoStateItem;
 import com.uber.rss.messages.TaskAttemptCommitStateItem;
@@ -114,9 +113,6 @@ public class LocalFileStateStore implements StateStore {
   }
 
   public void commit() {
-    CommitMarkerStateItem item = new CommitMarkerStateItem(System.currentTimeMillis());
-    writeState(item);
-
     synchronized (this) {
       try {
         currentFileStream.flush();
