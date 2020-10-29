@@ -130,12 +130,6 @@ public class LocalFileStateStoreTest {
         Arrays.asList(40L),
         Arrays.asList(new PartitionFilePathAndLength(9, "p9", 0), new PartitionFilePathAndLength(10, "p10", 100)));
 
-    // load data before commit, should get no data
-    iterator = stateStore.loadData();
-    Assert.assertFalse(iterator.hasNext());
-    Assert.assertNull(iterator.next());
-
-    // commit data in state store, now we should get data
     stateStore.commit();
 
     // load data
@@ -217,12 +211,6 @@ public class LocalFileStateStoreTest {
     Assert.assertEquals(taskAttemptCommitStateItem.getPartitionFilePathAndLengths(),
         Arrays.asList(new PartitionFilePathAndLength(9, "p9", 0),
             new PartitionFilePathAndLength(10, "p10", 100)));
-
-    Assert.assertFalse(iterator.hasNext());
-    Assert.assertNull(iterator.next());
-
-    // commit data
-    stateStore.commit();
 
     // load data
     iterator = stateStore.loadData();

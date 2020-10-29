@@ -16,7 +16,6 @@ package com.uber.rss.execution;
 
 import com.uber.rss.messages.AppDeletionStateItem;
 import com.uber.rss.messages.BaseMessage;
-import com.uber.rss.messages.CommitMarkerStateItem;
 import com.uber.rss.messages.MessageConstants;
 import com.uber.rss.messages.StageCorruptionStateItem;
 import com.uber.rss.messages.StageInfoStateItem;
@@ -29,11 +28,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 
@@ -46,7 +43,7 @@ public class LocalFileStateStoreIterator implements Iterator<BaseMessage>, AutoC
 
   private String currentFile;
   private FileInputStream fileStream;
-
+  private long fileSize;
 
   private final List<BaseMessage> messages = new ArrayList<>();
   private int nextMessageIndex = 0;
@@ -85,17 +82,21 @@ public class LocalFileStateStoreIterator implements Iterator<BaseMessage>, AutoC
         return;
       }
 
-      List<BaseMessage> nextBatch = readDataBatch();
-      while (nextBatch.isEmpty()) {
+      BaseMessage nextItem = readDataItem();
+      while (nextItem == null) {
         openFileIfNecessary();
         if (fileStream == null) {
           return;
         }
 
-        nextBatch = readDataBatch();
+        nextItem = readDataItem();
       }
 
-      messages.addAll(nextBatch);
+      // TODO messages was originally designed to read data in batches, now we do not need it anymore
+      // delete it later.
+      if (nextItem != null) {
+        messages.add(nextItem);
+      }
     }
   }
 
@@ -110,27 +111,14 @@ public class LocalFileStateStoreIterator implements Iterator<BaseMessage>, AutoC
       try {
         logger.info(String.format("Opening state file: %s", currentFile));
         fileStream = new FileInputStream(currentFile);
-      } catch (FileNotFoundException e) {
+        fileSize = fileStream.getChannel().size();
+      } catch (IOException e) {
         logger.warn(String.format("Failed to open state file %s", currentFile), e);
         fileStream = null;
+        fileSize = 0;
         continue;
       }
     }
-  }
-
-  // Read a batch of data: a sequence of data items right before next commit marker. Return empty list if
-  // not hit next commit marker.
-  private List<BaseMessage> readDataBatch() {
-    List<BaseMessage> result = new ArrayList<>();
-    BaseMessage item = readDataItem();
-    while (item != null) {
-      if (item instanceof CommitMarkerStateItem) {
-        return result;
-      }
-      result.add(item);
-      item = readDataItem();
-    }
-    return Collections.emptyList();
   }
 
   private BaseMessage readDataItem() {
@@ -171,8 +159,6 @@ public class LocalFileStateStoreIterator implements Iterator<BaseMessage>, AutoC
           return TaskAttemptCommitStateItem.deserialize(buf);
         case MessageConstants.MESSAGE_AppDeletionStateItem:
           return AppDeletionStateItem.deserialize(buf);
-        case MessageConstants.MESSAGE_CommitMarkerStateItem:
-          return CommitMarkerStateItem.deserialize(buf);
         case MessageConstants.MESSAGE_StageCorruptionStateItem:
           return StageCorruptionStateItem.deserialize(buf);
         default:
@@ -190,6 +176,9 @@ public class LocalFileStateStoreIterator implements Iterator<BaseMessage>, AutoC
   private byte[] readBytes(int numBytes) {
     try {
       long position = fileStream.getChannel().position();
+      if (position >= fileSize) {
+        return null;
+      }
       byte[] bytes = StreamUtils.readBytes(fileStream, numBytes);
       if (bytes == null) {
         logger.info(String.format("Finished reading state file %s after reading %s bytes", currentFile, position));
@@ -218,6 +207,7 @@ public class LocalFileStateStoreIterator implements Iterator<BaseMessage>, AutoC
       logger.warn(String.format("Failed to close state file: %s", currentFile), e);
     }
     fileStream = null;
+    fileSize = 0;
   }
 
   @Override
