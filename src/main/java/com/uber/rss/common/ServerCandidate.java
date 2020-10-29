@@ -17,10 +17,12 @@ package com.uber.rss.common;
 public class ServerCandidate {
   private ServerDetail serverDetail;
   private long requestLatency;
+  private long concurrentConnections;
 
-  public ServerCandidate(ServerDetail serverDetail, long requestLatency) {
+  public ServerCandidate(ServerDetail serverDetail, long requestLatency, long concurrentConnections) {
     this.serverDetail = serverDetail;
     this.requestLatency = requestLatency;
+    this.concurrentConnections = concurrentConnections;
   }
 
   public ServerDetail getServerDetail() {
@@ -31,11 +33,16 @@ public class ServerCandidate {
     return requestLatency;
   }
 
+  public long getConcurrentConnections(){
+    return concurrentConnections;
+  }
+
   @Override
   public String toString() {
     return "ServerCandidate{" +
         "serverDetail=" + serverDetail +
         ", requestLatency=" + requestLatency +
+        ", concurrentConnections=" + concurrentConnections +
         '}';
   }
 }

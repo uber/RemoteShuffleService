@@ -77,6 +77,8 @@ public class UploadChannelInboundHandler extends ChannelInboundHandlerAdapter {
 
     private ChannelIdleCheck idleCheck;
 
+    final int CONCURRENT_CONNS = 1;
+
     public UploadChannelInboundHandler(String serverId,
                                        String runningVersion,
                                        long idleTimeoutMillis,
@@ -211,6 +213,8 @@ public class UploadChannelInboundHandler extends ChannelInboundHandlerAdapter {
                 // TODO ideally clients should send some information to tell server what status they are interested
                 Map<Long, Long> metricsMap = new HashMap<>();
                 GetBusyStatusResponse getBusyStatusResponse = new GetBusyStatusResponse(metricsMap, new HashMap<>());
+                getBusyStatusResponse.getMetrics().put(new Long(CONCURRENT_CONNS),
+                                                            new Long (concurrentChannelsAtomicInteger.get()));
                 ChannelFuture channelFuture = HandlerUtil.writeResponseMsg(ctx, MessageConstants.RESPONSE_STATUS_OK,
                                                                             getBusyStatusResponse, true);
                 channelFuture.addListener(ChannelFutureListener.CLOSE);
