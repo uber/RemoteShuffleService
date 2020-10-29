@@ -52,12 +52,16 @@ public class ServiceRegistryUtils {
      * @param cluster cluster
      * @return servers
      */
-    public static List<ServerDetail> getReachableServers(ServiceRegistry serviceRegistry, int maxServerCount, long maxTryMillis, String dataCenter, String cluster, Collection<String> excludeHosts) {
+    public static List<ServerDetail> getReachableServers(ServiceRegistry serviceRegistry, int maxServerCount,
+                                                         long maxTryMillis, String dataCenter, String cluster,
+                                                         Collection<String> excludeHosts) {
         // TODO make following configurable
         // get extra servers in case there are bad servers, will remove those extra servers in the final server list
         final int extraServerCount = Math.min(5, maxServerCount);
 
         final int serverCandidateCount = maxServerCount + extraServerCount;
+
+        final Long CONCURRENT_CONNS = new Long(1);
 
         int retryIntervalMillis = 100;
         List<ServerDetail> serverInfos = RetryUtils.retryUntilNotNull(
@@ -65,7 +69,9 @@ public class ServiceRegistryUtils {
                 maxTryMillis,
                 () -> {
                     try {
-                        logger.info(String.format("Trying to get max %s RSS servers, data center: %s, cluster: %s, exclude hosts: %s", serverCandidateCount, dataCenter, cluster, StringUtils.join(excludeHosts, ",")));
+                        logger.info(String.format("Trying to get max %s RSS servers, data center: %s, cluster: %s, " +
+                                "exclude hosts: %s", serverCandidateCount, dataCenter, cluster,
+                                StringUtils.join(excludeHosts, ",")));
                         return serviceRegistry.getServers(dataCenter, cluster, serverCandidateCount, excludeHosts);
                     } catch (Throwable ex) {
                         logger.warn("Failed to call ServiceRegistry.getServers", ex);
@@ -77,17 +83,19 @@ public class ServiceRegistryUtils {
         }
 
         // some hosts may get UnknowHostException sometimes, exclude those hosts
-        logger.info(String.format("Got %s RSS servers from service registry, checking their connectivity", serverInfos.size()));
+        logger.info(String.format("Got %s RSS servers from service registry, checking their connectivity",
+                                    serverInfos.size()));
         ConcurrentLinkedQueue<String> unreachableHosts = new ConcurrentLinkedQueue<>();
         List<ServerCandidate> serverCandidates = serverInfos.parallelStream().map(t -> {
           ServerHostAndPort hostAndPort = ServerHostAndPort.fromString(t.getConnectionString());
           String host = hostAndPort.getHost();
           int port = hostAndPort.getPort();
           long startTime = System.currentTimeMillis();
-          try (BusyStatusSocketClient busyStatusSocketClient = new BusyStatusSocketClient(host, port, NetworkUtils.DEFAULT_REACHABLE_TIMEOUT, "")) {
+          try (BusyStatusSocketClient busyStatusSocketClient = new BusyStatusSocketClient(host, port,
+                                                                    NetworkUtils.DEFAULT_REACHABLE_TIMEOUT, "")) {
             GetBusyStatusResponse getBusyStatusResponse = busyStatusSocketClient.getBusyStatus();
             long requestLatency = System.currentTimeMillis() - startTime;
-            return new ServerCandidate(t, requestLatency);
+            return new ServerCandidate(t, requestLatency,getBusyStatusResponse.getMetrics().get(CONCURRENT_CONNS));
           } catch (Throwable ex) {
             logger.warn(String.format("Detected unreachable host %s", host), ex);
             unreachableHosts.add(host);
@@ -95,7 +103,23 @@ public class ServiceRegistryUtils {
           }
         })
             .filter(t -> t != null)
-            .sorted(Comparator.comparingLong(ServerCandidate::getRequestLatency))
+            .sorted((o1, o2) -> {
+                // We wanted to keep 500 ms offset to compare
+                long offfset = 500;
+                Long latency1 = o1.getRequestLatency();
+                Long latency2 = o2.getRequestLatency();
+
+                long diff = latency1 - latency2;
+                if (diff > offfset || diff < (-1 * offfset)) {
+                    int comp = Long.compare(latency1, latency2);
+                    if (comp != 0) {
+                        return comp;
+                    }
+                }
+                Long connections1 = o1.getConcurrentConnections();
+                Long connections2 = o2.getConcurrentConnections();
+                return Long.compare(connections1,connections2);
+            })
             .collect(Collectors.toList());
 
         for (String unreachableHost : unreachableHosts) {
