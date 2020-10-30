@@ -21,7 +21,6 @@ import com.uber.rss.exceptions.RssInvalidStateException;
 import com.uber.rss.exceptions.RssNetworkException;
 import com.uber.rss.messages.FinishUploadMessage;
 import com.uber.rss.messages.MessageConstants;
-import com.uber.rss.messages.CloseConnectionMessage;
 import com.uber.rss.messages.ConnectUploadRequest;
 import com.uber.rss.messages.ConnectUploadResponse;
 import com.uber.rss.messages.StartUploadMessage;
@@ -171,11 +170,6 @@ public class DataBlockSyncWriteClient extends com.uber.rss.clients.ClientBase {
 
   @Override
   public void close() {
-    if (!super.isClosed() && outputStream != null) {
-      String info = this.toString();
-      CloseConnectionMessage closeConnectionMessage = new CloseConnectionMessage(info);
-      writeControlMessageNotWaitResponseStatus(closeConnectionMessage);
-    }
     super.close();
     closeMetrics();
   }

@@ -29,7 +29,6 @@ import com.uber.rss.messages.GetBusyStatusResponse;
 import com.uber.rss.messages.HeartbeatMessage;
 import com.uber.rss.messages.MessageConstants;
 import com.uber.rss.messages.ShuffleDataWrapper;
-import com.uber.rss.messages.CloseConnectionMessage;
 import com.uber.rss.messages.ConnectUploadRequest;
 import com.uber.rss.messages.ConnectUploadResponse;
 import com.uber.rss.messages.StartUploadMessage;
@@ -198,8 +197,6 @@ public class UploadChannelInboundHandler extends ChannelInboundHandlerAdapter {
             } else if (msg instanceof ShuffleDataWrapper) {
                 ShuffleDataWrapper shuffleDataWrapper = (ShuffleDataWrapper)msg;
                 uploadServerHandler.writeRecord(shuffleDataWrapper);
-            } else if (msg instanceof CloseConnectionMessage) {
-                ctx.close();
             } else if (msg instanceof HeartbeatMessage) {
                 HeartbeatMessage heartbeatMessage = (HeartbeatMessage)msg;
                 String heartbeatAppId = heartbeatMessage.getAppId();
