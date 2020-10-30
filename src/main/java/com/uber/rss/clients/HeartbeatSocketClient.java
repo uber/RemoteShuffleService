@@ -14,8 +14,6 @@
 
 package com.uber.rss.clients;
 
-import com.uber.rss.exceptions.RssInvalidStateException;
-import com.uber.rss.messages.CloseConnectionMessage;
 import com.uber.rss.messages.HeartbeatMessage;
 import com.uber.rss.messages.MessageConstants;
 import org.slf4j.Logger;
@@ -56,11 +54,6 @@ public class HeartbeatSocketClient extends ClientBase {
 
   @Override
   public void close() {
-    if (!super.isClosed() && outputStream != null && keepLive) {
-      String info = this.toString();
-      CloseConnectionMessage closeConnectionMessage = new CloseConnectionMessage(info);
-      writeControlMessageNotWaitResponseStatus(closeConnectionMessage);
-    }
     super.close();
   }
 }

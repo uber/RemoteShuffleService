@@ -31,7 +31,6 @@ import com.uber.rss.exceptions.RssException;
 import com.uber.rss.exceptions.RssShuffleCorruptedException;
 import com.uber.rss.exceptions.RssShuffleDataNotAvailableException;
 import com.uber.rss.exceptions.RssStreamReadException;
-import com.uber.rss.messages.CloseConnectionMessage;
 import com.uber.rss.messages.ConnectDownloadRequest;
 import com.uber.rss.messages.GetDataAvailabilityRequest;
 import com.uber.rss.messages.MessageConstants;
@@ -264,11 +263,6 @@ public class DataBlockSocketReadClient extends com.uber.rss.clients.ClientBase {
   @Override
   public void close() {
     try {
-      if (!super.isClosed() && outputStream != null) {
-        String info = this.toString();
-        CloseConnectionMessage closeConnectionMessage = new CloseConnectionMessage(info);
-        writeControlMessageNotWaitResponseStatus(closeConnectionMessage);
-      }
       super.close();
       closeMetrics();
     } catch (Throwable ex) {

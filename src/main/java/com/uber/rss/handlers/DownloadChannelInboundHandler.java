@@ -17,15 +17,12 @@ package com.uber.rss.handlers;
 import com.uber.m3.tally.Counter;
 import com.uber.m3.tally.Gauge;
 import com.uber.rss.RssBuildInfo;
-import com.uber.rss.clients.ShuffleWriteConfig;
 import com.uber.rss.common.AppShufflePartitionId;
 import com.uber.rss.common.FilePathAndLength;
 import com.uber.rss.common.MapTaskCommitStatus;
 import com.uber.rss.exceptions.RssInvalidDataException;
-import com.uber.rss.exceptions.RssShuffleStageNotStartedException;
 import com.uber.rss.execution.ShuffleExecutor;
 import com.uber.rss.messages.BaseMessage;
-import com.uber.rss.messages.CloseConnectionMessage;
 import com.uber.rss.messages.ConnectDownloadRequest;
 import com.uber.rss.messages.ConnectDownloadResponse;
 import com.uber.rss.messages.GetDataAvailabilityRequest;
@@ -36,7 +33,6 @@ import com.uber.rss.metrics.M3Stats;
 import com.uber.rss.util.NettyUtils;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.util.ReferenceCountUtil;
@@ -156,9 +152,6 @@ public class DownloadChannelInboundHandler extends ChannelInboundHandlerAdapter 
                 dataAvailable = mapTaskCommitStatus != null && mapTaskCommitStatus.isPartitionDataAvailable(fetchTaskAttemptIds);
                 GetDataAvailabilityResponse getDataAvailabilityResponse = new GetDataAvailabilityResponse(mapTaskCommitStatus, dataAvailable);
                 sendResponseAndFiles(ctx, dataAvailable, shuffleStageStatus, getDataAvailabilityResponse, idleCheck);
-            } else if (msg instanceof CloseConnectionMessage) {
-                logger.info("Closing connection on client request {} {}", connectionInfo, System.nanoTime());
-                ctx.close();
             } else {
                 throw new RssInvalidDataException(String.format("Unsupported message: %s, %s", msg, connectionInfo));
             }

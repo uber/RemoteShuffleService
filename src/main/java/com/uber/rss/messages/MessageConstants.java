@@ -34,8 +34,6 @@ public class MessageConstants {
     public final static byte RESPONSE_STATUS_UNSPECIFIED = 0;
 
     // Control messages
-    public final static int MESSAGE_CloseConnectionMessage = -1;
-
     public final static int MESSAGE_FinishApplicationAttemptRequest = -7;
     public final static int MESSAGE_RegisterServerRequest = -9;
     public final static int MESSAGE_GetServersRequest = -10;
@@ -65,7 +63,6 @@ public class MessageConstants {
     public final static int MESSAGE_AppDeletionStateItem = -404;
     public final static int MESSAGE_StageCorruptionStateItem = -405;
     public final static int MESSAGE_TaskAttemptCommitStateItem = -407;
-    public final static int MESSAGE_CommitMarkerStateItem = -420;
 
     // Other constants
 
