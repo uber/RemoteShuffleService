@@ -46,7 +46,8 @@ public class BusyStatusSocketClient extends ClientBase {
     GetBusyStatusRequest getBusyStatusRequest = new GetBusyStatusRequest(user);
     writeControlMessageAndWaitResponseStatus(getBusyStatusRequest);
 
-    GetBusyStatusResponse getBusyStatusResponse = readResponseMessage(MessageConstants.MESSAGE_GetBusyStatusResponse, GetBusyStatusResponse::deserialize);
+    GetBusyStatusResponse getBusyStatusResponse = readResponseMessage(MessageConstants.MESSAGE_GetBusyStatusResponse,
+                                                                        GetBusyStatusResponse::deserialize);
     return getBusyStatusResponse;
   }
 

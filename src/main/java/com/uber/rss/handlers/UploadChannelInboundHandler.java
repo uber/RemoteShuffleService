@@ -30,7 +30,6 @@ import com.uber.rss.messages.GetBusyStatusResponse;
 import com.uber.rss.messages.HeartbeatMessage;
 import com.uber.rss.messages.MessageConstants;
 import com.uber.rss.messages.ShuffleDataWrapper;
-import com.uber.rss.messages.CloseConnectionMessage;
 import com.uber.rss.messages.ConnectUploadRequest;
 import com.uber.rss.messages.ConnectUploadResponse;
 import com.uber.rss.messages.StartUploadMessage;
@@ -77,6 +76,8 @@ public class UploadChannelInboundHandler extends ChannelInboundHandlerAdapter {
     private StartUploadMessage startUploadMessage = null;
 
     private ChannelIdleCheck idleCheck;
+
+    final int CONCURRENT_CONNS = 1;
 
     public UploadChannelInboundHandler(String serverId,
                                        String runningVersion,
@@ -196,8 +197,6 @@ public class UploadChannelInboundHandler extends ChannelInboundHandlerAdapter {
             } else if (msg instanceof ShuffleDataWrapper) {
                 ShuffleDataWrapper shuffleDataWrapper = (ShuffleDataWrapper)msg;
                 uploadServerHandler.writeRecord(shuffleDataWrapper);
-            } else if (msg instanceof CloseConnectionMessage) {
-                ctx.close();
             } else if (msg instanceof HeartbeatMessage) {
                 HeartbeatMessage heartbeatMessage = (HeartbeatMessage)msg;
                 String heartbeatAppId = heartbeatMessage.getAppId();
@@ -211,6 +210,8 @@ public class UploadChannelInboundHandler extends ChannelInboundHandlerAdapter {
                 // TODO ideally clients should send some information to tell server what status they are interested
                 Map<Long, Long> metricsMap = new HashMap<>();
                 GetBusyStatusResponse getBusyStatusResponse = new GetBusyStatusResponse(metricsMap, new HashMap<>());
+                getBusyStatusResponse.getMetrics().put(new Long(CONCURRENT_CONNS),
+                                                            new Long (concurrentChannelsAtomicInteger.get()));
                 ChannelFuture channelFuture = HandlerUtil.writeResponseMsg(ctx, MessageConstants.RESPONSE_STATUS_OK,
                                                                             getBusyStatusResponse, true);
                 channelFuture.addListener(ChannelFutureListener.CLOSE);

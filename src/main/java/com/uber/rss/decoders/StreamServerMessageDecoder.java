@@ -17,7 +17,6 @@ package com.uber.rss.decoders;
 import com.uber.rss.common.DataBlockHeader;
 import com.uber.rss.exceptions.RssException;
 import com.uber.rss.exceptions.RssInvalidDataException;
-import com.uber.rss.messages.CloseConnectionMessage;
 import com.uber.rss.messages.ConnectDownloadRequest;
 import com.uber.rss.messages.ConnectDownloadResponse;
 import com.uber.rss.messages.ConnectNotifyRequest;
@@ -331,9 +330,6 @@ public class StreamServerMessageDecoder extends ByteToMessageDecoder {
         return StartUploadMessage.deserialize(in);
       case MessageConstants.MESSAGE_FinishUploadMessage:
         return FinishUploadMessage.deserialize(in);
-      case MessageConstants.MESSAGE_CloseConnectionMessage:
-        CloseConnectionMessage closeConnectionMessage = CloseConnectionMessage.deserialize(in);
-        return closeConnectionMessage;
       case MessageConstants.MESSAGE_HeartbeatMessage:
         HeartbeatMessage heartbeatMessage = HeartbeatMessage.deserialize(in);
         return heartbeatMessage;
