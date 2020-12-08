@@ -156,8 +156,12 @@ public class PooledWriteClientFactory implements WriteClientFactory {
 
     @Override
     public boolean equals(Object o) {
-      if (this == o) return true;
-      if (o == null || getClass() != o.getClass()) return false;
+      if (this == o) {
+        return true;
+      }
+      if (o == null || getClass() != o.getClass()) {
+        return false;
+      }
       ClientKey clientKey = (ClientKey) o;
       return port == clientKey.port &&
           Objects.equals(host, clientKey.host) &&

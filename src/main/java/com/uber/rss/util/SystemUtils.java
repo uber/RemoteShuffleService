@@ -23,7 +23,7 @@ public class SystemUtils {
 
     public static long getFileDescriptorCount() {
         OperatingSystemMXBean mbean = ManagementFactory.getOperatingSystemMXBean();
-        if(mbean instanceof UnixOperatingSystemMXBean){
+        if (mbean instanceof UnixOperatingSystemMXBean) {
             return ((UnixOperatingSystemMXBean)mbean).getOpenFileDescriptorCount();
         } else {
             return 0L;

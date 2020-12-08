@@ -68,8 +68,12 @@ public class ServerDetail {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
         ServerDetail that = (ServerDetail) o;
         return Objects.equals(serverId, that.serverId) &&
                 Objects.equals(runningVersion, that.runningVersion) &&

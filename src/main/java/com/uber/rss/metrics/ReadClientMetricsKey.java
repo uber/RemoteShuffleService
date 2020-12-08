@@ -35,8 +35,12 @@ public class ReadClientMetricsKey {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
         ReadClientMetricsKey that = (ReadClientMetricsKey) o;
         return Objects.equals(source, that.source) &&
                 Objects.equals(user, that.user);
