@@ -43,26 +43,63 @@ class WriterAggregationManager[K, V, C](taskMemoryManager: TaskMemoryManager,
                                         conf: SparkConf)
   extends WriteBufferManager[K, V, C](serializer, bufferOptions) with Logging {
 
+  private var recordsRead: Int = 0
+  private var skipMapSideAgg: Boolean = false
+
+  private val minimumSampleSize: Int = 1000
+  private val reductionFactorThreshold: Double = conf.get(RssOpts.reductionFactorBackoffThreshold)
   private val initialMemoryThreshold: Long = conf.get(RssOpts.rssMapSideAggInitialMemoryThreshold)
 
   private val aggImpl = new WriterAggregationImpl(taskMemoryManager,
     shuffleDependency, serializer, bufferOptions, conf)
 
-  override def recordsWritten: Int = aggImpl.recordsWritten
+
+  private var aggMapper: WriterAggregationMapper[K, V, C] = null
+
+  override def recordsWritten: Int = aggImpl.recordsWritten + aggMapper.recordsWritten
 
   override def addRecord(partitionId: Int, record: Product2[K, V]): Seq[(Int, Array[Byte])] = {
-    aggImpl.addRecord(partitionId, record)
+    recordsRead += 1
+    if (skipMapSideAgg) {
+      aggMapper.addRecord(partitionId, record)
+    } else if (mayBeSkipAggregation) {
+      skipMapSideAgg = true
+      aggMapper = new WriterAggregationMapper[K, V, C](shuffleDependency, serializer, bufferOptions)
+      // Skip aggregation here on, spill the hashmap and use the buffer based mapper instead
+      aggImpl.addRecord(partitionId, record)
+      aggImpl.spillMap()
+    } else {
+      aggImpl.addRecord(partitionId, record)
+    }
+  }
+
+  private def mayBeSkipAggregation: Boolean = {
+    recordsRead > minimumSampleSize && reductionFactor > reductionFactorThreshold
+  }
+
+  private def reductionFactor: Double = {
+    aggImpl.mapSize / recordsRead.toDouble
   }
 
   override def clear(): Seq[(Int, Array[Byte])] = {
-    aggImpl.spillMap()
+    if (skipMapSideAgg) {
+      aggMapper.clear()
+    } else {
+      aggImpl.spillMap()
+    }
   }
 
   override def filledBytes: Int = {
-    aggImpl.filledBytes
+    if (skipMapSideAgg) {
+      aggMapper.filledBytes
+    } else {
+      aggImpl.filledBytes
+    }
   }
 
   override def releaseMemory(memoryToHold: Long = initialMemoryThreshold): Unit = {
-    aggImpl.releaseMemory(memoryToHold)
+    if (!skipMapSideAgg) {
+      aggImpl.releaseMemory(memoryToHold)
+    }
   }
 }

@@ -34,9 +34,10 @@ private[rss] class WriterAggregationImpl[K, V, C](taskMemoryManager: TaskMemoryM
   }
 
   private val initialMemoryThreshold: Long = conf.get(RssOpts.rssMapSideAggInitialMemoryThreshold)
-  private var allocatedMemoryThreshold: Long = initialMemoryThreshold
   private val serializerInstance = serializer.newInstance()
+  private var allocatedMemoryThreshold: Long = initialMemoryThreshold
 
+  private[rss] def mapSize: Int = map.size
   private[rss] def recordsWritten: Int = recordsWrittenCnt
 
   private def changeValue(key: (Int, K), updateFunc: (Boolean, C) => C): C = {
