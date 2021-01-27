@@ -16,13 +16,12 @@ package org.apache.spark.shuffle
 
 import java.nio.ByteBuffer
 import java.util.concurrent.{CompletableFuture, TimeUnit}
-
 import com.uber.rss.clients.ShuffleDataWriter
 import com.uber.rss.common.{AppTaskAttemptId, ServerList}
 import com.uber.rss.exceptions.RssInvalidStateException
 import com.uber.rss.metrics.ShuffleClientStageMetrics
 import net.jpountz.lz4.LZ4Factory
-import org.apache.spark.ShuffleDependency
+import org.apache.spark.{ShuffleDependency, SparkConf}
 import org.apache.spark.executor.ShuffleWriteMetrics
 import org.apache.spark.internal.Logging
 import org.apache.spark.scheduler.MapStatus
@@ -39,7 +38,8 @@ class RssShuffleWriter[K, V, C](
     bufferOptions: BufferManagerOptions,
     shuffleDependency: ShuffleDependency[K, V, C],
     stageMetrics: ShuffleClientStageMetrics,
-    shuffleWriteMetrics: ShuffleWriteMetrics) extends ShuffleWriter[K, V] with Logging {
+    shuffleWriteMetrics: ShuffleWriteMetrics,
+    conf: SparkConf) extends ShuffleWriter[K, V] with Logging {
 
   logInfo(s"Using ShuffleWriter: ${this.getClass.getSimpleName}, map task: $mapInfo, buffer: $bufferOptions")
 

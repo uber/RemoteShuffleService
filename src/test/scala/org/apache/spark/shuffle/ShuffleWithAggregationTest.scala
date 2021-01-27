@@ -50,32 +50,65 @@ class ShuffleWithAggregationTest {
 
   @Test
   def foldByKey(): Unit = {
-    val conf = TestUtil.newSparkConfWithStandAloneRegistryServer(appId, rssTestCluster.getRegistryServerConnection)
+    Seq("true", "false").foreach(confValue => {
+      val conf = TestUtil.newSparkConfWithStandAloneRegistryServer(appId, rssTestCluster.getRegistryServerConnection)
+      conf.set("spark.shuffle.rss.mapSideAggregation.enabled", confValue)
+      sc = new SparkContext(conf)
 
-    sc = new SparkContext(conf)
+      val numValues = 1000
+      val numMaps = 3
+      val numPartitions = 5
 
-    val numValues = 1000
-    val numMaps = 3
-    val numPartitions = 5
+      val rdd = sc.parallelize(0 until numValues, numMaps)
+        .map(t=>((t/2) -> (t*2).longValue()))
+        .foldByKey(0, numPartitions)((v1, v2)=>v1 + v2)
+      val result = rdd.collect()
 
-    val rdd = sc.parallelize(0 until numValues, numMaps)
-      .map(t=>((t/2) -> (t*2).longValue()))
-      .foldByKey(0, numPartitions)((v1, v2)=>v1 + v2)
-    val result = rdd.collect()
+      assert(sc.env.shuffleManager.getClass.getSimpleName === "RssShuffleManager")
+      assert(result.size === numValues/2)
 
-    assert(sc.env.shuffleManager.getClass.getSimpleName === "RssShuffleManager")
-    assert(result.size === numValues/2)
+      for (i <- 0 until result.size) {
+        val key = result(i)._1
+        val value = result(i)._2
+        assert(key*2*2 + (key*2+1)*2 === value)
+      }
 
-    for (i <- 0 until result.size) {
-      val key = result(i)._1
-      val value = result(i)._2
-      assert(key*2*2 + (key*2+1)*2 === value)
-    }
-
-    val keys = result.map(_._1).distinct.sorted
-    assert(keys.length === numValues/2)
-    assert(keys(0) === 0)
-    assert(keys.last === (numValues-1)/2)
+      val keys = result.map(_._1).distinct.sorted
+      assert(keys.length === numValues/2)
+      assert(keys(0) === 0)
+      assert(keys.last === (numValues-1)/2)
+    })
   }
 
+  @Test
+  def reduceByKey(): Unit = {
+    Seq("true", "false").foreach(confValue => {
+      val conf = TestUtil.newSparkConfWithStandAloneRegistryServer(appId, rssTestCluster.getRegistryServerConnection)
+      conf.set("spark.shuffle.rss.mapSideAggregation.enabled", confValue)
+      sc = new SparkContext(conf)
+
+      val numValues = 1000
+      val numMaps = 3
+      val numPartitions = 5
+
+      val rdd = sc.parallelize(0 until numValues, numMaps)
+        .map(t=>((t/2) -> (t*2).longValue()))
+        .reduceByKey(_ + _)
+      val result = rdd.collect()
+
+      assert(sc.env.shuffleManager.getClass.getSimpleName === "RssShuffleManager")
+      assert(result.size === numValues/2)
+
+      for (i <- 0 until result.size) {
+        val key = result(i)._1
+        val value = result(i)._2
+        assert(key*2*2 + (key*2+1)*2 === value)
+      }
+
+      val keys = result.map(_._1).distinct.sorted
+      assert(keys.length === numValues/2)
+      assert(keys(0) === 0)
+      assert(keys.last === (numValues-1)/2)
+    })
+  }
 }

@@ -278,7 +278,8 @@ class RssShuffleManager(conf: SparkConf) extends ShuffleManager with Logging {
                 bufferOptions,
                 rssShuffleHandle.dependency,
                 shuffleClientStageMetrics,
-                context.taskMetrics().shuffleWriteMetrics)
+                context.taskMetrics().shuffleWriteMetrics,
+                conf)
             } catch {
               case ex: Throwable => {
                 ExceptionUtils.closeWithoutException(writeClient)

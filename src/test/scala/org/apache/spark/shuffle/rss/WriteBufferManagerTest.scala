@@ -38,7 +38,7 @@ class WriteBufferManagerTest {
     Assert.assertEquals(spilledData.size, 0)
 
     val partition1 = 1
-    spilledData = bufferManager.addRecord(partition1, record).toList
+    spilledData = bufferManager.addRecordImpl(partition1, record).toList
     Assert.assertEquals(spilledData.size, 1)
     Assert.assertEquals(bufferManager.filledBytes, 0)
 
@@ -50,26 +50,26 @@ class WriteBufferManagerTest {
     spilledData = bufferManager.clear().toList
     Assert.assertEquals(spilledData.size, 0)
 
-    spilledData = bufferManager.addRecord(partition1, record).toList
+    spilledData = bufferManager.addRecordImpl(partition1, record).toList
     Assert.assertEquals(spilledData.size, 0)
     Assert.assertTrue(bufferManager.filledBytes > 0)
 
-    spilledData = bufferManager.addRecord(partition1, record).toList
+    spilledData = bufferManager.addRecordImpl(partition1, record).toList
     Assert.assertEquals(spilledData.size, 0)
 
-    spilledData = bufferManager.addRecord(partition1, record).toList
+    spilledData = bufferManager.addRecordImpl(partition1, record).toList
     Assert.assertEquals(spilledData.size, 1)
 
     Assert.assertEquals(bufferManager.filledBytes, 0)
 
-    spilledData = bufferManager.addRecord(partition1, record).toList
+    spilledData = bufferManager.addRecordImpl(partition1, record).toList
     Assert.assertEquals(spilledData.size, 0)
     Assert.assertTrue(bufferManager.filledBytes > 0)
 
-    spilledData = bufferManager.addRecord(partition1, record).toList
+    spilledData = bufferManager.addRecordImpl(partition1, record).toList
     Assert.assertEquals(spilledData.size, 0)
 
-    spilledData = bufferManager.addRecord(partition1, record).toList
+    spilledData = bufferManager.addRecordImpl(partition1, record).toList
     Assert.assertEquals(spilledData.size, 1)
 
     Assert.assertEquals(bufferManager.filledBytes, 0)
@@ -90,19 +90,19 @@ class WriteBufferManagerTest {
     val partition1 = 1
     val partition2 = 2
     val record = (1, "123") // it is 7 bytes after serialization
-    spilledData = bufferManager.addRecord(partition1, record).toList
+    spilledData = bufferManager.addRecordImpl(partition1, record).toList
     Assert.assertEquals(spilledData.size, 0)
     Assert.assertTrue(bufferManager.filledBytes > 0)
 
-    spilledData = bufferManager.addRecord(partition2, record).toList
+    spilledData = bufferManager.addRecordImpl(partition2, record).toList
     Assert.assertEquals(spilledData.size, 0)
 
-    spilledData = bufferManager.addRecord(partition1, record).toList
+    spilledData = bufferManager.addRecordImpl(partition1, record).toList
     Assert.assertEquals(spilledData.size, 0)
 
     val filledBytes1 = bufferManager.filledBytes
 
-    spilledData = bufferManager.addRecord(partition1, record).toList
+    spilledData = bufferManager.addRecordImpl(partition1, record).toList
     Assert.assertEquals(spilledData.size, 1)
     Assert.assertTrue(bufferManager.filledBytes < filledBytes1)
     Assert.assertTrue(bufferManager.filledBytes > 0)
@@ -118,14 +118,14 @@ class WriteBufferManagerTest {
     val partition2 = 2
     val partition3 = 3
     val record = (1, "123") // it is 7 bytes after serialization
-    var spilledData = bufferManager.addRecord(partition1, record).toList
+    var spilledData = bufferManager.addRecordImpl(partition1, record).toList
     Assert.assertEquals(spilledData.size, 0)
     Assert.assertTrue(bufferManager.filledBytes > 0)
 
-    spilledData = bufferManager.addRecord(partition2, record).toList
+    spilledData = bufferManager.addRecordImpl(partition2, record).toList
     Assert.assertEquals(spilledData.size, 0)
 
-    spilledData = bufferManager.addRecord(partition3, record).toList
+    spilledData = bufferManager.addRecordImpl(partition3, record).toList
     Assert.assertEquals(spilledData.size, 3)
     Assert.assertEquals(spilledData.map(_._1).sorted, Seq(partition1, partition2, partition3))
     Assert.assertEquals(bufferManager.filledBytes, 0)
@@ -147,7 +147,7 @@ class WriteBufferManagerTest {
     (0 until numRecords).foreach(_ => {
       val partition = partitions(random.nextInt(partitions.size))
       val record = records(random.nextInt(records.size))
-      val spilledData = bufferManager.addRecord(partition, record)
+      val spilledData = bufferManager.addRecordImpl(partition, record)
 
       Assert.assertTrue(bufferManager.filledBytes < spillSize)
       Assert.assertTrue(bufferManager.filledBytes >= 0)

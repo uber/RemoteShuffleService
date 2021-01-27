@@ -162,4 +162,14 @@ object RssOpts {
       .doc("the server hosts to exclude, separated by comma.")
       .stringConf
       .createWithDefault("")
+  val enableMapSideAggregation: ConfigEntry[Boolean] =
+    ConfigBuilder("spark.shuffle.rss.mapSideAggregation.enabled")
+      .doc("Enable Best effort map side aggregation")
+      .booleanConf
+      .createWithDefault(false)
+  val rssMapSideAggInitialMemoryThreshold: ConfigEntry[Int] =
+    ConfigBuilder("spark.rss.shuffle.spill.initialMemoryThreshold")
+      .doc("Initial memory to allocate each mapper for performing map side aggregation")
+      .intConf
+      .createWithDefault(5 * 1024 * 1024)
 }
