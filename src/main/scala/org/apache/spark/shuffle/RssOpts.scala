@@ -167,9 +167,14 @@ object RssOpts {
       .doc("Enable Best effort map side aggregation")
       .booleanConf
       .createWithDefault(false)
-  val rssMapSideAggInitialMemoryThreshold: ConfigEntry[Int] =
+  val rssMapSideAggInitialMemoryThreshold: ConfigEntry[Long] =
     ConfigBuilder("spark.rss.shuffle.spill.initialMemoryThreshold")
       .doc("Initial memory to allocate each mapper for performing map side aggregation")
-      .intConf
-      .createWithDefault(5 * 1024 * 1024)
+      .longConf
+      .createWithDefault(5 * 1024 * 1024L)
+  val enableDynamicMemoryAllocation: ConfigEntry[Boolean] =
+    ConfigBuilder("spark.shuffle.rss.mapSideAggregation.enabled")
+      .doc("When enabled, memory will be dynamically allocated for map side aggregation from the task memory manager.")
+      .booleanConf
+      .createWithDefault(true)
 }

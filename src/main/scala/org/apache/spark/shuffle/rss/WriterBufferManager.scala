@@ -109,4 +109,6 @@ class WriteBufferManager[K, V, C](serializer: Serializer,
     totalBytes = 0
     result
   }
+
+  def releaseMemory(memoryToHold: Long = 0L): Unit = {}
 }

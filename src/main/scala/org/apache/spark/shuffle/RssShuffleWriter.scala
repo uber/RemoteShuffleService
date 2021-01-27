@@ -24,6 +24,7 @@ import net.jpountz.lz4.LZ4Factory
 import org.apache.spark.{ShuffleDependency, SparkConf}
 import org.apache.spark.executor.ShuffleWriteMetrics
 import org.apache.spark.internal.Logging
+import org.apache.spark.memory.TaskMemoryManager
 import org.apache.spark.scheduler.MapStatus
 import org.apache.spark.serializer.Serializer
 import org.apache.spark.shuffle.rss.{BufferManagerOptions, RssUtils, WriteBufferManager, WriterAggregationManager, WriterAggregationMapper}
@@ -39,6 +40,7 @@ class RssShuffleWriter[K, V, C](
     shuffleDependency: ShuffleDependency[K, V, C],
     stageMetrics: ShuffleClientStageMetrics,
     shuffleWriteMetrics: ShuffleWriteMetrics,
+    taskMemoryManager: TaskMemoryManager,
     conf: SparkConf) extends ShuffleWriter[K, V] with Logging {
 
   logInfo(s"Using ShuffleWriter: ${this.getClass.getSimpleName}, map task: $mapInfo, buffer: $bufferOptions")
@@ -53,7 +55,7 @@ class RssShuffleWriter[K, V, C](
   val enableMapSideAggregation = shuffleDependency.mapSideCombine && conf.get(RssOpts.enableMapSideAggregation)
 
   private val writerManager: WriteBufferManager[K, V, C] = if (enableMapSideAggregation) {
-    new WriterAggregationManager[K, V, C](shuffleDependency, serializer, bufferOptions, conf)
+    new WriterAggregationManager[K, V, C](taskMemoryManager, shuffleDependency, serializer, bufferOptions, conf)
   } else if (shuffleDependency.mapSideCombine) {
     new WriterAggregationMapper(shuffleDependency, serializer, bufferOptions)
   } else{
@@ -100,7 +102,10 @@ class RssShuffleWriter[K, V, C](
       val serializeStartTime = System.nanoTime()
       spilledData = writerManager.addRecord(partition, record)
       serializeTime += (System.nanoTime() - serializeStartTime)
-      sendDataBlocks(spilledData, partitionLengths)
+      if (!spilledData.isEmpty) {
+        sendDataBlocks(spilledData, partitionLengths)
+        writerManager.releaseMemory()
+      }
       numRecords = numRecords + 1
       writeRecordTime += (System.nanoTime() - writeRecordStartTime)
       recordFetchStartTime = System.nanoTime()
@@ -110,7 +115,11 @@ class RssShuffleWriter[K, V, C](
     val serializeStartTime = System.nanoTime()
     val remainingData = writerManager.clear()
     serializeTime += (System.nanoTime() - serializeStartTime)
-    sendDataBlocks(remainingData, partitionLengths)
+    if (!remainingData.isEmpty) {
+      //ToDo: These blocks will not be of the protobuf recommended size of 32kb. Should we fix this?
+      sendDataBlocks(remainingData, partitionLengths)
+      writerManager.releaseMemory()
+    }
     writeRecordTime += (System.nanoTime() - writeRecordStartTime)
 
     numRecords = writerManager.recordsWritten
@@ -158,6 +167,7 @@ class RssShuffleWriter[K, V, C](
       if (remainingBytes != 0) {
         throw new RssInvalidStateException(s"Writer buffer should be empty, but still has $remainingBytes bytes, $mapInfo")
       }
+      writerManager.releaseMemory(0)
       Option(mapStatus)
     } else {
       None

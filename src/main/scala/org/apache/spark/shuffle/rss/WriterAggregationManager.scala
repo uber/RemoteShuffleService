@@ -14,14 +14,11 @@
 
 package org.apache.spark.shuffle.rss
 
-import com.esotericsoftware.kryo.io.Output
-import org.apache.spark.{ShuffleDependency, SparkConf, SparkEnv}
+import org.apache.spark.{ShuffleDependency, SparkConf}
 import org.apache.spark.internal.Logging
+import org.apache.spark.memory.TaskMemoryManager
 import org.apache.spark.serializer.Serializer
 import org.apache.spark.shuffle.RssOpts
-import org.apache.spark.util.collection.PartitionedAppendOnlyMap
-
-import scala.collection.mutable
 
 //ToDo: Fix/Check number of bytes written
 /**
@@ -31,100 +28,41 @@ import scala.collection.mutable
  * map implementation is used since it provides a functionality to estimate the size of the map.
  * To make the keys compatible with PartitionedAppendOnlyMap, each key is of the format (partitionId, aggKey).
  *
- * The map can grow up to the size of up to [[RssOpts.rssMapSideAggInitialMemoryThreshold]], Once the
- * allocated memory is exhausted, data is spilled (sent to RSS servers).
+ * The map can grow up to the size of up to [[RssOpts.rssMapSideAggInitialMemoryThreshold]], post that twice the memory
+ * deficit is requested from the task memory manager everytime the allocated quota is exhausted. If the memory is
+ * not allocated the data is spilled (sent to RSS servers). Acquiring memory dynamically comes with a caveat that,
+ * the allocated memory can be requested by the task memory manager by calling
+ * [[org.apache.spark.memory.MemoryConsumer#spill]] implementation.
+ * In such case we set the [[org.apache.spark.shuffle.rss.WriterAggregationManager#forceSpill()]]
+ * flag to false, so that whenever next record is written to map, entire map is spilled.
  */
-class WriterAggregationManager[K, V, C](shuffleDependency: ShuffleDependency[K, V, C],
+class WriterAggregationManager[K, V, C](taskMemoryManager: TaskMemoryManager,
+                                        shuffleDependency: ShuffleDependency[K, V, C],
                                         serializer: Serializer,
                                         bufferOptions: BufferManagerOptions,
                                         conf: SparkConf)
   extends WriteBufferManager[K, V, C](serializer, bufferOptions) with Logging {
 
-  var map = new PartitionedAppendOnlyMap[K, C]
-  var recordsWrittenCnt: Int = 0
-  override def recordsWritten: Int = recordsWrittenCnt
+  private val initialMemoryThreshold: Long = conf.get(RssOpts.rssMapSideAggInitialMemoryThreshold)
 
-  var numberOfSpills: Int = 0
+  private val aggImpl = new WriterAggregationImpl(taskMemoryManager,
+    shuffleDependency, serializer, bufferOptions, conf)
 
-  private val mergeValue = shuffleDependency.aggregator.get.mergeValue
-  private val createCombiner = shuffleDependency.aggregator.get.createCombiner
-  private var kv: Product2[K, V] = null
-  val update = (hadValue: Boolean, oldValue: C) => {
-    if (hadValue) {
-      mergeValue(oldValue, kv._2)
-    } else {
-      createCombiner(kv._2)
-    }
-  }
-
-  //ToDo: Allocate memory dynamically
-  private[this] val initialMemoryThreshold: Int = conf.get(RssOpts.rssMapSideAggInitialMemoryThreshold)
-
-  private val serializerInstance = serializer.newInstance()
-
-  private def changeValue(key: (Int, K), updateFunc: (Boolean, C) => C): C = {
-    map.changeValue(key, updateFunc)
-  }
+  override def recordsWritten: Int = aggImpl.recordsWritten
 
   override def addRecord(partitionId: Int, record: Product2[K, V]): Seq[(Int, Array[Byte])] = {
-    kv = record
-    changeValue((partitionId, kv._1), update)
-    maybeSpillCollection()
-  }
-
-  private def maybeSpillCollection(): Seq[(Int, Array[Byte])] = {
-    val estimatedSize = map.estimateSize()
-    val (spill, spilledData) = mayBeSpill(estimatedSize)
-    if (spill) {
-      spilledData
-    } else {
-      Seq.empty
-    }
-  }
-
-  private def mayBeSpill(currentMemory: Long): (Boolean, Seq[(Int, Array[Byte])])  = {
-    if (currentMemory > initialMemoryThreshold) {
-      logDebug(s"Exhausted allocated $initialMemoryThreshold memory. Spilling $currentMemory to RSS servers")
-      val result = spillMap()
-      (true, result)
-    } else {
-      (false, Seq.empty)
-    }
-  }
-
-  private def spillMap(): Seq[(Int, Array[Byte])] = {
-    numberOfSpills += 1
-    val result = mutable.Buffer[(Int, Array[Byte])]()
-    val output = new Output(initialMemoryThreshold, bufferOptions.individualBufferMax)
-    val stream = serializerInstance.serializeStream(output)
-
-    val itr = map.iterator
-    //ToDo: Skip map side aggregation based on the reduction factor
-    while (itr.hasNext) {
-      val item = itr.next()
-      val (key, value): Product2[Any, Any] = (item._1._2, item._2)
-      stream.writeKey(key)
-      stream.writeValue(value)
-      stream.flush()
-      result.append((item._1._1, output.toBytes))
-      output.clear()
-      recordsWrittenCnt += 1
-    }
-    stream.close()
-    map = new PartitionedAppendOnlyMap[K, C]
-    result
+    aggImpl.addRecord(partitionId, record)
   }
 
   override def clear(): Seq[(Int, Array[Byte])] = {
-    val result = spillMap()
-    result
+    aggImpl.spillMap()
   }
 
   override def filledBytes: Int = {
-    if (map.isEmpty) {
-      0
-    } else {
-      map.estimateSize().toInt
-    }
+    aggImpl.filledBytes
+  }
+
+  override def releaseMemory(memoryToHold: Long = initialMemoryThreshold): Unit = {
+    aggImpl.releaseMemory(memoryToHold)
   }
 }
