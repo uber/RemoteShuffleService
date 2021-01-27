@@ -173,7 +173,7 @@ object RssOpts {
       .longConf
       .createWithDefault(5 * 1024 * 1024L)
   val enableDynamicMemoryAllocation: ConfigEntry[Boolean] =
-    ConfigBuilder("spark.shuffle.rss.mapSideAggregation.enabled")
+    ConfigBuilder("spark.shuffle.rss.mapSideAggregation.dynamicAllocation.enabled")
       .doc("When enabled, memory will be dynamically allocated for map side aggregation from the task memory manager.")
       .booleanConf
       .createWithDefault(true)
