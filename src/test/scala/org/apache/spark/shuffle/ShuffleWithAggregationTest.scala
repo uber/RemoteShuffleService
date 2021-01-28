@@ -17,9 +17,13 @@ package org.apache.spark.shuffle
 import java.util.UUID
 
 import com.uber.rss.testutil.{RssMiniCluster, RssZookeeperCluster, StreamServerTestUtils}
-import org.apache.spark.{HashPartitioner, SparkContext}
+
+import org.apache.spark.scheduler.{SparkListener, SparkListenerTaskEnd}
+import org.apache.spark.SparkContext
 import org.scalatest.Assertions._
 import org.testng.annotations._
+
+import scala.collection.mutable.ArrayBuffer
 
 /***
  * This is to test shuffle with aggregation
@@ -46,6 +50,27 @@ class ShuffleWithAggregationTest {
     sc.stop()
 
     rssTestCluster.stop()
+  }
+
+  private def runAndReturnMetrics(job: => Unit,
+                                  collector: SparkListenerTaskEnd => Long):
+  Long = {
+    val taskMetrics = new ArrayBuffer[Long]()
+
+    // Avoid receiving earlier taskEnd events
+    sc.listenerBus.waitUntilEmpty(500)
+
+    sc.addSparkListener(new SparkListener() {
+      override def onTaskEnd(taskEnd: SparkListenerTaskEnd) {
+        val metrics = collector(taskEnd)
+        taskMetrics.append(metrics)
+      }
+    })
+
+    job
+
+    sc.listenerBus.waitUntilEmpty(500)
+    taskMetrics.sum
   }
 
   @Test
@@ -110,5 +135,100 @@ class ShuffleWithAggregationTest {
       assert(keys(0) === 0)
       assert(keys.last === (numValues-1)/2)
     })
+  }
+
+  @Test
+  def recordsNoAggregation(): Unit = {
+    Seq("true", "false").foreach(confValue => {
+      val conf = TestUtil.newSparkConfWithStandAloneRegistryServer(appId, rssTestCluster.getRegistryServerConnection)
+      conf.set("spark.shuffle.rss.mapSideAggregation.enabled", "false")
+      conf.set("spark.shuffle.rss.mapSideAggregation.dynamicAllocation.enabled", confValue)
+      sc = new SparkContext(conf)
+
+      val numValues = 1000
+      val numPartitions = 10
+
+      val rdd = sc.parallelize(0 until numValues, numPartitions)
+        .map(t => ((t / 2) -> (t * 2).longValue()))
+        .reduceByKey(_ + _)
+
+      val shuffleRecordsWritten = runAndReturnMetrics(rdd.collect(), _.taskMetrics.shuffleWriteMetrics.recordsWritten)
+      val shuffleRecordsRead = runAndReturnMetrics(rdd.collect(), _.taskMetrics.shuffleReadMetrics.recordsRead)
+      assert(shuffleRecordsWritten == 1000)
+      assert(shuffleRecordsRead == 1000)
+    })
+  }
+
+  @Test
+  def recordsWrittenPartialAggregation(): Unit = {
+    Seq("true", "false").foreach(confValue => {
+      val conf = TestUtil.newSparkConfWithStandAloneRegistryServer(appId, rssTestCluster.getRegistryServerConnection)
+      conf.set("spark.shuffle.rss.mapSideAggregation.dynamicAllocation.enabled", confValue)
+      conf.set("spark.shuffle.rss.mapSideAggregation.enabled", "true")
+      conf.set("spark.shuffle.rss.mapSideAggregation.reductionFactorBackoffMinRecords", "10")
+      conf.set("spark.shuffle.rss.mapSideAggregation.reductionFactorBackoffThreshold", "1.0")
+      sc = new SparkContext(conf)
+
+      val numValues = 1000
+      val numPartitions = 10
+
+      val rdd = sc.parallelize(0 until numValues, numPartitions)
+        .map(t => ((t / 2) -> (t * 2).longValue()))
+        .mapPartitions(partition => {
+          partition.toSeq.sorted.iterator
+        })
+        .reduceByKey(_ + _)
+
+      val shuffleRecordsWritten = runAndReturnMetrics(rdd.collect(), _.taskMetrics.shuffleWriteMetrics.recordsWritten)
+      val shuffleRecordsRead = runAndReturnMetrics(rdd.collect(), _.taskMetrics.shuffleReadMetrics.recordsRead)
+      // since the backoff sample size is 10, first 10 records in each partition will be aggregated and then the
+      // rest records will just be type casted as the reduction factor is set to 1.0
+      assert(shuffleRecordsWritten == 950)
+      assert(shuffleRecordsRead == 950)
+    })
+  }
+
+  @Test
+  def recordsWrittenCompleteAggregation(): Unit = {
+    Seq("true", "false").foreach(confValue => {
+      val conf = TestUtil.newSparkConfWithStandAloneRegistryServer(appId, rssTestCluster.getRegistryServerConnection)
+      conf.set("spark.shuffle.rss.mapSideAggregation.dynamicAllocation.enabled", confValue)
+      conf.set("spark.shuffle.rss.mapSideAggregation.enabled", "true")
+      sc = new SparkContext(conf)
+
+      val numValues = 1000
+      val numPartitions = 10
+
+      val rdd = sc.parallelize(0 until numValues, numPartitions)
+        .map(t => ((t / 2) -> (t * 2).longValue()))
+        .reduceByKey(_ + _)
+
+      val shuffleRecordsWritten = runAndReturnMetrics(rdd.collect(), _.taskMetrics.shuffleWriteMetrics.recordsWritten)
+      val shuffleRecordsRead = runAndReturnMetrics(rdd.collect(), _.taskMetrics.shuffleReadMetrics.recordsRead)
+      assert(shuffleRecordsWritten == 500)
+      assert(shuffleRecordsRead == 500)
+    })
+  }
+
+  @Test
+  def dynamicMemoryAllocationTriggers(): Unit = {
+    val conf = TestUtil.newSparkConfWithStandAloneRegistryServer(appId, rssTestCluster.getRegistryServerConnection)
+    conf.set("spark.shuffle.rss.mapSideAggregation.dynamicAllocation.enabled", "true")
+    conf.set("spark.shuffle.rss.mapSideAggregation.enabled", "true")
+    // Allocate very little memory so that dynamic allocation gets triggered
+    conf.set("spark.rss.shuffle.spill.initialMemoryThreshold", "5")
+    sc = new SparkContext(conf)
+
+    val numValues = 1000
+    val numPartitions = 10
+
+    val rdd = sc.parallelize(0 until numValues, numPartitions)
+      .map(t => ((t / 2) -> (t * 2).longValue()))
+      .reduceByKey(_ + _)
+
+    val shuffleRecordsWritten = runAndReturnMetrics(rdd.collect(), _.taskMetrics.shuffleWriteMetrics.recordsWritten)
+    val shuffleRecordsRead = runAndReturnMetrics(rdd.collect(), _.taskMetrics.shuffleReadMetrics.recordsRead)
+    assert(shuffleRecordsWritten == 500)
+    assert(shuffleRecordsRead == 500)
   }
 }

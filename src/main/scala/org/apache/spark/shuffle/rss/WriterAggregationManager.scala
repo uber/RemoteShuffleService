@@ -46,7 +46,7 @@ class WriterAggregationManager[K, V, C](taskMemoryManager: TaskMemoryManager,
   private var recordsRead: Int = 0
   private var skipMapSideAgg: Boolean = false
 
-  private val minimumSampleSize: Int = 1000
+  private val minimumSampleSize: Int = conf.get(RssOpts.reductionFactorBackoffMinRecords)
   private val reductionFactorThreshold: Double = conf.get(RssOpts.reductionFactorBackoffThreshold)
   private val initialMemoryThreshold: Long = conf.get(RssOpts.rssMapSideAggInitialMemoryThreshold)
 
@@ -56,7 +56,11 @@ class WriterAggregationManager[K, V, C](taskMemoryManager: TaskMemoryManager,
 
   private var aggMapper: WriterAggregationMapper[K, V, C] = null
 
-  override def recordsWritten: Int = aggImpl.recordsWritten + aggMapper.recordsWritten
+  override def recordsWritten: Int = if (skipMapSideAgg) {
+    aggImpl.recordsWritten + aggMapper.recordsWritten
+  } else {
+    aggImpl.recordsWritten
+  }
 
   override def addRecord(partitionId: Int, record: Product2[K, V]): Seq[(Int, Array[Byte])] = {
     recordsRead += 1
@@ -74,7 +78,7 @@ class WriterAggregationManager[K, V, C](taskMemoryManager: TaskMemoryManager,
   }
 
   private def mayBeSkipAggregation: Boolean = {
-    recordsRead > minimumSampleSize && reductionFactor > reductionFactorThreshold
+    recordsRead > minimumSampleSize && reductionFactor < reductionFactorThreshold
   }
 
   private def reductionFactor: Double = {

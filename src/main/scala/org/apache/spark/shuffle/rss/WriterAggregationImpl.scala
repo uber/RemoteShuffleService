@@ -34,6 +34,7 @@ private[rss] class WriterAggregationImpl[K, V, C](taskMemoryManager: TaskMemoryM
   }
 
   private val initialMemoryThreshold: Long = conf.get(RssOpts.rssMapSideAggInitialMemoryThreshold)
+  private val allocateMemoryDynamically: Boolean = conf.get(RssOpts.enableDynamicMemoryAllocation)
   private val serializerInstance = serializer.newInstance()
   private var allocatedMemoryThreshold: Long = initialMemoryThreshold
 
@@ -81,18 +82,22 @@ private[rss] class WriterAggregationImpl[K, V, C](taskMemoryManager: TaskMemoryM
   }
 
   def releaseMemory(memoryToHold: Long): Long = {
-    val memoryReleased = allocatedMemoryThreshold - memoryToHold
-    freeMemory(memoryReleased)
-    allocatedMemoryThreshold = memoryToHold
-    memoryReleased
+    if (allocateMemoryDynamically) {
+      val memoryReleased = allocatedMemoryThreshold - memoryToHold
+      freeMemory(memoryReleased)
+      allocatedMemoryThreshold = memoryToHold
+      memoryReleased
+    } else {
+      0L
+    }
   }
 
   private def tryToAllocateMemory(currentMemory: Long): Boolean = {
-    if (conf.get(RssOpts.enableDynamicMemoryAllocation)) {
+    if (allocateMemoryDynamically) {
       val memoryToRequest = 2 * currentMemory - allocatedMemoryThreshold
       val granted = acquireMemory(memoryToRequest)
       allocatedMemoryThreshold += granted
-      currentMemory >= allocatedMemoryThreshold
+      allocatedMemoryThreshold >= currentMemory
     } else {
       false
     }
@@ -130,7 +135,7 @@ private[rss] class WriterAggregationImpl[K, V, C](taskMemoryManager: TaskMemoryM
   }
 
   override def spill(size: Long, trigger: MemoryConsumer): Long = {
-    if (taskMemoryManager.getTungstenMemoryMode == MemoryMode.ON_HEAP) {
+    if (allocateMemoryDynamically && taskMemoryManager.getTungstenMemoryMode == MemoryMode.ON_HEAP) {
       val dataToSpill = spillMap()
       if (!dataToSpill.isEmpty) {
         // set forceSpill so that the data will be force spilled whenever new record is to be written

@@ -177,6 +177,11 @@ object RssOpts {
       .doc("When enabled, memory will be dynamically allocated for map side aggregation from the task memory manager.")
       .booleanConf
       .createWithDefault(true)
+  val reductionFactorBackoffMinRecords: ConfigEntry[Int] =
+    ConfigBuilder("spark.shuffle.rss.mapSideAggregation.reductionFactorBackoffMinRecords")
+      .doc("Minimum number of records to sample/process before checking reduction factor")
+      .intConf
+      .createWithDefault(1000)
   val reductionFactorBackoffThreshold: ConfigEntry[Double] =
     ConfigBuilder("spark.shuffle.rss.mapSideAggregation.reductionFactorBackoffThreshold")
       .doc("Minimum reduction factor below which map side aggregation will be skipped")
