@@ -130,18 +130,21 @@ class RssShuffleWriter[K, V, C](
     val finishUploadTime = System.nanoTime() - finishUploadStartTime
 
     val totalBytes = writeClient.getShuffleWriteBytes()
-    logInfo(s"Wrote shuffle records ($mapInfo), $numRecords records, $totalBytes bytes, write seconds: ${TimeUnit.NANOSECONDS.toSeconds(startUploadTime)}, ${TimeUnit.NANOSECONDS.toSeconds(writeRecordTime)}, ${TimeUnit.NANOSECONDS.toSeconds(finishUploadTime)}, serialize seconds: ${TimeUnit.NANOSECONDS.toSeconds(serializeTime)}, record fetch seconds: ${TimeUnit.NANOSECONDS.toSeconds(recordFetchTime)}")
 
     val writeMetrics = List(("mapSideCombine", shuffleDependency.mapSideCombine.toString),
-        ("reductionFactor", writerManager.reductionFactor.toString),
-        ("spillCount", writerManager.numberOfSpills.toString),
-        ("aggManager", writerManager.getClass.toString),
-        ("recordsWritten", writerManager.recordsWritten.toString))
-//    println("$$$$$$$$$")
-//    println(writeMetrics)
-//    println("$$$$$$$$$")
+      ("reductionFactor", writerManager.reductionFactor.toString),
+      ("spillCount", writerManager.numberOfSpills.toString),
+      ("aggManager", writerManager.getClass.toString),
+      ("recordsWritten", writerManager.recordsWritten.toString))
 
-    taskMetrics.addSupplementaryMetric(("shuffleWriteMetrics", SupplementaryMetric(writeMetrics)))
+    logInfo(s"Wrote shuffle records ($mapInfo), " +
+      s"$numRecords records, $totalBytes bytes, " +
+      s"write seconds: ${TimeUnit.NANOSECONDS.toSeconds(startUploadTime)}, " +
+      s"${TimeUnit.NANOSECONDS.toSeconds(writeRecordTime)}, " +
+      s"${TimeUnit.NANOSECONDS.toSeconds(finishUploadTime)}, " +
+      s"serialize seconds: ${TimeUnit.NANOSECONDS.toSeconds(serializeTime)}, " +
+      s"record fetch seconds: ${TimeUnit.NANOSECONDS.toSeconds(recordFetchTime)}," +
+      s"write metadata: ${writeMetrics.toString()}")
 
     shuffleWriteMetrics.incRecordsWritten(numRecords)
     shuffleWriteMetrics.incBytesWritten(totalBytes)

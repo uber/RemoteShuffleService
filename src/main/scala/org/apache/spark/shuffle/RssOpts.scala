@@ -168,7 +168,7 @@ object RssOpts {
       .booleanConf
       .createWithDefault(false)
   val rssMapSideAggInitialMemoryThreshold: ConfigEntry[Long] =
-    ConfigBuilder("spark.rss.shuffle.spill.initialMemoryThreshold")
+    ConfigBuilder("spark.shuffle.rss.spill.initialMemoryThreshold")
       .doc("Initial memory to allocate each mapper for performing map side aggregation")
       .longConf
       .createWithDefault(5 * 1024 * 1024L)
@@ -176,7 +176,7 @@ object RssOpts {
     ConfigBuilder("spark.shuffle.rss.mapSideAggregation.dynamicAllocation.enabled")
       .doc("When enabled, memory will be dynamically allocated for map side aggregation from the task memory manager.")
       .booleanConf
-      .createWithDefault(true)
+      .createWithDefault(false)
   val reductionFactorBackoffMinRecords: ConfigEntry[Int] =
     ConfigBuilder("spark.shuffle.rss.mapSideAggregation.reductionFactorBackoffMinRecords")
       .doc("Minimum number of records to sample/process before checking reduction factor")

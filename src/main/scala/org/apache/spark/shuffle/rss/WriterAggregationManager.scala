@@ -53,8 +53,6 @@ class WriterAggregationManager[K, V, C](taskMemoryManager: TaskMemoryManager,
   private val aggImpl = new WriterAggregationImpl(taskMemoryManager,
     shuffleDependency, serializer, bufferOptions, conf)
 
-  logInfo(">>> Using the custom map side aggregation in RSS")
-
   private var aggMapper: WriterAggregationMapper[K, V, C] = null
 
   override def recordsWritten: Int = if (skipMapSideAgg) {
@@ -93,13 +91,7 @@ class WriterAggregationManager[K, V, C](taskMemoryManager: TaskMemoryManager,
       0.0
     } else {
       val recordsCountPostAgg = recordsWritten + aggImpl.mapSize
-      val a = 1 - (recordsCountPostAgg / recordsRead.toDouble)
-//      logInfo(">>>>>>>>")
-//      logInfo(s"mapSize ${recordsWritten + aggImpl.mapSize}")
-//      logInfo(s"recordsRead ${recordsRead.toString}")
-//      logInfo(s"Reduction Factor ${a.toString}")
-//      logInfo(">>>>>>>>")
-      a
+      1.0 - (recordsCountPostAgg / recordsRead.toDouble)
     }
   }
 

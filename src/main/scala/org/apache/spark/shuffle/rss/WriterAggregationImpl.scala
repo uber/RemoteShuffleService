@@ -35,10 +35,6 @@ private[rss] class WriterAggregationImpl[K, V, C](taskMemoryManager: TaskMemoryM
 
   private val initialMemoryThreshold: Long = conf.get(RssOpts.rssMapSideAggInitialMemoryThreshold)
   private val allocateMemoryDynamically: Boolean = conf.get(RssOpts.enableDynamicMemoryAllocation)
-  println(">>>>>>>>>>>>>>>>")
-  println(allocateMemoryDynamically)
-  println(initialMemoryThreshold)
-  println(">>>>>>>>>>>>>>>>")
   private val serializerInstance = serializer.newInstance()
   private var allocatedMemoryThreshold: Long = initialMemoryThreshold
 
@@ -75,7 +71,7 @@ private[rss] class WriterAggregationImpl[K, V, C](taskMemoryManager: TaskMemoryM
   private def mayBeSpill(currentMemory: Long): (Boolean, Seq[(Int, Array[Byte])])  = {
     if (currentMemory >= allocatedMemoryThreshold) {
       if (!tryToAllocateMemory(currentMemory)) {
-        logInfo(s">>> Exhausted allocated $allocatedMemoryThreshold memory. Spilling $currentMemory to RSS servers")
+        logInfo(s"Exhausted allocated $allocatedMemoryThreshold memory. Spilling $currentMemory to RSS servers")
         val result = spillMap()
         (true, result)
       } else {
@@ -101,7 +97,7 @@ private[rss] class WriterAggregationImpl[K, V, C](taskMemoryManager: TaskMemoryM
     if (allocateMemoryDynamically) {
       val memoryToRequest = 2 * currentMemory - allocatedMemoryThreshold
       val granted = acquireMemory(memoryToRequest)
-      logInfo(s">>>>>> Got $granted memory")
+      logDebug(s"Granted $granted memory from the taskMemoryManager")
       allocatedMemoryThreshold += granted
       allocatedMemoryThreshold >= currentMemory
     } else {
@@ -143,6 +139,7 @@ private[rss] class WriterAggregationImpl[K, V, C](taskMemoryManager: TaskMemoryM
   override def spill(size: Long, trigger: MemoryConsumer): Long = {
     if (allocateMemoryDynamically && taskMemoryManager.getTungstenMemoryMode == MemoryMode.ON_HEAP) {
       val dataToSpill = spillMap()
+      logDebug(s"Got spill request from the taskMemoryManager. Spilling ${dataToSpill.size} records")
       if (!dataToSpill.isEmpty) {
         // set forceSpill so that the data will be force spilled whenever new record is to be written
         forceSpill = true
