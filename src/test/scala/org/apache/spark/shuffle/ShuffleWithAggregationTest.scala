@@ -15,9 +15,7 @@
 package org.apache.spark.shuffle
 
 import java.util.UUID
-
 import com.uber.rss.testutil.{RssMiniCluster, RssZookeeperCluster, StreamServerTestUtils}
-
 import org.apache.spark.scheduler.{SparkListener, SparkListenerTaskEnd}
 import org.apache.spark.SparkContext
 import org.scalatest.Assertions._
@@ -231,4 +229,37 @@ class ShuffleWithAggregationTest {
     assert(shuffleRecordsWritten == 500)
     assert(shuffleRecordsRead == 500)
   }
+
+//  @Test
+//  def nullValueTest(): Unit = {
+//    val conf = TestUtil.newSparkConfWithStandAloneRegistryServer(appId, rssTestCluster.getRegistryServerConnection)
+//    conf.set("spark.shuffle.rss.mapSideAggregation.dynamicAllocation.enabled", "true")
+//    conf.set("spark.shuffle.rss.mapSideAggregation.enabled", "true")
+//    // Allocate very little memory so that dynamic allocation gets triggered
+//    conf.set("spark.rss.shuffle.spill.initialMemoryThreshold", "5")
+//    sc = new SparkContext(conf)
+//
+//    val numValues = 1000
+//    val numPartitions = 10
+//
+//    val seq = Seq(1, 2, null, 3, 4, 5, 6, 7, null, 8, 9, 10, null)
+//
+//    val path = "/Users/mayurb/src/open/RemoteShuffleService/names.csv"
+//    import org.apache.spark.sql.SQLContext
+//    val sqlContext = new SQLContext(sc)
+//    val spark = SparkSession.builder().sparkContext(sc).getOrCreate()
+//    val peopleDf = spark.read.option("header", "true").csv(path)
+//    val rdd = peopleDf.toDF().rdd
+//
+//
+//    val result = rdd
+//      .repartition(2)
+//      .map(t => t.toString())
+//      .reduce((x:String, y: String) => x + y)
+//
+////    val shuffleRecordsWritten = runAndReturnMetrics(rdd.collect(), _.taskMetrics.shuffleWriteMetrics.recordsWritten)
+////    val shuffleRecordsRead = runAndReturnMetrics(rdd.collect(), _.taskMetrics.shuffleReadMetrics.recordsRead)
+////    assert(shuffleRecordsWritten == 500)
+////    assert(shuffleRecordsRead == 500)
+//  }
 }

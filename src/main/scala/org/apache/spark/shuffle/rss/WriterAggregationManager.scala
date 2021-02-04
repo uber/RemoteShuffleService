@@ -53,6 +53,7 @@ class WriterAggregationManager[K, V, C](taskMemoryManager: TaskMemoryManager,
   private val aggImpl = new WriterAggregationImpl(taskMemoryManager,
     shuffleDependency, serializer, bufferOptions, conf)
 
+  logInfo(">>> Using the custom map side aggregation in RSS")
 
   private var aggMapper: WriterAggregationMapper[K, V, C] = null
 
@@ -60,6 +61,12 @@ class WriterAggregationManager[K, V, C](taskMemoryManager: TaskMemoryManager,
     aggImpl.recordsWritten + aggMapper.recordsWritten
   } else {
     aggImpl.recordsWritten
+  }
+
+  override def numberOfSpills: Int = if (skipMapSideAgg) {
+    aggImpl.numberOfSpills + aggMapper.numberOfSpills
+  } else {
+    aggImpl.numberOfSpills
   }
 
   override def addRecord(partitionId: Int, record: Product2[K, V]): Seq[(Int, Array[Byte])] = {
@@ -81,8 +88,19 @@ class WriterAggregationManager[K, V, C](taskMemoryManager: TaskMemoryManager,
     recordsRead > minimumSampleSize && reductionFactor < reductionFactorThreshold
   }
 
-  private def reductionFactor: Double = {
-    aggImpl.mapSize / recordsRead.toDouble
+  override def reductionFactor: Double = {
+    if (recordsRead == 0) {
+      0.0
+    } else {
+      val recordsCountPostAgg = recordsWritten + aggImpl.mapSize
+      val a = 1 - (recordsCountPostAgg / recordsRead.toDouble)
+//      logInfo(">>>>>>>>")
+//      logInfo(s"mapSize ${recordsWritten + aggImpl.mapSize}")
+//      logInfo(s"recordsRead ${recordsRead.toString}")
+//      logInfo(s"Reduction Factor ${a.toString}")
+//      logInfo(">>>>>>>>")
+      a
+    }
   }
 
   override def clear(): Seq[(Int, Array[Byte])] = {

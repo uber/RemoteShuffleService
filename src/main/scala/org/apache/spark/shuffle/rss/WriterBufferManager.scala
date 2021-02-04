@@ -42,7 +42,13 @@ class WriteBufferManager[K, V, C](serializer: Serializer,
 
   def recordsWritten: Int = recordsWrittenCount
 
-  var recordsWrittenCount: Int = 0
+  def numberOfSpills: Int = spillCount
+
+  def reductionFactor: Double = 0.0
+
+  private var recordsWrittenCount: Int = 0
+
+  private var spillCount: Int = 0
 
   def addRecord(partitionId: Int, record: Product2[K, V]): Seq[(Int, Array[Byte])] = {
     addRecordImpl(partitionId, record)
@@ -61,6 +67,7 @@ class WriteBufferManager[K, V, C](serializer: Serializer,
         stream.flush()
         val newSize = v.output.position()
         if (newSize >= bufferSize) {
+          spillCount += 1
           result.append((partitionId, v.output.toBytes))
           v.serializeStream.close()
           map.remove(partitionId)
@@ -76,6 +83,7 @@ class WriteBufferManager[K, V, C](serializer: Serializer,
         stream.flush()
         val newSize = output.position()
         if (newSize >= bufferSize) {
+          spillCount += 1
           result.append((partitionId, output.toBytes))
           stream.close()
         } else {
@@ -85,6 +93,7 @@ class WriteBufferManager[K, V, C](serializer: Serializer,
     }
 
     if (totalBytes >= spillSize) {
+      spillCount += 1
       result.appendAll(map.map(t=>(t._1, t._2.output.toBytes)))
       map.foreach(t => t._2.serializeStream.close())
       map.clear()
@@ -107,6 +116,9 @@ class WriteBufferManager[K, V, C](serializer: Serializer,
     map.foreach(t => t._2.serializeStream.close())
     map.clear()
     totalBytes = 0
+    if (!result.isEmpty) {
+      spillCount += 1
+    }
     result
   }
 

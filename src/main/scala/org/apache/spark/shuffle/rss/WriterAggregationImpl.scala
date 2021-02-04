@@ -20,7 +20,7 @@ private[rss] class WriterAggregationImpl[K, V, C](taskMemoryManager: TaskMemoryM
   private var map = new PartitionedAppendOnlyMap[K, C]
   private var recordsWrittenCnt: Int = 0
   private var forceSpill: Boolean = false
-  private var numberOfSpills: Int = 0
+  private var spillCount: Int = 0
 
   private val mergeValue = shuffleDependency.aggregator.get.mergeValue
   private val createCombiner = shuffleDependency.aggregator.get.createCombiner
@@ -35,11 +35,16 @@ private[rss] class WriterAggregationImpl[K, V, C](taskMemoryManager: TaskMemoryM
 
   private val initialMemoryThreshold: Long = conf.get(RssOpts.rssMapSideAggInitialMemoryThreshold)
   private val allocateMemoryDynamically: Boolean = conf.get(RssOpts.enableDynamicMemoryAllocation)
+  println(">>>>>>>>>>>>>>>>")
+  println(allocateMemoryDynamically)
+  println(initialMemoryThreshold)
+  println(">>>>>>>>>>>>>>>>")
   private val serializerInstance = serializer.newInstance()
   private var allocatedMemoryThreshold: Long = initialMemoryThreshold
 
   private[rss] def mapSize: Int = map.size
   private[rss] def recordsWritten: Int = recordsWrittenCnt
+  private[rss] def numberOfSpills: Int = spillCount
 
   private def changeValue(key: (Int, K), updateFunc: (Boolean, C) => C): C = {
     map.changeValue(key, updateFunc)
@@ -70,7 +75,7 @@ private[rss] class WriterAggregationImpl[K, V, C](taskMemoryManager: TaskMemoryM
   private def mayBeSpill(currentMemory: Long): (Boolean, Seq[(Int, Array[Byte])])  = {
     if (currentMemory >= allocatedMemoryThreshold) {
       if (!tryToAllocateMemory(currentMemory)) {
-        logDebug(s"Exhausted allocated $allocatedMemoryThreshold memory. Spilling $currentMemory to RSS servers")
+        logInfo(s">>> Exhausted allocated $allocatedMemoryThreshold memory. Spilling $currentMemory to RSS servers")
         val result = spillMap()
         (true, result)
       } else {
@@ -96,6 +101,7 @@ private[rss] class WriterAggregationImpl[K, V, C](taskMemoryManager: TaskMemoryM
     if (allocateMemoryDynamically) {
       val memoryToRequest = 2 * currentMemory - allocatedMemoryThreshold
       val granted = acquireMemory(memoryToRequest)
+      logInfo(s">>>>>> Got $granted memory")
       allocatedMemoryThreshold += granted
       allocatedMemoryThreshold >= currentMemory
     } else {
@@ -104,7 +110,7 @@ private[rss] class WriterAggregationImpl[K, V, C](taskMemoryManager: TaskMemoryM
   }
 
   private[rss] def spillMap(): Seq[(Int, Array[Byte])] = {
-    numberOfSpills += 1
+    spillCount += 1
     val result = mutable.Buffer[(Int, Array[Byte])]()
     val output = new Output(initialMemoryThreshold.toInt, bufferOptions.individualBufferMax)
     val stream = serializerInstance.serializeStream(output)

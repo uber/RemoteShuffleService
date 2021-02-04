@@ -22,7 +22,7 @@ import com.uber.rss.exceptions.RssInvalidStateException
 import com.uber.rss.metrics.ShuffleClientStageMetrics
 import net.jpountz.lz4.LZ4Factory
 import org.apache.spark.{ShuffleDependency, SparkConf}
-import org.apache.spark.executor.ShuffleWriteMetrics
+import org.apache.spark.executor.{AdditionalTaskMetrics, ShuffleWriteMetrics, SupplementaryMetric, TaskMetrics}
 import org.apache.spark.internal.Logging
 import org.apache.spark.memory.TaskMemoryManager
 import org.apache.spark.scheduler.MapStatus
@@ -39,12 +39,13 @@ class RssShuffleWriter[K, V, C](
     bufferOptions: BufferManagerOptions,
     shuffleDependency: ShuffleDependency[K, V, C],
     stageMetrics: ShuffleClientStageMetrics,
-    shuffleWriteMetrics: ShuffleWriteMetrics,
+    taskMetrics: TaskMetrics,
     taskMemoryManager: TaskMemoryManager,
     conf: SparkConf) extends ShuffleWriter[K, V] with Logging {
 
   logInfo(s"Using ShuffleWriter: ${this.getClass.getSimpleName}, map task: $mapInfo, buffer: $bufferOptions")
 
+  private val shuffleWriteMetrics = taskMetrics.shuffleWriteMetrics
   private val partitioner = shuffleDependency.partitioner
   private val numPartitions = partitioner.numPartitions
   private val shouldPartition = numPartitions > 1
@@ -130,6 +131,17 @@ class RssShuffleWriter[K, V, C](
 
     val totalBytes = writeClient.getShuffleWriteBytes()
     logInfo(s"Wrote shuffle records ($mapInfo), $numRecords records, $totalBytes bytes, write seconds: ${TimeUnit.NANOSECONDS.toSeconds(startUploadTime)}, ${TimeUnit.NANOSECONDS.toSeconds(writeRecordTime)}, ${TimeUnit.NANOSECONDS.toSeconds(finishUploadTime)}, serialize seconds: ${TimeUnit.NANOSECONDS.toSeconds(serializeTime)}, record fetch seconds: ${TimeUnit.NANOSECONDS.toSeconds(recordFetchTime)}")
+
+    val writeMetrics = List(("mapSideCombine", shuffleDependency.mapSideCombine.toString),
+        ("reductionFactor", writerManager.reductionFactor.toString),
+        ("spillCount", writerManager.numberOfSpills.toString),
+        ("aggManager", writerManager.getClass.toString),
+        ("recordsWritten", writerManager.recordsWritten.toString))
+//    println("$$$$$$$$$")
+//    println(writeMetrics)
+//    println("$$$$$$$$$")
+
+    taskMetrics.addSupplementaryMetric(("shuffleWriteMetrics", SupplementaryMetric(writeMetrics)))
 
     shuffleWriteMetrics.incRecordsWritten(numRecords)
     shuffleWriteMetrics.incBytesWritten(totalBytes)
