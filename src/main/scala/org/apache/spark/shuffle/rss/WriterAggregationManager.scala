@@ -20,10 +20,9 @@ import org.apache.spark.memory.TaskMemoryManager
 import org.apache.spark.serializer.Serializer
 import org.apache.spark.shuffle.RssOpts
 
-//ToDo: Fix/Check number of bytes written
 /**
  * Does a best effort map side aggregation. Even if the partial aggregation is not complete, reducer side combiners
- * will take of aggregating the partially aggregated results within the mapper partition.
+ * will take care of aggregating the partially aggregated results within the mapper partition.
  * [[org.apache.spark.util.collection.PartitionedAppendOnlyMap]]'s
  * map implementation is used since it provides a functionality to estimate the size of the map.
  * To make the keys compatible with PartitionedAppendOnlyMap, each key is of the format (partitionId, aggKey).
@@ -34,7 +33,9 @@ import org.apache.spark.shuffle.RssOpts
  * the allocated memory can be requested by the task memory manager by calling
  * [[org.apache.spark.memory.MemoryConsumer#spill]] implementation.
  * In such case we set the [[org.apache.spark.shuffle.rss.WriterAggregationManager#forceSpill()]]
- * flag to false, so that whenever next record is written to map, entire map is spilled.
+ * flag to true, so that whenever next record is written to map, entire map is spilled.
+ *
+ * The aggregation is skipped by looking at the reduction factor after threshold number of records have been processsed.
  */
 class WriterAggregationManager[K, V, C](taskMemoryManager: TaskMemoryManager,
                                         shuffleDependency: ShuffleDependency[K, V, C],
@@ -74,8 +75,8 @@ class WriterAggregationManager[K, V, C](taskMemoryManager: TaskMemoryManager,
     } else if (mayBeSkipAggregation) {
       skipMapSideAgg = true
       aggMapper = new WriterAggregationMapper[K, V, C](shuffleDependency, serializer, bufferOptions)
-      // Skip aggregation here on, spill the hashmap and use the buffer based mapper instead
       aggImpl.addRecord(partitionId, record)
+      // Skip aggregation here on, spill the hashmap and use the buffer based mapper instead
       aggImpl.spillMap()
     } else {
       aggImpl.addRecord(partitionId, record)

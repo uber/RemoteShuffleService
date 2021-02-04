@@ -112,7 +112,6 @@ private[rss] class WriterAggregationImpl[K, V, C](taskMemoryManager: TaskMemoryM
     val stream = serializerInstance.serializeStream(output)
 
     val itr = map.iterator
-    //ToDo: Skip map side aggregation based on the reduction factor
     while (itr.hasNext) {
       val item = itr.next()
       val (key, value): Product2[Any, Any] = (item._1._2, item._2)
