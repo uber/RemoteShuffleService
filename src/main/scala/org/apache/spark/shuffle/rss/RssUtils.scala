@@ -90,7 +90,7 @@ object RssUtils extends Logging {
         s"get information from map output tracker, shuffleId: $shuffleId, partition: $partition",
         new Supplier[Seq[MapTaskRssInfo]] {
           override def get(): Seq[MapTaskRssInfo] = {
-            val mapStatusInfo = SparkEnv.get.mapOutputTracker.getMapSizesByRange(shuffleId, startMapIndex, endMapIndex, partition, partition + 1)
+            val mapStatusInfo = SparkEnv.get.mapOutputTracker.getMapSizesByExecutorId(shuffleId, startMapIndex, endMapIndex, partition, partition + 1)
             logInfo(s"Got result from mapOutputTracker.getMapSizesByExecutorId")
             mapStatusInfo
               .toParArray
