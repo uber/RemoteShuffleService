@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2020 Uber Technologies, Inc.
+ * This file is copied from Uber Remote Shuffle Service
+(https://github.com/uber/RemoteShuffleService) and modified.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,23 +17,23 @@ package org.apache.spark.shuffle
 
 import java.util.UUID
 
-import com.uber.rss.testutil.{RssMiniCluster, RssZookeeperCluster, StreamServerTestUtils}
-import org.apache.spark.{HashPartitioner, ShuffleDependency, SparkConf, SparkContext}
+import org.apache.spark.remoteshuffle.testutil.{RssMiniCluster, StreamServerTestUtils}
+import org.apache.spark.{SparkConf, SparkContext}
 import org.scalatest.Assertions._
 import org.testng.annotations._
 
-/***
+/** *
  * This is to test scenario where shuffle reader has ordering
  */
 class ShuffleWithOrderingTest {
 
   var appId: String = null
   val numRssServers = 2
-  
+
   var sc: SparkContext = null
-  
+
   var rssTestCluster: RssMiniCluster = null
-  
+
   @BeforeMethod
   def beforeTestMethod(): Unit = {
     appId = UUID.randomUUID().toString()
@@ -50,20 +51,23 @@ class ShuffleWithOrderingTest {
 
   @Test
   def sortByKey(): Unit = {
-    val conf = TestUtil.newSparkConfWithStandAloneRegistryServer(appId, rssTestCluster.getRegistryServerConnection)
+    val conf = TestUtil
+      .newSparkConfWithStandAloneRegistryServer(appId, rssTestCluster.getRegistryServerConnection)
     runWithConf(conf)
   }
 
   @Test
   def sortByKey_fileBufferLargeValue(): Unit = {
-    val conf = TestUtil.newSparkConfWithStandAloneRegistryServer(appId, rssTestCluster.getRegistryServerConnection)
+    val conf = TestUtil
+      .newSparkConfWithStandAloneRegistryServer(appId, rssTestCluster.getRegistryServerConnection)
     conf.set("spark.shuffle.file.buffer", "1m")
     runWithConf(conf)
   }
 
   @Test
   def sortByKey_initialMemoryThresholdLargeValue(): Unit = {
-    val conf = TestUtil.newSparkConfWithStandAloneRegistryServer(appId, rssTestCluster.getRegistryServerConnection)
+    val conf = TestUtil
+      .newSparkConfWithStandAloneRegistryServer(appId, rssTestCluster.getRegistryServerConnection)
     conf.set("spark.shuffle.spill.initialMemoryThreshold", "128000000")
     runWithConf(conf)
   }
@@ -76,7 +80,7 @@ class ShuffleWithOrderingTest {
     val numPartitions = 5
 
     val rdd = sc.parallelize(0 until numValues, numMaps)
-      .map(t=>(t->t*2))
+      .map(t => (t -> t * 2))
       .sortByKey(ascending = false, numPartitions = numPartitions)
     val result = rdd.collect()
 

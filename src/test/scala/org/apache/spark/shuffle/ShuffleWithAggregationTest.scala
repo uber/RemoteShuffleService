@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2020 Uber Technologies, Inc.
+ * This file is copied from Uber Remote Shuffle Service
+(https://github.com/uber/RemoteShuffleService) and modified.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,23 +17,23 @@ package org.apache.spark.shuffle
 
 import java.util.UUID
 
-import com.uber.rss.testutil.{RssMiniCluster, RssZookeeperCluster, StreamServerTestUtils}
-import org.apache.spark.{HashPartitioner, SparkContext}
+import org.apache.spark.SparkContext
+import org.apache.spark.remoteshuffle.testutil.{RssMiniCluster, StreamServerTestUtils}
 import org.scalatest.Assertions._
 import org.testng.annotations._
 
-/***
+/** *
  * This is to test shuffle with aggregation
  */
 class ShuffleWithAggregationTest {
 
   var appId: String = null
   val numRssServers = 2
-  
+
   var sc: SparkContext = null
-  
+
   var rssTestCluster: RssMiniCluster = null
-  
+
   @BeforeMethod
   def beforeTestMethod(): Unit = {
     appId = UUID.randomUUID().toString()
@@ -50,7 +51,8 @@ class ShuffleWithAggregationTest {
 
   @Test
   def foldByKey(): Unit = {
-    val conf = TestUtil.newSparkConfWithStandAloneRegistryServer(appId, rssTestCluster.getRegistryServerConnection)
+    val conf = TestUtil
+      .newSparkConfWithStandAloneRegistryServer(appId, rssTestCluster.getRegistryServerConnection)
 
     sc = new SparkContext(conf)
 
@@ -59,23 +61,23 @@ class ShuffleWithAggregationTest {
     val numPartitions = 5
 
     val rdd = sc.parallelize(0 until numValues, numMaps)
-      .map(t=>((t/2) -> (t*2).longValue()))
-      .foldByKey(0, numPartitions)((v1, v2)=>v1 + v2)
+      .map(t => ((t / 2) -> (t * 2).longValue()))
+      .foldByKey(0, numPartitions)((v1, v2) => v1 + v2)
     val result = rdd.collect()
 
     assert(sc.env.shuffleManager.getClass.getSimpleName === "RssShuffleManager")
-    assert(result.size === numValues/2)
+    assert(result.size === numValues / 2)
 
     for (i <- 0 until result.size) {
       val key = result(i)._1
       val value = result(i)._2
-      assert(key*2*2 + (key*2+1)*2 === value)
+      assert(key * 2 * 2 + (key * 2 + 1) * 2 === value)
     }
 
     val keys = result.map(_._1).distinct.sorted
-    assert(keys.length === numValues/2)
+    assert(keys.length === numValues / 2)
     assert(keys(0) === 0)
-    assert(keys.last === (numValues-1)/2)
+    assert(keys.last === (numValues - 1) / 2)
   }
 
 }

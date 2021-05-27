@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2020 Uber Technologies, Inc.
+ * This file is copied from Uber Remote Shuffle Service
+(https://github.com/uber/RemoteShuffleService) and modified.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,10 +15,10 @@
 
 package org.apache.spark.shuffle
 
-import com.uber.rss.common.ServerDetail
+import org.apache.spark.remoteshuffle.common.ServerDetail
 
-case class RssShuffleServerHandle(serverId: String, runningVersion: String, connectionString: String){
+case class RssShuffleServerHandle(serverId: String, connectionString: String) {
   def toServerDetail(): ServerDetail = {
-    new ServerDetail(serverId, runningVersion, connectionString)
+    new ServerDetail(serverId, connectionString)
   }
 }

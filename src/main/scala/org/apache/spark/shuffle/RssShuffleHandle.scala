@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2020 Uber Technologies, Inc.
+ * This file is copied from Uber Remote Shuffle Service
+(https://github.com/uber/RemoteShuffleService) and modified.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,24 +15,25 @@
 
 package org.apache.spark.shuffle
 
-import com.uber.rss.common.ServerList
 import org.apache.spark.ShuffleDependency
+import org.apache.spark.remoteshuffle.common.ServerList
 
 private[spark] class RssShuffleHandle[K, V, C](
-    shuffleId: Int,
-    val appId: String,
-    val appAttempt: String,
-    val numMaps: Int,
-    val user: String,
-    val queue: String,
-    val dependency: ShuffleDependency[K, V, C],
-    val rssServers: Array[RssShuffleServerHandle],
-    val partitionFanout: Int = 1)
+                                                shuffleId: Int,
+                                                val appId: String,
+                                                val appAttempt: String,
+                                                val user: String,
+                                                val queue: String,
+                                                val dependency: ShuffleDependency[K, V, C],
+                                                val rssServers: Array[RssShuffleServerHandle],
+                                                val partitionFanout: Int = 1)
   extends ShuffleHandle(shuffleId) {
 
   def getServerList: ServerList = {
     new ServerList(rssServers.map(_.toServerDetail()))
   }
 
-  override def toString: String = s"RssShuffleHandle (shuffleId $shuffleId, numMaps: $numMaps, rssServers: ${rssServers.length} servers), partitionFanout: $partitionFanout"
+  override def toString: String = s"RssShuffleHandle (shuffleId $shuffleId, rssServers: ${
+    rssServers.length
+  } servers), partitionFanout: $partitionFanout"
 }

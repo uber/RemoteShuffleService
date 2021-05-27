@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2020 Uber Technologies, Inc.
+ * This file is copied from Uber Remote Shuffle Service
+(https://github.com/uber/RemoteShuffleService) and modified.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +17,8 @@ package org.apache.spark.shuffle
 
 import java.util.UUID
 
-import com.uber.rss.testutil.{RssMiniCluster, StreamServerTestUtils}
 import org.apache.spark.SparkConf
+import org.apache.spark.remoteshuffle.testutil.{RssMiniCluster, StreamServerTestUtils}
 import org.apache.spark.sql.SparkSession
 import org.testng.Assert
 import org.testng.annotations._
@@ -48,7 +49,8 @@ class ShuffleWithSparkSqlLargeDataTest {
 
   @Test
   def runWithDefault(): Unit = {
-    val conf = TestUtil.newSparkConfWithStandAloneRegistryServer(appId, rssTestCluster.getRegistryServerConnection)
+    val conf = TestUtil
+      .newSparkConfWithStandAloneRegistryServer(appId, rssTestCluster.getRegistryServerConnection)
     runWithConf(conf)
   }
 
@@ -88,11 +90,11 @@ class ShuffleWithSparkSqlLargeDataTest {
 
     var row = result(0)
     Assert.assertEquals(row.get(0).toString, "0")
-    Assert.assertEquals(row.get(1).toString, (maxId/2).toString)
+    Assert.assertEquals(row.get(1).toString, (maxId / 2).toString)
 
     row = result(1)
     Assert.assertEquals(row.get(0).toString, "1")
-    Assert.assertEquals(row.get(1).toString, (maxId/2).toString)
+    Assert.assertEquals(row.get(1).toString, (maxId / 2).toString)
   }
 
 }

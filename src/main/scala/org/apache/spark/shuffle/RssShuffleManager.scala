@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2020 Uber Technologies, Inc.
+ * This file is copied from Uber Remote Shuffle Service
+(https://github.com/uber/RemoteShuffleService) and modified.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,36 +19,34 @@ import java.util
 import java.util.Random
 import java.util.function.Supplier
 
-import com.uber.rss.{RssBuildInfo, StreamServerConfig}
-import com.uber.rss.clients.{MultiServerAsyncWriteClient, MultiServerHeartbeatClient, MultiServerSyncWriteClient, MultiServerWriteClient, PooledWriteClientFactory, ServerConnectionCacheUpdateRefresher, ServerConnectionStringCache, ServerConnectionStringResolver, ServerReplicationGroupUtil, ShuffleWriteConfig}
-import com.uber.rss.common.{AppShuffleId, AppTaskAttemptId, ServerDetail, ServerList}
-import com.uber.rss.exceptions.{RssException, RssInvalidStateException, RssNoServerAvailableException, RssServerResolveException}
-import com.uber.rss.metadata.{ServiceRegistry, ServiceRegistryUtils, StandaloneServiceRegistryClient, ZooKeeperServiceRegistry}
-import com.uber.rss.metrics.{M3Stats, ShuffleClientStageMetrics, ShuffleClientStageMetricsKey}
-import com.uber.rss.util.{ExceptionUtils, RetryUtils, ServerHostAndPort, ThreadUtils}
-import org.apache.commons.lang3.StringUtils
 import org.apache.spark._
 import org.apache.spark.internal.Logging
-import org.apache.spark.shuffle.rss.{BufferManagerOptions, RssSparkListener, RssUtils}
+import org.apache.spark.remoteshuffle.RssBuildInfo
+import org.apache.spark.remoteshuffle.clients.{MultiServerAsyncWriteClient, MultiServerHeartbeatClient, MultiServerSyncWriteClient, MultiServerWriteClient, PooledWriteClientFactory, ServerConnectionStringCache, ServerConnectionStringResolver, ServerReplicationGroupUtil, ShuffleWriteConfig}
+import org.apache.spark.remoteshuffle.common.{AppShuffleId, AppTaskAttemptId, ServerDetail, ServerList}
+import org.apache.spark.remoteshuffle.exceptions.{RssException, RssInvalidStateException, RssNoServerAvailableException, RssServerResolveException}
+import org.apache.spark.remoteshuffle.metadata.{ServerSequenceServiceRegistry, ServiceRegistry, ServiceRegistryUtils, StandaloneServiceRegistryClient}
+import org.apache.spark.remoteshuffle.metrics.M3Stats
+import org.apache.spark.remoteshuffle.util.{ExceptionUtils, RetryUtils, ServerHostAndPort, ThreadUtils}
+import org.apache.spark.shuffle.internal.{BufferManagerOptions, RssSparkListener, RssUtils}
 
 import scala.collection.JavaConverters
 
+
 class RssShuffleManager(conf: SparkConf) extends ShuffleManager with Logging {
-  logInfo(s"Creating ShuffleManager instance: ${this.getClass.getSimpleName}, version: ${RssBuildInfo.Version}, revision: ${RssBuildInfo.Revision}")
+  logInfo(s"Creating ShuffleManager instance: ${this.getClass.getSimpleName}, version: ${
+    RssBuildInfo.Version
+  }, revision: ${RssBuildInfo.Revision}")
 
   private val SparkYarnQueueConfigKey = "spark.yarn.queue"
   private val NumRssServersMetricName = "numRssServers2"
-  private val FailToGetRssServersMetricName = "failToGetRssServers2"
   private val RssDataCenterTagName = "rssDataCenter"
   private val RssClusterTagName = "rssCluster"
   private val UserMetricTagName = "user"
 
   private val networkTimeoutMillis = conf.get(RssOpts.networkTimeout).toInt
-  private val networkRetries = conf.get(RssOpts.networkRetries).toInt
   private val pollInterval = conf.get(RssOpts.pollInterval)
   private val dataAvailableWaitTime = conf.get(RssOpts.readerDataAvailableWaitTime)
-  
-  private var shuffleClientStageMetrics: ShuffleClientStageMetrics = null
 
   private val serviceRegistry = createServiceRegistry
   private val dataCenter = getDataCenter
@@ -59,24 +58,30 @@ class RssShuffleManager(conf: SparkConf) extends ShuffleManager with Logging {
   private val writerBufferMax = conf.get(RssOpts.writerBufferMax)
   private val writerBufferSpill = conf.get(RssOpts.writerBufferSpill)
   private val writerBufferSpillByEachExecutor = if (executorCores >= 1) {
-    writerBufferSpill/executorCores
+    writerBufferSpill / executorCores
   } else {
     writerBufferSpill
   }
+  private val writerSupportAggregate = conf.get(RssOpts.writerSupportAggregate)
   private val bufferOptions = BufferManagerOptions(
     individualBufferSize = writerBufferSize,
     individualBufferMax = writerBufferMax,
-    bufferSpillThreshold = writerBufferSpillByEachExecutor
+    bufferSpillThreshold = writerBufferSpillByEachExecutor,
+    supportAggregate = writerSupportAggregate
   )
 
   private def getSparkContext = {
     SparkContext.getActive.get
   }
-  
-  // This method is called in Spark driver side, and Spark driver will make some decision, e.g. determining what 
-  // RSS servers to use. Then Spark driver will return a ShuffleHandle and pass that ShuffleHandle to executors (getWriter/getReader).
-  override def registerShuffle[K, V, C](shuffleId: Int, numMaps: Int, dependency: ShuffleDependency[K, V, C]): ShuffleHandle = {
-    // RSS does not support speculation yet, due to the random task attempt ids (finished map task attempt id not always increasing).
+
+  // This method is called in Spark driver side, and Spark driver will make some
+  // decision, e.g. determining what
+  // RSS servers to use. Then Spark driver will return a ShuffleHandle and pass
+  // that ShuffleHandle to executors (getWriter/getReader).
+  override def registerShuffle[K, V, C](shuffleId: Int,
+      dependency: ShuffleDependency[K, V, C]): ShuffleHandle = {
+    // RSS does not support speculation yet, due to the random task attempt ids
+    // (finished map task attempt id not always increasing).
     // We will fall back to SortShuffleManager if speculation is configured to true.
     val useSpeculation = conf.getBoolean("spark.speculation", false)
     if (useSpeculation) {
@@ -97,18 +102,19 @@ class RssShuffleManager(conf: SparkConf) extends ShuffleManager with Logging {
 
     val heartbeatClient = MultiServerHeartbeatClient.getInstance();
     heartbeatClient.setAppContext(user, appId, appAttempt)
-    if (!heartbeatClient.hasServerConnectionRefresher) {
-      heartbeatClient.setServerConnectionRefresher(createServerConnectionRefresher4Heartbeat())
-    }
 
     var rssServerSelectionResult: RssServerSelectionResult = null
 
     val excludeHostsConfigValue = conf.get(RssOpts.excludeHosts)
     val excludeHosts = excludeHostsConfigValue.split(",").filter(!_.isEmpty).distinct
 
-    rssServerSelectionResult = getRssServers(numMaps, numPartitions, excludeHosts)
+    rssServerSelectionResult = getRssServers(numPartitions, excludeHosts)
     val rssServers = rssServerSelectionResult.servers
-    logInfo(s"Selected ${rssServers.size} RSS servers for shuffle $shuffleId, maps: $numMaps, partitions: $numPartitions, replicas: ${rssServerSelectionResult.replicas}, partition fanout: ${rssServerSelectionResult.partitionFanout}, ${rssServers.mkString(",")}")
+    logInfo(s"Selected ${
+      rssServers.size
+    } RSS servers for shuffle $shuffleId, partitions: $numPartitions, replicas: ${
+      rssServerSelectionResult.replicas
+    }, partition fanout: ${rssServerSelectionResult.partitionFanout}, ${rssServers.mkString(",")}")
 
     val tagMap = new java.util.HashMap[String, String]()
     tagMap.put(RssDataCenterTagName, dataCenter)
@@ -124,13 +130,6 @@ class RssShuffleManager(conf: SparkConf) extends ShuffleManager with Logging {
         rssServerSelectionResult.servers.map(_.getConnectionString()),
         networkTimeoutMillis))
 
-    val shuffleClientStageMetricsKey = new ShuffleClientStageMetricsKey(user, queue)
-    shuffleClientStageMetrics = new ShuffleClientStageMetrics(shuffleClientStageMetricsKey)
-
-    shuffleClientStageMetrics.getNumRegisterShuffle.inc(1)
-    shuffleClientStageMetrics.getNumMappers().recordValue(numMaps)
-    shuffleClientStageMetrics.getNumReducers().recordValue(numPartitions)
-    
     val dependencyInfo = s"numPartitions: ${dependency.partitioner.numPartitions}, " +
       s"serializer: ${dependency.serializer.getClass().getSimpleName()}, " +
       s"keyOrdering: ${dependency.keyOrdering}, " +
@@ -139,37 +138,41 @@ class RssShuffleManager(conf: SparkConf) extends ShuffleManager with Logging {
       s"keyClassName: ${dependency.keyClassName}, " +
       s"valueClassName: ${dependency.valueClassName}"
 
-    logInfo(s"registerShuffle: $appId, $appAttempt, $shuffleId, $numMaps, $dependencyInfo")
+    logInfo(s"registerShuffle: $appId, $appAttempt, $shuffleId, $dependencyInfo")
 
-    val rssServerHandles = rssServerSelectionResult.servers.map(t => new RssShuffleServerHandle(t.getServerId(), t.getRunningVersion(), t.getConnectionString())).toArray
-    new RssShuffleHandle(shuffleId, appId, appAttempt, numMaps, user, queue, dependency, rssServerHandles, rssServerSelectionResult.partitionFanout)
+    val rssServerHandles = rssServerSelectionResult.servers
+      .map(t => new RssShuffleServerHandle(t.getServerId(), t.getConnectionString())).toArray
+    new RssShuffleHandle(shuffleId, appId, appAttempt, user, queue, dependency, rssServerHandles,
+      rssServerSelectionResult.partitionFanout)
   }
 
-  // This method is called in Spark executor, getting information from Spark driver via the ShuffleHandle.
-  override def getWriter[K, V](handle: ShuffleHandle, mapId: Int, context: TaskContext): ShuffleWriter[K, V] = {
-    logInfo(s"getWriter: Use ShuffleManager: ${this.getClass().getSimpleName()}, $handle, mapId: $mapId, stageId: ${context.stageId()}, shuffleId: ${handle.shuffleId}")
+  // This method is called in Spark executor, getting information from Spark driver via
+  // the ShuffleHandle.
+  override def getWriter[K, V](handle: ShuffleHandle, mapId: Long, context: TaskContext,
+                               metrics: ShuffleWriteMetricsReporter): ShuffleWriter[K, V] = {
+    logInfo(s"getWriter: Use ShuffleManager: ${
+      this.getClass().getSimpleName()
+    }, $handle, mapId: $mapId, stageId: ${context.stageId()}, shuffleId: ${handle.shuffleId}")
 
     handle match {
-      case rssShuffleHandle: RssShuffleHandle[K@unchecked, V@unchecked, _] => {
+      case rssShuffleHandle: RssShuffleHandle[K@unchecked, V@unchecked, _] =>
         val writerQueueSize = conf.get(RssOpts.writerQueueSize)
 
         val mapInfo = new AppTaskAttemptId(
           conf.getAppId,
           rssShuffleHandle.appAttempt,
           handle.shuffleId,
-          mapId,
+          mapId.intValue(), // TODO Spark 3.0 for mapId.intValue()
           context.taskAttemptId()
         )
 
-        logDebug( s"getWriter $mapInfo" )
-
-        createShuffleClientStageMetricsIfNeeded( rssShuffleHandle )
+        logDebug(s"getWriter $mapInfo")
 
         val serializer = rssShuffleHandle.dependency.serializer
-        val maxWaitMillis = conf.get( RssOpts.maxWaitTime )
+        val maxWaitMillis = conf.get(RssOpts.maxWaitTime)
         val useConnectionPool = conf.get(RssOpts.useConnectionPool)
         val rssMapsPerSplit = conf.get(RssOpts.mapsPerSplit)
-        var rssNumSplits = Math.ceil(rssShuffleHandle.numMaps.toDouble/rssMapsPerSplit.toDouble).toInt
+        var rssNumSplits = 1
         val rssMinSplits = conf.get(RssOpts.minSplits)
         val rssMaxSplits = conf.get(RssOpts.maxSplits)
         if (rssNumSplits < rssMinSplits) {
@@ -182,118 +185,140 @@ class RssShuffleManager(conf: SparkConf) extends ShuffleManager with Logging {
         if (rssReplicas <= 0) {
           throw new RssException(s"Invalid config value for ${RssOpts.replicas.key}: $rssReplicas")
         }
-        val rssServers: ServerList = ServerConnectionStringCache.getInstance().getServerList(rssShuffleHandle.getServerList)
-        val serverReplicationGroups = ServerReplicationGroupUtil.createReplicationGroups(rssServers.getSevers, rssReplicas)
+        val rssServers: ServerList = ServerConnectionStringCache.getInstance()
+          .getServerList(rssShuffleHandle.getServerList)
+        val serverReplicationGroups = ServerReplicationGroupUtil
+          .createReplicationGroups(rssServers.getSevers, rssReplicas)
 
         val serverConnectionResolver = new ServerConnectionStringResolver {
           override def resolveConnection(serverId: String): ServerDetail = {
-            val serverDetailInShuffleHandle = rssShuffleHandle.getServerList.getSeverDetail(serverId)
+            val serverDetailInShuffleHandle = rssShuffleHandle.getServerList
+              .getSeverDetail(serverId)
             if (serverDetailInShuffleHandle == null) {
               throw new FetchFailedException(
-                bmAddress = RssUtils.createMapTaskDummyBlockManagerId(mapInfo.getMapId, mapInfo.getTaskAttemptId),
+                bmAddress = RssUtils
+                  .createMapTaskDummyBlockManagerId(mapInfo.getMapId, mapInfo.getTaskAttemptId),
                 shuffleId = rssShuffleHandle.shuffleId,
                 mapId = -1,
+                mapIndex = -1,
                 reduceId = 0,
-                message = s"Failed to get server detail for $serverId from shuffle handle: $rssShuffleHandle")
+                message = s"Failed to get server detail for $serverId from shuffle " +
+                  s"handle: $rssShuffleHandle")
             }
             // random sleep some time to avoid request spike on service registry
             val random = new Random()
             val randomWaitMillis = random.nextInt(pollInterval)
             ThreadUtils.sleep(randomWaitMillis)
-            val lookupResult = serviceRegistry.lookupServers(dataCenter, cluster, util.Arrays.asList(serverId))
+            val lookupResult = serviceRegistry
+              .lookupServers(dataCenter, cluster, util.Arrays.asList(serverId))
             if (lookupResult == null) {
               throw new RssServerResolveException(s"Got null when looking up server for $serverId")
             }
             if (lookupResult.size() != 1) {
-              throw new RssInvalidStateException(s"Invalid result $lookupResult when looking up server for $serverId")
+              throw new RssInvalidStateException(
+                s"Invalid result $lookupResult when looking up server for $serverId")
             }
             val refreshedServer: ServerDetail = lookupResult.get(0)
-            // add refreshed server into cache so future server lookup from the cache will get latest server.
+            // add refreshed server into cache so future server lookup from the cache will get
+            // latest server.
             ServerConnectionStringCache.getInstance().updateServer(serverId, refreshedServer)
             if (!refreshedServer.equals(serverDetailInShuffleHandle)) {
               throw new FetchFailedException(
-                bmAddress = RssUtils.createMapTaskDummyBlockManagerId(mapInfo.getMapId, mapInfo.getTaskAttemptId),
+                bmAddress = RssUtils
+                  .createMapTaskDummyBlockManagerId(mapInfo.getMapId, mapInfo.getTaskAttemptId),
                 shuffleId = rssShuffleHandle.shuffleId,
                 mapId = -1,
+                mapIndex = -1,
                 reduceId = 0,
-                message = s"Detected server restart, current server: $refreshedServer, previous server: $serverDetailInShuffleHandle")
+                message = s"Detected server restart, current server: $refreshedServer, " +
+                  s"previous server: $serverDetailInShuffleHandle")
             }
             refreshedServer
           }
         }
-        val serverConnectionRefresher = new ServerConnectionCacheUpdateRefresher(serverConnectionResolver, ServerConnectionStringCache.getInstance())
 
         val writerAsyncFinish = conf.get(RssOpts.writerAsyncFinish)
         val finishUploadAck = !writerAsyncFinish
 
-        RetryUtils.retry(pollInterval, pollInterval * 10, maxWaitMillis, "create write client", new Supplier[ShuffleWriter[K, V]] {
-          override def get(): ShuffleWriter[K, V] = {
-            val writeClient: MultiServerWriteClient =
-              if (writerQueueSize == 0) {
-                logInfo(s"Use replicated sync writer, $rssNumSplits splits, ${rssShuffleHandle.partitionFanout} partition fanout, $serverReplicationGroups, finishUploadAck: $finishUploadAck")
-                new MultiServerSyncWriteClient(
-                  serverReplicationGroups,
-                  rssShuffleHandle.partitionFanout,
-                  networkTimeoutMillis,
-                  maxWaitMillis,
-                  serverConnectionRefresher,
-                  finishUploadAck,
-                  useConnectionPool,
-                  rssShuffleHandle.user,
-                  rssShuffleHandle.appId,
-                  rssShuffleHandle.appAttempt,
-                  shuffleWriteConfig)
-              } else {
-                val maxThreads = conf.get(RssOpts.writerMaxThreads)
-                val serverThreadRatio = 8.0
-                val numThreadsBasedOnShuffleServers = Math.ceil(rssShuffleHandle.rssServers.length.toDouble / serverThreadRatio)
-                val numThreads = Math.min(numThreadsBasedOnShuffleServers, maxThreads).toInt
-                logInfo(s"Use replicated async writer with queue size $writerQueueSize threads $numThreads, $rssNumSplits splits, ${rssShuffleHandle.partitionFanout} partition fanout, $serverReplicationGroups, finishUploadAck: $finishUploadAck")
-                new MultiServerAsyncWriteClient(
-                  serverReplicationGroups,
-                  rssShuffleHandle.partitionFanout,
-                  networkTimeoutMillis,
-                  maxWaitMillis,
-                  serverConnectionRefresher,
-                  finishUploadAck,
-                  useConnectionPool,
-                  writerQueueSize,
-                  numThreads,
-                  rssShuffleHandle.user,
-                  rssShuffleHandle.appId,
-                  rssShuffleHandle.appAttempt,
-                  shuffleWriteConfig)
-              }
+        RetryUtils.retry(pollInterval, pollInterval * 10, maxWaitMillis, "create write client",
+          new Supplier[ShuffleWriter[K, V]] {
+            override def get(): ShuffleWriter[K, V] = {
+              val writeClient: MultiServerWriteClient =
+                if (writerQueueSize == 0) {
+                  logInfo(s"Use replicated sync writer, $rssNumSplits splits, ${
+                    rssShuffleHandle.partitionFanout
+                  } partition fanout, $serverReplicationGroups, finishUploadAck: $finishUploadAck")
+                  new MultiServerSyncWriteClient(
+                    serverReplicationGroups,
+                    rssShuffleHandle.partitionFanout,
+                    networkTimeoutMillis,
+                    maxWaitMillis,
+                    finishUploadAck,
+                    useConnectionPool,
+                    rssShuffleHandle.user,
+                    rssShuffleHandle.appId,
+                    rssShuffleHandle.appAttempt,
+                    shuffleWriteConfig)
+                } else {
+                  val maxThreads = conf.get(RssOpts.writerMaxThreads)
+                  val serverThreadRatio = 8.0
+                  val numThreadsBasedOnShuffleServers = Math
+                    .ceil(rssShuffleHandle.rssServers.length.toDouble / serverThreadRatio)
+                  val numThreads = Math.min(numThreadsBasedOnShuffleServers, maxThreads).toInt
+                  logInfo(
+                    s"Use replicated async writer with queue " +
+                      s"size $writerQueueSize threads $numThreads, " +
+                      s"$rssNumSplits splits, ${rssShuffleHandle.partitionFanout} partition " +
+                      s"fanout, $serverReplicationGroups, finishUploadAck: $finishUploadAck")
+                  new MultiServerAsyncWriteClient(
+                    serverReplicationGroups,
+                    rssShuffleHandle.partitionFanout,
+                    networkTimeoutMillis,
+                    maxWaitMillis,
+                    finishUploadAck,
+                    useConnectionPool,
+                    writerQueueSize,
+                    numThreads,
+                    rssShuffleHandle.user,
+                    rssShuffleHandle.appId,
+                    rssShuffleHandle.appAttempt,
+                    shuffleWriteConfig)
+                }
 
-            try {
-              writeClient.connect()
+              try {
+                writeClient.connect()
 
-              new RssShuffleWriter(
-                rssShuffleHandle.user,
-                new ServerList(rssShuffleHandle.rssServers.map(_.toServerDetail()).toArray),
-                writeClient,
-                mapInfo,
-                rssShuffleHandle.numMaps,
-                serializer,
-                bufferOptions,
-                rssShuffleHandle.dependency,
-                shuffleClientStageMetrics,
-                context.taskMetrics().shuffleWriteMetrics)
-            } catch {
-              case ex: Throwable => {
-                ExceptionUtils.closeWithoutException(writeClient)
-                throw ex
+                new RssShuffleWriter(
+                  new ServerList(rssShuffleHandle.rssServers.map(_.toServerDetail()).toArray),
+                  writeClient,
+                  mapInfo,
+                  serializer,
+                  bufferOptions,
+                  rssShuffleHandle.dependency,
+                  metrics)
+              } catch {
+                case ex: Throwable =>
+                  ExceptionUtils.closeWithoutException(writeClient)
+                  throw ex
               }
             }
-          }
-        })
-      }
+          })
     }
   }
 
-  // This method is called in Spark executor, getting information from Spark driver via the ShuffleHandle.
-  override def getReader[K, C](handle: ShuffleHandle, startPartition: Int, endPartition: Int, context: TaskContext): ShuffleReader[K, C] = {
-    logInfo(s"getReader: Use ShuffleManager: ${this.getClass().getSimpleName()}, $handle, partitions: [$startPartition, $endPartition)")
+  override def getReader[K, C](handle: ShuffleHandle, startPartition: Int, endPartition: Int,
+                               context: TaskContext, metrics: ShuffleReadMetricsReporter):
+      ShuffleReader[K, C] = {
+    getReaderForRange(handle, 0, Integer.MAX_VALUE, startPartition, endPartition,
+      context, metrics)
+  }
+
+  override def getReaderForRange[K, C](handle: ShuffleHandle, startMapIndex: Int, endMapIndex: Int,
+                               startPartition: Int, endPartition: Int, context: TaskContext,
+                               metrics: ShuffleReadMetricsReporter): ShuffleReader[K, C] = {
+    logInfo(s"getReader: Use ShuffleManager: ${
+      this.getClass().getSimpleName()
+    }, $handle, partitions: [$startPartition, $endPartition)")
 
     val rssShuffleHandle = handle.asInstanceOf[RssShuffleHandle[K, _, C]]
     val shuffleInfo = new AppShuffleId(
@@ -302,45 +327,34 @@ class RssShuffleManager(conf: SparkConf) extends ShuffleManager with Logging {
       handle.shuffleId
     )
 
-    if (rssShuffleHandle.numMaps == 0) {
-      return new RssEmptyShuffleReader(
-        shuffleInfo,
-        startPartition,
-        endPartition)
-    }
-
     val serializer = rssShuffleHandle.dependency.serializer
     val rssReplicas = conf.get(RssOpts.replicas)
     val rssCheckReplicaConsistency = conf.get(RssOpts.checkReplicaConsistency)
     val maxWaitMillis = conf.get(RssOpts.maxWaitTime)
-    val rssServers = ServerConnectionStringCache.getInstance().getServerList(rssShuffleHandle.getServerList)
+    val rssServers = ServerConnectionStringCache.getInstance()
+      .getServerList(rssShuffleHandle.getServerList)
     new RssShuffleReader(
       user = rssShuffleHandle.user,
       shuffleInfo = shuffleInfo,
+      startMapIndex = startMapIndex,
+      endMapIndex = endMapIndex,
       startPartition = startPartition,
       endPartition = endPartition,
       serializer = serializer,
       context = context,
       shuffleDependency = rssShuffleHandle.dependency,
-      numMaps = rssShuffleHandle.numMaps,
       rssServers = rssServers,
       partitionFanout = rssShuffleHandle.partitionFanout,
-      serviceRegistry = serviceRegistry,
-      serviceRegistryDataCenter = dataCenter,
-      serviceRegistryCluster = cluster,
       timeoutMillis = networkTimeoutMillis,
       maxRetryMillis = maxWaitMillis.toInt,
       dataAvailablePollInterval = pollInterval,
       dataAvailableWaitTime = dataAvailableWaitTime,
       shuffleReplicas = rssReplicas,
-      checkShuffleReplicaConsistency = rssCheckReplicaConsistency)
+      checkShuffleReplicaConsistency = rssCheckReplicaConsistency,
+      shuffleMetrics = metrics)
   }
 
   override def unregisterShuffle(shuffleId: Int): Boolean = {
-    if (shuffleClientStageMetrics != null) {
-      shuffleClientStageMetrics.close()
-    }
-    
     true
   }
 
@@ -359,41 +373,39 @@ class RssShuffleManager(conf: SparkConf) extends ShuffleManager with Logging {
     logInfo(s"Service registry type: $serviceRegistryType")
 
     serviceRegistryType match {
-      case ServiceRegistry.TYPE_ZOOKEEPER =>
-        val zkServers = getZooKeeperServers
-        ZooKeeperServiceRegistry.createTimingInstance(zkServers, networkTimeoutMillis, networkRetries)
+      case ServiceRegistry.TYPE_SERVER_SEQUENCE =>
+        new ServerSequenceServiceRegistry(
+          conf.get(RssOpts.serverSequenceServerId),
+          conf.get(RssOpts.serverSequenceConnectionString),
+          conf.get(RssOpts.serverSequenceStartIndex),
+          conf.get(RssOpts.serverSequenceEndIndex)
+        )
       case ServiceRegistry.TYPE_STANDALONE =>
         val serviceRegistryServer = conf.get(RssOpts.serviceRegistryServer)
         if (serviceRegistryServer == null || serviceRegistryServer.isEmpty) {
           throw new RssException(s"${RssOpts.serviceRegistryServer.key} configure is not set")
         }
         val hostAndPort = ServerHostAndPort.fromString(serviceRegistryServer)
-        new StandaloneServiceRegistryClient(hostAndPort.getHost, hostAndPort.getPort, networkTimeoutMillis, "rss")
-      case _ => throw new RuntimeException(s"Invalid service registry type: $serviceRegistryType" )
+        new StandaloneServiceRegistryClient(hostAndPort.getHost, hostAndPort.getPort,
+          networkTimeoutMillis, "rss")
+      case _ => throw new RuntimeException(s"Invalid service registry type: $serviceRegistryType")
     }
   }
 
   private def getDataCenter: String = {
-    var dataCenterValue = conf.get(RssOpts.dataCenter)
-    if (StringUtils.isBlank(dataCenterValue)) {
-      dataCenterValue = StreamServerConfig.DEFAULT_DATA_CENTER;
-    }
-    dataCenterValue
+    conf.get(RssOpts.dataCenter)
   }
 
-  private def getZooKeeperServers: String = {
-    val serversValue = conf.get(RssOpts.serviceRegistryZKServers)
-    serversValue
-  }
-
-  private def getRssServers(numMaps: Int, numPartitions: Int, excludeHosts: Seq[String]): RssServerSelectionResult = {
+  private def getRssServers(numPartitions: Int,
+                            excludeHosts: Seq[String]): RssServerSelectionResult = {
     val maxServerCount = conf.get(RssOpts.maxServerCount)
     val minServerCount = conf.get(RssOpts.minServerCount)
 
     var selectedServerCount = maxServerCount
 
     val shuffleServerRatio = conf.get(RssOpts.serverRatio)
-    val serverCountEstimate = Math.ceil(Math.max(numMaps, numPartitions).doubleValue()/shuffleServerRatio).intValue()
+    val serverCountEstimate = Math.ceil(numPartitions.doubleValue() / shuffleServerRatio)
+      .intValue()
     if (selectedServerCount > serverCountEstimate) {
       selectedServerCount = serverCountEstimate
     }
@@ -413,8 +425,11 @@ class RssShuffleManager(conf: SparkConf) extends ShuffleManager with Logging {
       selectedServerCount = minServerCount
     }
 
-    val excludeHostsJavaCollection = JavaConverters.asJavaCollectionConverter(excludeHosts).asJavaCollection
-    val servers = ServiceRegistryUtils.getReachableServers(serviceRegistry, selectedServerCount, networkTimeoutMillis, dataCenter, cluster, excludeHostsJavaCollection)
+    val excludeHostsJavaCollection = JavaConverters.asJavaCollectionConverter(excludeHosts)
+      .asJavaCollection
+    val servers = ServiceRegistryUtils
+      .getReachableServers(serviceRegistry, selectedServerCount, networkTimeoutMillis, dataCenter,
+        cluster, excludeHostsJavaCollection)
     if (servers.isEmpty) {
       throw new RssNoServerAvailableException("There is no reachable RSS server")
     }
@@ -425,7 +440,8 @@ class RssShuffleManager(conf: SparkConf) extends ShuffleManager with Logging {
 
     var partitionFanout = 1
     if (minServerCount > 1) {
-      // if min server count is configured, try to distribute a single partition on multiple servers
+      // if min server count is configured, try to distribute a single partition on
+      // multiple servers
       val numReplicationGroups = serverArray.length / rssReplicas
       if (numReplicationGroups > numPartitions) {
         partitionFanout = numReplicationGroups / numPartitions
@@ -433,34 +449,6 @@ class RssShuffleManager(conf: SparkConf) extends ShuffleManager with Logging {
     }
 
     RssServerSelectionResult(serverArray, rssReplicas, partitionFanout)
-  }
-
-  private def createShuffleClientStageMetricsIfNeeded(rssShuffleHandle: RssShuffleHandle[_, _, _]) = {
-    if (shuffleClientStageMetrics == null) {
-      val shuffleClientStageMetricsKey = new ShuffleClientStageMetricsKey(rssShuffleHandle.user, rssShuffleHandle.queue)
-      shuffleClientStageMetrics = new ShuffleClientStageMetrics(shuffleClientStageMetricsKey)
-    }
-  }
-
-  private def createServerConnectionRefresher4Heartbeat() = {
-    val serverConnectionResolver = new ServerConnectionStringResolver {
-        override def resolveConnection(serverId: String): ServerDetail = {
-            // random sleep some time to avoid request spike on service registry
-              val random = new Random()
-            val randomWaitMillis = random.nextInt(pollInterval)
-            ThreadUtils.sleep(randomWaitMillis)
-            val lookupResult = serviceRegistry.lookupServers(dataCenter, cluster, util.Arrays.asList(serverId))
-            if (lookupResult == null) {
-                throw new RssServerResolveException(s"Got null when looking up server for $serverId")
-              }
-            if (lookupResult.size() != 1) {
-                throw new RssInvalidStateException(s"Invalid result $lookupResult when looking up server for $serverId")
-              }
-            val refreshedServer: ServerDetail = lookupResult.get(0)
-            refreshedServer
-          }
-      }
-    new ServerConnectionCacheUpdateRefresher(serverConnectionResolver, MultiServerHeartbeatClient.getServerCache)
   }
 
 }

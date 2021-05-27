@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2020 Uber Technologies, Inc.
+ * This file is copied from Uber Remote Shuffle Service
+(https://github.com/uber/RemoteShuffleService) and modified.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,20 +15,20 @@
 
 package org.apache.spark.shuffle
 
+import java.util
 import java.util.Properties
-
-import org.apache.spark.TaskContext
+import org.apache.spark.{SparkConf, TaskContext}
 import org.apache.spark.executor.TaskMetrics
-import org.apache.spark.memory.TaskMemoryManager
+import org.apache.spark.memory.{MemoryConsumer, TaskMemoryManager, UnifiedMemoryManager}
 import org.apache.spark.metrics.source.Source
+import org.apache.spark.resource.ResourceInformation
 import org.apache.spark.util.{AccumulatorV2, TaskCompletionListener, TaskFailureListener}
 
-class MockTaskContext(val mockStageId: Int, val mockPartitionId: Int, val mockTaskAttemptId: Long = 0) extends TaskContext {
+class MockTaskContext(val mockStageId: Int, val mockPartitionId: Int,
+                      val mockTaskAttemptId: Long = 0) extends TaskContext {
   override def isCompleted(): Boolean = true
 
   override def isInterrupted(): Boolean = false
-
-  override def isRunningLocally(): Boolean = true
 
   override def addTaskCompletionListener(listener: TaskCompletionListener): TaskContext = {
     this
@@ -67,7 +68,14 @@ class MockTaskContext(val mockStageId: Int, val mockPartitionId: Int, val mockTa
     None
   }
 
-  override private[spark] def taskMemoryManager(): TaskMemoryManager = ???
+  override private[spark] def taskMemoryManager(): TaskMemoryManager = {
+    val memoryManager = UnifiedMemoryManager(new SparkConf(false), 1)
+    new TaskMemoryManager(memoryManager, 0) {
+      override def acquireExecutionMemory(required: Long, consumer: MemoryConsumer): Long = {
+        super.acquireExecutionMemory(required, consumer)
+      }
+    }
+  }
 
   override private[spark] def registerAccumulator(a: AccumulatorV2[_, _]): Unit = {}
 
@@ -86,4 +94,9 @@ class MockTaskContext(val mockStageId: Int, val mockPartitionId: Int, val mockTa
   override private[spark] def getLocalProperties: Properties = {
     new Properties()
   }
+
+  override def resources(): Map[String, ResourceInformation] = Map()
+
+  override def resourcesJMap(): util.Map[String, ResourceInformation] =
+    new util.HashMap[String, ResourceInformation]()
 }
