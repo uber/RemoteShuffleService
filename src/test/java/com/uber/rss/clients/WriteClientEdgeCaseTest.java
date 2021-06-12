@@ -227,4 +227,48 @@ public class WriteClientEdgeCaseTest {
     }
   }
 
+  @Test(expectedExceptions = RssServerBusyException.class)
+  public void writeClientsExceedStreamServerMaxConnectionsWithRetry() {
+    StreamServerConfig serverConfig = new StreamServerConfig();
+    serverConfig.setJFxDebugProfilerEnable(false);
+    serverConfig.setMaxConnections(1);
+    serverConfig.setDataCenter(ServiceRegistry.DEFAULT_DATA_CENTER);
+    serverConfig.setCluster(ServiceRegistry.DEFAULT_TEST_CLUSTER);
+
+    ServiceRegistry serviceRegistry = new InMemoryServiceRegistry();
+    TestStreamServer testServer = TestStreamServer.createRunningServer(serverConfig, serviceRegistry);
+
+    AppTaskAttemptId appTaskAttemptId1 = new AppTaskAttemptId("app1", "exec1", 1, 2, 0L);
+
+    boolean finishUploadAck = true;
+
+    try (DataBlockSyncWriteClient writeclient1 = new DataBlockSyncWriteClient("localhost", testServer.getShufflePort(), TestConstants.NETWORK_TIMEOUT, finishUploadAck, "user1", appTaskAttemptId1.getAppId(), appTaskAttemptId1.getAppAttempt())) {
+      writeclient1.connect();
+      ShuffleMapTaskAttemptId shuffleMapTaskAttemptId = new ShuffleMapTaskAttemptId(appTaskAttemptId1.getShuffleId(), appTaskAttemptId1.getMapId(), appTaskAttemptId1.getTaskAttemptId());
+      writeclient1.startUpload(shuffleMapTaskAttemptId, 10, 20, TestConstants.SHUFFLE_WRITE_CONFIG);
+
+      writeclient1.writeData(1, appTaskAttemptId1.getTaskAttemptId(), Unpooled.wrappedBuffer(new byte[0]));
+
+      writeclient1.writeData(2, appTaskAttemptId1.getTaskAttemptId(), Unpooled.wrappedBuffer(new byte[0]));
+
+      writeclient1.writeData(3, appTaskAttemptId1.getTaskAttemptId(), Unpooled.wrappedBuffer("value1".getBytes(StandardCharsets.UTF_8)));
+
+      writeclient1.finishUpload(appTaskAttemptId1.getTaskAttemptId());
+
+      AppTaskAttemptId appTaskAttemptId2 = new AppTaskAttemptId("app1", "exec1", 1, 3, 0L);
+
+      try (ServerBusyRetriableWriteClient retriableWriteClient =
+                   new ServerBusyRetriableWriteClient(
+                           ()->new PlainShuffleDataSyncWriteClient("localhost", testServer.getShufflePort(), 500, finishUploadAck, "user1", appTaskAttemptId2.getAppId(), appTaskAttemptId2.getAppAttempt(), TestConstants.SHUFFLE_WRITE_CONFIG),
+                           1000,
+                           "user1",
+                           appTaskAttemptId2.getAppId(),
+                           appTaskAttemptId2.getAppAttempt())) {
+        retriableWriteClient.connect();
+        retriableWriteClient.startUpload(appTaskAttemptId2, 10, 20);
+      }
+    } finally {
+      testServer.shutdown();
+    }
+  }
 }

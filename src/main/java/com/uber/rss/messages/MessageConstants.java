@@ -57,7 +57,8 @@ public class MessageConstants {
     public final static int MESSAGE_ConnectRegistryResponse = -314;
     public final static int MESSAGE_GetBusyStatusRequest = -320;
     public final static int MESSAGE_GetBusyStatusResponse = -321;
-
+    public final static int MESSAGE_ConnectDownloadRequestMessage = -351;
+    public final static int MESSAGE_GetDataAvailabilityRequestMessage = -351;
     // State store data item
     public final static int MESSAGE_StageInfoStateItem = -401;
     public final static int MESSAGE_AppDeletionStateItem = -404;
