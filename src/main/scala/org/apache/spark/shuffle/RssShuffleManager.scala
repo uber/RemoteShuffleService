@@ -200,10 +200,12 @@ class RssShuffleManager(conf: SparkConf) extends ShuffleManager with Logging {
             val random = new Random()
             val randomWaitMillis = random.nextInt(pollInterval)
             ThreadUtils.sleep(randomWaitMillis)
+            // create service registry
             val lookupResult = serviceRegistry.lookupServers(dataCenter, cluster, util.Arrays.asList(serverId))
             if (lookupResult == null) {
               throw new RssServerResolveException(s"Got null when looking up server for $serverId")
             }
+            // close service registry
             if (lookupResult.size() != 1) {
               throw new RssInvalidStateException(s"Invalid result $lookupResult when looking up server for $serverId")
             }

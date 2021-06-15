@@ -150,6 +150,7 @@ public class ServiceRegistryUtils {
      * @param serverIds list of server ids
      * @return servers
      */
+    // delete this method
     public static List<ServerDetail> lookupServers(ServiceRegistry serviceRegistry, long maxTryMillis, String dataCenter, String cluster, Collection<String> serverIds) {
         int retryIntervalMillis = 100;
         return RetryUtils.retryUntilNotNull(
