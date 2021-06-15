@@ -14,7 +14,7 @@
 
 package com.uber.rss.messages;
 
-        import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBuf;
 
 /***
  * Message sent by the client to check shuffle data availability

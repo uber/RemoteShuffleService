@@ -14,23 +14,23 @@
 
 package com.uber.rss.clients;
 
-        import com.uber.rss.common.AppTaskAttemptId;
-        import com.uber.rss.common.ServerDetail;
-        import com.uber.rss.common.ServerReplicationGroup;
-        import com.uber.rss.testutil.StreamServerTestUtils;
-        import com.uber.rss.testutil.TestStreamServer;
-        import com.uber.rss.util.ServerHostAndPort;
-        import org.testng.Assert;
-        import org.testng.annotations.DataProvider;
-        import org.testng.annotations.Test;
+import com.uber.rss.common.AppTaskAttemptId;
+import com.uber.rss.common.ServerDetail;
+import com.uber.rss.common.ServerReplicationGroup;
+import com.uber.rss.testutil.StreamServerTestUtils;
+import com.uber.rss.testutil.TestStreamServer;
+import com.uber.rss.util.ServerHostAndPort;
+import org.testng.Assert;
+import org.testng.annotations.DataProvider;
+import org.testng.annotations.Test;
 
-        import java.nio.ByteBuffer;
-        import java.nio.charset.StandardCharsets;
-        import java.util.ArrayList;
-        import java.util.Arrays;
-        import java.util.HashSet;
-        import java.util.List;
-        import java.util.stream.Collectors;
+import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
+import java.util.stream.Collectors;
 
 public class DownloadRequestClient {
 
