@@ -109,10 +109,12 @@ class BlockDownloaderPartitionRangeRecordIterator[K, C](
             val random = new Random()
             val randomWaitMillis = random.nextInt(dataAvailablePollInterval.intValue())
             ThreadUtils.sleep(randomWaitMillis)
+            // cretae service registry
             val lookupResult = serviceRegistry.lookupServers(serviceRegistryDataCenter, serviceRegistryCluster, util.Arrays.asList(serverId))
             if (lookupResult == null) {
               throw new RssServerResolveException(s"Got null when looking up server for $serverId")
             }
+            // close service registry
             if (lookupResult.size() != 1) {
               throw new RssInvalidStateException(s"Invalid result $lookupResult when looking up server for $serverId")
             }
