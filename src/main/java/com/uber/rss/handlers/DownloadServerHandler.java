@@ -168,7 +168,7 @@ public class DownloadServerHandler {
                     String exceptionInfo = "";
                     Throwable futureException = future.cause();
                     if (futureException != null) {
-                        M3Stats.addException(futureException, this.getClass().getSimpleName());
+                        M3Stats.addException(futureException, M3Stats.TAG_VALUE_DOWNLOAD_PROCESSOR);
                         exceptionInfo = String.format(
                             ", exception: %s, %s",
                             com.uber.rss.util.ExceptionUtils.getSimpleMessage(future.cause()),

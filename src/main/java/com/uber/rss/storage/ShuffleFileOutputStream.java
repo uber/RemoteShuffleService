@@ -46,7 +46,7 @@ public class ShuffleFileOutputStream implements ShuffleOutputStream {
             internalCountedOutputStream = new CountedOutputStream(outputStream);
             outputStream = internalCountedOutputStream;
         } catch (Throwable e) {
-            M3Stats.addException(e, this.getClass().getSimpleName());
+            M3Stats.addException(e, M3Stats.TAG_VALUE_SHUFFLE_OUTPUT_STREAM);
             throw new RssException(
                     "Failed to open or create writable file: " + this.filePath, e);
         }
