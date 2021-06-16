@@ -22,24 +22,26 @@ import com.uber.rss.common.{AppTaskAttemptId, ServerList}
 import com.uber.rss.exceptions.RssInvalidStateException
 import com.uber.rss.metrics.ShuffleClientStageMetrics
 import net.jpountz.lz4.LZ4Factory
-import org.apache.spark.ShuffleDependency
+import org.apache.spark.{ShuffleDependency, SparkConf}
 import org.apache.spark.executor.ShuffleWriteMetrics
 import org.apache.spark.internal.Logging
 import org.apache.spark.scheduler.MapStatus
 import org.apache.spark.serializer.Serializer
-import org.apache.spark.shuffle.rss.{BufferManagerOptions, RssUtils, WriteBufferManager}
+import org.apache.spark.shuffle.rss.{BufferManagerOptions, RssUtils, WriteBufferManager,
+  WriterAggregationManager, WriterNoAggregationManager}
 
 class RssShuffleWriter[K, V, C](
-    user: String,
-    rssServers: ServerList,
-    writeClient: ShuffleDataWriter,
-    mapInfo: AppTaskAttemptId,
-    numMaps: Int,
-    serializer: Serializer,
-    bufferOptions: BufferManagerOptions,
-    shuffleDependency: ShuffleDependency[K, V, C],
-    stageMetrics: ShuffleClientStageMetrics,
-    shuffleWriteMetrics: ShuffleWriteMetrics) extends ShuffleWriter[K, V] with Logging {
+                                 user: String,
+                                 rssServers: ServerList,
+                                 writeClient: ShuffleDataWriter,
+                                 mapInfo: AppTaskAttemptId,
+                                 numMaps: Int,
+                                 serializer: Serializer,
+                                 bufferOptions: BufferManagerOptions,
+                                 shuffleDependency: ShuffleDependency[K, V, C],
+                                 stageMetrics: ShuffleClientStageMetrics,
+                                 shuffleWriteMetrics: ShuffleWriteMetrics,
+                                 conf: SparkConf) extends ShuffleWriter[K, V] with Logging {
 
   logInfo(s"Using ShuffleWriter: ${this.getClass.getSimpleName}, map task: $mapInfo, buffer: $bufferOptions")
 
@@ -50,11 +52,25 @@ class RssShuffleWriter[K, V, C](
   private val writeClientCloseLock = new Object()
   private var mapStatus: MapStatus = null
 
-  private val bufferManager = new WriteBufferManager(
-    serializer = serializer,
-    bufferSize = bufferOptions.individualBufferSize,
-    maxBufferSize = bufferOptions.individualBufferMax,
-    spillSize = bufferOptions.bufferSpillThreshold)
+  private var numberOfSpills: Int = 0
+
+  private val enableMapSideAggregation = shuffleDependency.mapSideCombine && conf.get(RssOpts.enableMapSideAggregation)
+
+  private val writerManager: WriteBufferManager[K, V, C] = if (enableMapSideAggregation) {
+    new WriterAggregationManager[K, V, C](shuffleDependency, serializer, bufferOptions, conf)
+  } else if (shuffleDependency.mapSideCombine) {
+    // Only apply combiner function to each record and do not aggregate records. Reducer will
+    // merge these records
+    new WriterNoAggregationManager(shuffleDependency, serializer, bufferOptions)
+  } else{
+    new WriteBufferManager[K, V, C](
+      serializer = serializer,
+      bufferSize = bufferOptions.individualBufferSize,
+      maxBufferSize = bufferOptions.individualBufferMax,
+      spillSize = bufferOptions.bufferSpillThreshold)
+  }
+
+  logInfo(s"Using ${writerManager.getClass} as the shuffle writer manager.")
 
   private val compressor = LZ4Factory.fastestInstance.fastCompressor
 
@@ -82,45 +98,55 @@ class RssShuffleWriter[K, V, C](
     while (records.hasNext) {
       val record = records.next()
       recordFetchTime += (System.nanoTime() - recordFetchStartTime)
-
       val writeRecordStartTime = System.nanoTime()
-
       val partition = getPartition(record._1)
-
       var spilledData: Seq[(Int, Array[Byte])] = null
-
-      if (shuffleDependency.mapSideCombine) {
-        val createCombiner = shuffleDependency.aggregator.get.createCombiner
-        val c = createCombiner(record._2)
-        val serializeStartTime = System.nanoTime()
-        spilledData = bufferManager.addRecord(partition, (record._1, c))
-        serializeTime += (System.nanoTime() - serializeStartTime)
-      } else {
-        val serializeStartTime = System.nanoTime()
-        spilledData = bufferManager.addRecord(partition, record)
-        serializeTime += (System.nanoTime() - serializeStartTime)
+      val serializeStartTime = System.nanoTime()
+      spilledData = writerManager.addRecord(partition, record)
+      serializeTime += (System.nanoTime() - serializeStartTime)
+      if (!spilledData.isEmpty) {
+        sendDataBlocks(spilledData, partitionLengths)
       }
-      sendDataBlocks(spilledData, partitionLengths)
-
       numRecords = numRecords + 1
       writeRecordTime += (System.nanoTime() - writeRecordStartTime)
-
       recordFetchStartTime = System.nanoTime()
     }
 
-    val remainingData = bufferManager.clear()
+    val writeRecordStartTime = System.nanoTime()
+    val serializeStartTime = System.nanoTime()
+    val remainingData = writerManager.clear()
+    serializeTime += (System.nanoTime() - serializeStartTime)
     sendDataBlocks(remainingData, partitionLengths)
+    writeRecordTime += (System.nanoTime() - writeRecordStartTime)
 
     val finishUploadStartTime = System.nanoTime()
     writeClient.finishUpload()
     val finishUploadTime = System.nanoTime() - finishUploadStartTime
 
     val totalBytes = writeClient.getShuffleWriteBytes()
-    logInfo(s"Wrote shuffle records ($mapInfo), $numRecords records, $totalBytes bytes, write seconds: ${TimeUnit.NANOSECONDS.toSeconds(startUploadTime)}, ${TimeUnit.NANOSECONDS.toSeconds(writeRecordTime)}, ${TimeUnit.NANOSECONDS.toSeconds(finishUploadTime)}, serialize seconds: ${TimeUnit.NANOSECONDS.toSeconds(serializeTime)}, record fetch seconds: ${TimeUnit.NANOSECONDS.toSeconds(recordFetchTime)}")
+    val writeTime = startUploadTime + writeRecordTime + finishUploadTime
 
-    shuffleWriteMetrics.incRecordsWritten(numRecords)
+    val writeMetrics = List(("mapSideCombine", shuffleDependency.mapSideCombine.toString),
+      ("aggManager", writerManager.getClass.toString),
+      ("spillCount", numberOfSpills),
+      ("recordsRead", numRecords.toString),
+      ("recordsWritten", writerManager.recordsWritten.toString),
+      ("bytesWritten", totalBytes.toString),
+      ("writeTime", writeTime.toString),
+      ("reductionFactor", writerManager.reductionFactor.toString))
+
+    logInfo(s"Wrote shuffle records ($mapInfo), " +
+      s"$numRecords records read, ${writerManager.recordsWritten} records written, $totalBytes bytes, " +
+      s"write seconds: ${TimeUnit.NANOSECONDS.toSeconds(startUploadTime)}, " +
+      s"${TimeUnit.NANOSECONDS.toSeconds(writeRecordTime)}, " +
+      s"${TimeUnit.NANOSECONDS.toSeconds(finishUploadTime)}, " +
+      s"serialize seconds: ${TimeUnit.NANOSECONDS.toSeconds(serializeTime)}, " +
+      s"record fetch seconds: ${TimeUnit.NANOSECONDS.toSeconds(recordFetchTime)}," +
+      s"write metadata: ${writeMetrics.toString()}")
+
+    shuffleWriteMetrics.incRecordsWritten(writerManager.recordsWritten)
     shuffleWriteMetrics.incBytesWritten(totalBytes)
-    shuffleWriteMetrics.incWriteTime(startUploadTime + writeRecordTime + finishUploadTime)
+    shuffleWriteMetrics.incWriteTime(writeTime)
 
     // fill non-zero length
     val nonZeroPartitionLengths = partitionLengths.map(x => if (x == 0) 1 else x)
@@ -131,8 +157,8 @@ class RssShuffleWriter[K, V, C](
     closeWriteClientAsync()
   }
 
-  private def sendDataBlocks(fullFilledData: Seq[(Int, Array[Byte])], partitionLengths: Array[Long]) = {
-    fullFilledData.foreach(t => {
+  private def sendDataBlocks(dataBlocks: Seq[(Int, Array[Byte])], partitionLengths: Array[Long]) = {
+    dataBlocks.foreach(t => {
       val partitionId = t._1
       val bytes = t._2
       if (bytes != null && bytes.length > 0) {
@@ -142,6 +168,9 @@ class RssShuffleWriter[K, V, C](
         partitionLengths(partitionId) += bytes.length
       }
     })
+    if (!dataBlocks.isEmpty) {
+      numberOfSpills += 1
+    }
   }
 
   override def stop(success: Boolean): Option[MapStatus] = {
@@ -150,7 +179,7 @@ class RssShuffleWriter[K, V, C](
     closeWriteClientAsync()
 
     if (success) {
-      val remainingBytes = bufferManager.filledBytes
+      val remainingBytes = writerManager.collectionSizeInBytes
       if (remainingBytes != 0) {
         throw new RssInvalidStateException(s"Writer buffer should be empty, but still has $remainingBytes bytes, $mapInfo")
       }
