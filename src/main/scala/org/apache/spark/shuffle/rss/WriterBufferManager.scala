@@ -26,18 +26,35 @@ case class BufferManagerOptions(individualBufferSize: Int, individualBufferMax: 
 
 case class WriterBufferManagerValue(serializeStream: SerializationStream, output: Output)
 
-class WriteBufferManager(serializer: Serializer,
-                               bufferSize: Int,
-                               maxBufferSize: Int,
-                               spillSize: Int) extends Logging {
+class WriteBufferManager[K, V, C](serializer: Serializer,
+                                  bufferSize: Int,
+                                  maxBufferSize: Int,
+                                  spillSize: Int) extends Logging {
+
+  def this(serializer: Serializer, bufferOptions: BufferManagerOptions) {
+    this(serializer, bufferOptions.individualBufferSize,
+      bufferOptions.individualBufferMax, bufferOptions.bufferSpillThreshold)
+  }
+
   private val map: Map[Int, WriterBufferManagerValue] = Map()
 
   private var totalBytes = 0
 
+  def recordsWritten: Int = recordsWrittenCount
+
+  def reductionFactor: Double = 0.0
+
+  private var recordsWrittenCount: Int = 0
+
   private val serializerInstance = serializer.newInstance()
 
-  def addRecord(partitionId: Int, record: Product2[Any, Any]): Seq[(Int, Array[Byte])] = {
+  def addRecord(partitionId: Int, record: Product2[K, V]): Seq[(Int, Array[Byte])] = {
+    addRecordImpl(partitionId, record)
+  }
+
+  private[rss] def addRecordImpl(partitionId: Int, record: Product2[Any, Any]): Seq[(Int, Array[Byte])] = {
     var result: mutable.Buffer[(Int, Array[Byte])] = null
+    recordsWrittenCount += 1
     map.get(partitionId) match {
       case Some(v) =>
         val stream = v.serializeStream
@@ -97,7 +114,7 @@ class WriteBufferManager(serializer: Serializer,
     }
   }
 
-  def filledBytes = {
+  def collectionSizeInBytes: Int = {
     map.values.foreach(t => flushStream(t.serializeStream, t.output))
     val sum = map.map(_._2.output.position()).sum
     if (sum != totalBytes) {
