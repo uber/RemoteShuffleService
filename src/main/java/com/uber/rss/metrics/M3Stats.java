@@ -41,6 +41,13 @@ public class M3Stats {
     public static final String TAG_NAME_ATTEMPT_ID = "attemptId";
     public static final String TAG_NAME_JOB_STATUS = "jobStatus";
 
+    public static final String TAG_VALUE_SERVER_DECODER = "serverDecoder";
+    public static final String TAG_VALUE_SERVER_HANDLER = "serverHandler";
+    public static final String TAG_VALUE_DOWNLOAD_PROCESSOR = "downloadProcessor";
+    public static final String TAG_VALUE_SHUFFLE_OUTPUT_STREAM = "shuffleOutputStream";
+    public static final String TAG_VALUE_MEMORY_MONITOR = "memoryMonitor";
+    public static final String TAG_VALUE_STRESS_TOOL = "stressTool";
+
     private static final AtomicInteger numM3ScopesAtomicInteger;
     
     private static final Scope defaultScope;
