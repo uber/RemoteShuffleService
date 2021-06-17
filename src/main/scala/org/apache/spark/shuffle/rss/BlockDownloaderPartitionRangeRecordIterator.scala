@@ -16,7 +16,6 @@ package org.apache.spark.shuffle.rss
 
 import java.util
 import java.util.Random
-
 import com.uber.rss.clients._
 import com.uber.rss.common.{AppShufflePartitionId, ServerDetail, ServerList}
 import com.uber.rss.exceptions._
@@ -26,7 +25,7 @@ import com.uber.rss.util.{ExceptionUtils, ThreadUtils}
 import org.apache.spark.executor.ShuffleReadMetrics
 import org.apache.spark.internal.Logging
 import org.apache.spark.serializer.Serializer
-import org.apache.spark.shuffle.FetchFailedException
+import org.apache.spark.shuffle.{FetchFailedException, RssServiceRegistry}
 
 import scala.collection.JavaConverters
 
@@ -41,7 +40,6 @@ class BlockDownloaderPartitionRangeRecordIterator[K, C](
     numMaps: Int,
     rssServers: ServerList,
     partitionFanout: Int,
-    serviceRegistry: ServiceRegistry,
     serviceRegistryDataCenter: String,
     serviceRegistryCluster: String,
     timeoutMillis: Int,
@@ -109,8 +107,8 @@ class BlockDownloaderPartitionRangeRecordIterator[K, C](
             val random = new Random()
             val randomWaitMillis = random.nextInt(dataAvailablePollInterval.intValue())
             ThreadUtils.sleep(randomWaitMillis)
-            // cretae service registry
-            val lookupResult = serviceRegistry.lookupServers(serviceRegistryDataCenter, serviceRegistryCluster, util.Arrays.asList(serverId))
+            val lookupResult = RssServiceRegistry.executeWithServiceRegistry(serviceRegistry =>
+              serviceRegistry.lookupServers(serviceRegistryDataCenter, serviceRegistryCluster, util.Arrays.asList(serverId)))
             if (lookupResult == null) {
               throw new RssServerResolveException(s"Got null when looking up server for $serverId")
             }

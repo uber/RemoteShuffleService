@@ -21,21 +21,28 @@ import com.uber.rss.metrics.M3Stats;
 import com.uber.rss.metrics.MetadataClientMetrics;
 import com.uber.rss.metrics.MetadataClientMetricsContainer;
 import com.uber.rss.util.ExceptionUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Supplier;
 
 /**
  * This class wraps a ServiceRegistry instance and add metrics for its method call.
  */
 public class ServiceRegistryWrapper implements ServiceRegistry {
-  private static MetadataClientMetricsContainer metricsContainer = new MetadataClientMetricsContainer();
+  private static final Logger logger = LoggerFactory.getLogger(ServiceRegistryWrapper.class);
+  private static final MetadataClientMetricsContainer metricsContainer = new MetadataClientMetricsContainer();
+  private static final AtomicLong metaDataConnections = new AtomicLong();
+  private static final String METADATA_CONNECTED = "metadata_connected";
 
-  private ServiceRegistry delegate;
+  private final ServiceRegistry delegate;
 
   public ServiceRegistryWrapper(ServiceRegistry delegate) {
     this.delegate = delegate;
+    updateMetaDataOperation(delegate, 1);
   }
 
   @Override
@@ -62,8 +69,19 @@ public class ServiceRegistryWrapper implements ServiceRegistry {
   @Override
   public void close() {
     invokeRunnable(
-        ()->delegate.close(),
+        ()-> {
+          delegate.close();
+          updateMetaDataOperation(delegate, -1);
+        },
         "close");
+  }
+
+  private void updateMetaDataOperation(ServiceRegistry delegate, int delta) {
+    metricsContainer
+            .getMetricGroup(delegate.getClass().getSimpleName(), METADATA_CONNECTED)
+            .getNumConnections()
+            .update(metaDataConnections.addAndGet(delta));
+    logger.info("ServiceRegistry {}({}) {} , current count {}", delegate.getClass().getSimpleName(), delegate.hashCode(), (delta == 1 ? " opened" : " closed"), metaDataConnections.get());
   }
 
   private void invokeRunnable(Runnable runnable, String name) {

@@ -29,12 +29,14 @@ import org.apache.commons.lang3.StringUtils
 import org.apache.spark._
 import org.apache.spark.internal.Logging
 import org.apache.spark.shuffle.rss.{BufferManagerOptions, RssSparkListener, RssUtils}
+import org.apache.spark.shuffle.RssServiceRegistry.executeWithServiceRegistry
 
 import scala.collection.JavaConverters
 
 class RssShuffleManager(conf: SparkConf) extends ShuffleManager with Logging {
   logInfo(s"Creating ShuffleManager instance: ${this.getClass.getSimpleName}, version: ${RssBuildInfo.Version}, revision: ${RssBuildInfo.Revision}")
 
+  RssServiceRegistry.init(conf)
   private val SparkYarnQueueConfigKey = "spark.yarn.queue"
   private val NumRssServersMetricName = "numRssServers2"
   private val FailToGetRssServersMetricName = "failToGetRssServers2"
@@ -42,15 +44,14 @@ class RssShuffleManager(conf: SparkConf) extends ShuffleManager with Logging {
   private val RssClusterTagName = "rssCluster"
   private val UserMetricTagName = "user"
 
-  private val networkTimeoutMillis = conf.get(RssOpts.networkTimeout).toInt
-  private val networkRetries = conf.get(RssOpts.networkRetries).toInt
   private val pollInterval = conf.get(RssOpts.pollInterval)
   private val dataAvailableWaitTime = conf.get(RssOpts.readerDataAvailableWaitTime)
   
   private var shuffleClientStageMetrics: ShuffleClientStageMetrics = null
 
-  private val serviceRegistry = createServiceRegistry
-  private val dataCenter = getDataCenter
+  private val networkTimeoutMillis = conf.get(RssOpts.networkTimeout).toInt
+
+  private val dataCenter = RssServiceRegistry.getDataCenter
   private val cluster = conf.get(RssOpts.cluster)
 
   private val executorCores = conf.getInt("spark.executor.cores", 1)
@@ -200,8 +201,10 @@ class RssShuffleManager(conf: SparkConf) extends ShuffleManager with Logging {
             val random = new Random()
             val randomWaitMillis = random.nextInt(pollInterval)
             ThreadUtils.sleep(randomWaitMillis)
-            // create service registry
-            val lookupResult = serviceRegistry.lookupServers(dataCenter, cluster, util.Arrays.asList(serverId))
+
+            val lookupResult = executeWithServiceRegistry(serviceRegistry =>
+              serviceRegistry.lookupServers(dataCenter, cluster, util.Arrays.asList(serverId)))
+
             if (lookupResult == null) {
               throw new RssServerResolveException(s"Got null when looking up server for $serverId")
             }
@@ -328,7 +331,6 @@ class RssShuffleManager(conf: SparkConf) extends ShuffleManager with Logging {
       numMaps = rssShuffleHandle.numMaps,
       rssServers = rssServers,
       partitionFanout = rssShuffleHandle.partitionFanout,
-      serviceRegistry = serviceRegistry,
       serviceRegistryDataCenter = dataCenter,
       serviceRegistryCluster = cluster,
       timeoutMillis = networkTimeoutMillis,
@@ -353,40 +355,7 @@ class RssShuffleManager(conf: SparkConf) extends ShuffleManager with Logging {
 
   override def stop(): Unit = {
     PooledWriteClientFactory.getInstance().shutdown();
-    serviceRegistry.close()
     M3Stats.closeDefaultScope()
-  }
-
-  private def createServiceRegistry: ServiceRegistry = {
-    val serviceRegistryType = conf.get(RssOpts.serviceRegistryType)
-    logInfo(s"Service registry type: $serviceRegistryType")
-
-    serviceRegistryType match {
-      case ServiceRegistry.TYPE_ZOOKEEPER =>
-        val zkServers = getZooKeeperServers
-        ZooKeeperServiceRegistry.createTimingInstance(zkServers, networkTimeoutMillis, networkRetries)
-      case ServiceRegistry.TYPE_STANDALONE =>
-        val serviceRegistryServer = conf.get(RssOpts.serviceRegistryServer)
-        if (serviceRegistryServer == null || serviceRegistryServer.isEmpty) {
-          throw new RssException(s"${RssOpts.serviceRegistryServer.key} configure is not set")
-        }
-        val hostAndPort = ServerHostAndPort.fromString(serviceRegistryServer)
-        new StandaloneServiceRegistryClient(hostAndPort.getHost, hostAndPort.getPort, networkTimeoutMillis, "rss")
-      case _ => throw new RuntimeException(s"Invalid service registry type: $serviceRegistryType" )
-    }
-  }
-
-  private def getDataCenter: String = {
-    var dataCenterValue = conf.get(RssOpts.dataCenter)
-    if (StringUtils.isBlank(dataCenterValue)) {
-      dataCenterValue = StreamServerConfig.DEFAULT_DATA_CENTER;
-    }
-    dataCenterValue
-  }
-
-  private def getZooKeeperServers: String = {
-    val serversValue = conf.get(RssOpts.serviceRegistryZKServers)
-    serversValue
   }
 
   private def getRssServers(numMaps: Int, numPartitions: Int, excludeHosts: Seq[String]): RssServerSelectionResult = {
@@ -417,7 +386,8 @@ class RssShuffleManager(conf: SparkConf) extends ShuffleManager with Logging {
     }
 
     val excludeHostsJavaCollection = JavaConverters.asJavaCollectionConverter(excludeHosts).asJavaCollection
-    val servers = ServiceRegistryUtils.getReachableServers(serviceRegistry, selectedServerCount, networkTimeoutMillis, dataCenter, cluster, excludeHostsJavaCollection)
+    val servers = executeWithServiceRegistry(serviceRegistry =>
+      ServiceRegistryUtils.getReachableServers(serviceRegistry, selectedServerCount, networkTimeoutMillis, dataCenter, cluster, excludeHostsJavaCollection))
     if (servers.isEmpty) {
       throw new RssNoServerAvailableException("There is no reachable RSS server")
     }
@@ -452,7 +422,8 @@ class RssShuffleManager(conf: SparkConf) extends ShuffleManager with Logging {
               val random = new Random()
             val randomWaitMillis = random.nextInt(pollInterval)
             ThreadUtils.sleep(randomWaitMillis)
-            val lookupResult = serviceRegistry.lookupServers(dataCenter, cluster, util.Arrays.asList(serverId))
+            val lookupResult = executeWithServiceRegistry(serviceRegistry =>
+              serviceRegistry.lookupServers(dataCenter, cluster, util.Arrays.asList(serverId)))
             if (lookupResult == null) {
                 throw new RssServerResolveException(s"Got null when looking up server for $serverId")
               }

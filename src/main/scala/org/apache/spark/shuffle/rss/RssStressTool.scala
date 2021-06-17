@@ -24,7 +24,7 @@ import java.util.function.Consumer
 import com.uber.rss.clients._
 import com.uber.rss.common._
 import com.uber.rss.metadata.ServiceRegistry
-import com.uber.rss.metrics.{M3Stats, ShuffleClientStageMetrics, ShuffleClientStageMetricsKey}
+import com.uber.rss.metrics.{ShuffleClientStageMetrics, ShuffleClientStageMetricsKey}
 import com.uber.rss.storage.ShuffleFileStorage
 import com.uber.rss.{StreamServer, StreamServerConfig}
 import org.apache.commons.lang3.StringUtils
@@ -362,7 +362,6 @@ class RssStressTool extends Logging {
       numMaps = numMaps,
       rssServers = new ServerList(serverDetails),
       partitionFanout = 1,
-      serviceRegistry = registryServer.getServiceRegistry,
       serviceRegistryDataCenter = ServiceRegistry.DEFAULT_DATA_CENTER,
       serviceRegistryCluster = ServiceRegistry.DEFAULT_TEST_CLUSTER,
       timeoutMillis = 30000,

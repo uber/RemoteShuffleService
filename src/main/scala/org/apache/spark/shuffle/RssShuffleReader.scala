@@ -15,7 +15,6 @@
 package org.apache.spark.shuffle
 
 import com.uber.rss.common.{AppShuffleId, ServerList}
-import com.uber.rss.metadata.ServiceRegistry
 import org.apache.spark.internal.Logging
 import org.apache.spark.serializer.Serializer
 import org.apache.spark.shuffle.rss.BlockDownloaderPartitionRangeRecordIterator
@@ -34,7 +33,6 @@ class RssShuffleReader[K, C](
                               numMaps: Int,
                               rssServers: ServerList,
                               partitionFanout: Int,
-                              serviceRegistry: ServiceRegistry,
                               serviceRegistryDataCenter: String,
                               serviceRegistryCluster: String,
                               timeoutMillis: Int,
@@ -60,7 +58,6 @@ class RssShuffleReader[K, C](
       numMaps = numMaps,
       rssServers = rssServers,
       partitionFanout = partitionFanout,
-      serviceRegistry = serviceRegistry,
       serviceRegistryDataCenter = serviceRegistryDataCenter,
       serviceRegistryCluster = serviceRegistryCluster,
       timeoutMillis = timeoutMillis,
