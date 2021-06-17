@@ -15,6 +15,7 @@
 package com.uber.rss.metrics;
 
 import com.uber.m3.tally.Counter;
+import com.uber.m3.tally.Gauge;
 import com.uber.m3.tally.Scope;
 import com.uber.m3.tally.Timer;
 
@@ -26,13 +27,15 @@ public class MetadataClientMetrics extends MetricGroup<MetadataClientMetricsKey>
     private final Counter numRequests;
     private final Counter numFailures;
     private final Timer requestLatency;
-    
+    private final Gauge numConnections;
+
     public MetadataClientMetrics(MetadataClientMetricsKey key) {
         super(key);
 
         this.numRequests = scope.counter("numRequests");
         this.numFailures = scope.counter("numFailures");
         this.requestLatency = scope.timer("requestLatency");
+        this.numConnections = scope.gauge("numConnections");
     }
 
     public Counter getNumRequests() {
@@ -45,6 +48,10 @@ public class MetadataClientMetrics extends MetricGroup<MetadataClientMetricsKey>
 
     public Timer getRequestLatency() {
         return requestLatency;
+    }
+
+    public Gauge getNumConnections() {
+        return numConnections;
     }
 
     @Override
