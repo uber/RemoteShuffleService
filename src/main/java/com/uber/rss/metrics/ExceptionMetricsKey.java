@@ -35,8 +35,12 @@ public class ExceptionMetricsKey {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
         ExceptionMetricsKey that = (ExceptionMetricsKey) o;
         return Objects.equals(exceptionName, that.exceptionName) &&
                 Objects.equals(exceptionSource, that.exceptionSource);

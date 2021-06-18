@@ -58,8 +58,12 @@ public class AppMapId {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
         AppMapId appMapId = (AppMapId) o;
         return shuffleId == appMapId.shuffleId &&
                 mapId == appMapId.mapId &&

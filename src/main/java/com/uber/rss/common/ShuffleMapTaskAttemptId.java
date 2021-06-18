@@ -44,8 +44,12 @@ public class ShuffleMapTaskAttemptId {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
         ShuffleMapTaskAttemptId that = (ShuffleMapTaskAttemptId) o;
         return shuffleId == that.shuffleId &&
             mapId == that.mapId &&

@@ -43,8 +43,12 @@ public class MetadataClientMetricsKey {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
         MetadataClientMetricsKey that = (MetadataClientMetricsKey) o;
         return Objects.equals(client, that.client) &&
                 Objects.equals(operation, that.operation);

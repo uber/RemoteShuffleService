@@ -32,8 +32,12 @@ public class ObjectWrapper <T> {
 
   @Override
   public boolean equals(Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
     ObjectWrapper<?> that = (ObjectWrapper<?>) o;
     return Objects.equals(object, that.object);
   }

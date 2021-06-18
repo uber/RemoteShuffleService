@@ -76,8 +76,12 @@ public class AppTaskAttemptId {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
         AppTaskAttemptId that = (AppTaskAttemptId) o;
         return shuffleId == that.shuffleId &&
                 mapId == that.mapId &&

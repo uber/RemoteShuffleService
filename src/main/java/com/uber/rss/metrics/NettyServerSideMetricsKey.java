@@ -29,8 +29,12 @@ public class NettyServerSideMetricsKey {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
         NettyServerSideMetricsKey that = (NettyServerSideMetricsKey) o;
         return Objects.equals(user, that.user);
     }

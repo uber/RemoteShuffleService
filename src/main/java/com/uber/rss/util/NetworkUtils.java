@@ -33,12 +33,13 @@ public class NetworkUtils {
     public static String getLocalHostName() {
         try {
             Map<String, String> env = System.getenv();
-            if (env.containsKey("COMPUTERNAME"))
+            if (env.containsKey("COMPUTERNAME")) {
                 return env.get("COMPUTERNAME");
-            else if (env.containsKey("HOSTNAME"))
+            } else if (env.containsKey("HOSTNAME")) {
                 return env.get("HOSTNAME");
-            else
+            } else {
                 return InetAddress.getLocalHost().getHostName();
+            }
         } catch (Throwable e) {
             return "localhost";
         }

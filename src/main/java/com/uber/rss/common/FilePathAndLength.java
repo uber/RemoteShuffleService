@@ -35,8 +35,12 @@ public class FilePathAndLength {
 
   @Override
   public boolean equals(Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
     FilePathAndLength that = (FilePathAndLength) o;
     return length == that.length &&
         Objects.equals(path, that.path);
