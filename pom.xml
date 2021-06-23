@@ -56,6 +56,12 @@
             <artifactId>spark-core_${scala.compat.version}</artifactId>
             <version>${spark.version}</version>
             <scope>${dependency.scope}</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.glassfish.jersey.core</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.apache.spark</groupId>
@@ -294,50 +300,51 @@
                 </executions>
             </plugin>
             <plugin>
-                <groupId>net.alchim31.maven</groupId>
-                <artifactId>scala-maven-plugin</artifactId>
-                <version>3.2.2</version>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-shade-plugin</artifactId>
+                <version>${shade.version}</version>
                 <executions>
                     <execution>
-                        <id>scala-compile</id>
-                        <phase>process-resources</phase>
+                        <id>client</id>
+                        <phase>package</phase>
                         <goals>
-                            <goal>compile</goal>
-                            <goal>add-source</goal>
+                            <goal>shade</goal>
                         </goals>
+                        <configuration>
+                            <shadedArtifactAttached>true</shadedArtifactAttached>
+                            <shadedClassifierName>client</shadedClassifierName>
+                            <filters>
+                                <filter>
+                                    <artifact>*:*</artifact>
+                                    <excludes>
+                                        <exclude>META-INF/*.SF</exclude>
+                                        <exclude>META-INF/*.DSA</exclude>
+                                        <exclude>META-INF/*.RSA</exclude>
+                                        <exclude>META-INF/maven/**</exclude>
+                                    </excludes>
+                                </filter>
+                            </filters>
+                            <!-- Explicitly setting the dependencies is ugly, but allows the shaded client jar to be
+                            built while dependency.scope is set to compile -->
+                            <artifactSet>
+                                <includes>
+                                    <include>com.uber.m3</include>
+                                    <include>org.apache.thrift</include>
+                                </includes>
+                            </artifactSet>
+                            <relocations>
+                                <relocation>
+                                    <pattern>com.uber.m3</pattern>
+                                    <shadedPattern>uber_rss_shaded.com.uber.m3</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>org.apache.thrift</pattern>
+                                    <shadedPattern>uber_rss_shaded.org.apache.thrift</shadedPattern>
+                                </relocation>
+                            </relocations>
+                        </configuration>
                     </execution>
-                    <execution>
-                        <id>scala-test-compile</id>
-                        <phase>process-test-resources</phase>
-                        <goals>
-                            <goal>testCompile</goal>
-                        </goals>
-                    </execution>
-                    <!--<execution>
-                        <id>attach-javadocs</id>
-                        <goals>
-                            <goal>doc-jar</goal>
-                        </goals>
-                    </execution>-->
                 </executions>
-                <configuration>
-                    <scalaVersion>${scala.version}</scalaVersion>
-                    <recompileMode>incremental</recompileMode>
-                    <args>
-                        <arg>-unchecked</arg>
-                        <arg>-deprecation</arg>
-                        <arg>-feature</arg>
-                        <arg>-explaintypes</arg>
-                        <arg>-Yno-adapted-args</arg>
-                    </args>
-                    <javacArgs>
-                        <javacArg>-source</javacArg>
-                        <javacArg>${java.version}</javacArg>
-                        <javacArg>-target</javacArg>
-                        <javacArg>${java.version}</javacArg>
-                        <javacArg>-Xlint:all,-serial,-path,-try</javacArg>
-                    </javacArgs>
-                </configuration>
             </plugin>
             <plugin>
                 <artifactId>maven-clean-plugin</artifactId>
