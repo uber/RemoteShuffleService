@@ -23,7 +23,7 @@ class RssOptsTest {
   private val conf = new SparkConf()
 
   def testDefaultValues(): Unit = {
-    assert(conf.get(RssOpts.dataCenter) === "")
+    assert(conf.get(RssOpts.dataCenter) === "dataCenter1")
   }
 
 }

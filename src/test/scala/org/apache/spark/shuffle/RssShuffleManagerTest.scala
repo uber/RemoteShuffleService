@@ -135,7 +135,8 @@ class RssShuffleManagerTest {
   @Test(expectedExceptions = Array(classOf[RssException]))
   def excludeHosts(): Unit = {
     val conf = TestUtil.newSparkConfWithZooKeeperRegistryServer(appId, rssTestCluster.getZooKeeperServers)
-    conf.set("spark.shuffle.rss.excludeHosts", s"localhost,${NetworkUtils.getLocalHostName},${NetworkUtils.getLocalFQDN}")
+    conf.set("spark.shuffle.rss.excludeHosts",
+      s"localhost,${NetworkUtils.getLocalHostName},${NetworkUtils.getLocalFQDN}")
 
     sc = new SparkContext(conf)
 
@@ -166,7 +167,7 @@ class RssShuffleManagerTest {
     val numPartitions = 5
 
     val rdd = sc.parallelize(1 to 100)
-      .map(t=>(t->t*2))
+      .map(t => (t -> t * 2))
       .partitionBy(new HashPartitioner(numPartitions))
     val shuffleDependency = new ShuffleDependency[Int, Int, Int](rdd, rdd.partitioner.get)
 
@@ -183,8 +184,10 @@ class RssShuffleManagerTest {
     val mapStatus = (0 until numMaps).toList.par.map(mapId => {
       val taskAttemptId = mapId + 1000
       val mapTaskContext = new MockTaskContext(shuffleId, mapId, taskAttemptId)
-      val shuffleWriter = executorShuffleManager.getWriter[Int, Int]( shuffleHandle, mapId, mapTaskContext, new ShuffleWriteMetrics() )
-      val records = (1 to numValuesInMap).map(t => (mapId*1000+t) -> (mapId*1000+t*2)).iterator
+      val shuffleWriter = executorShuffleManager.
+        getWriter[Int, Int](
+          shuffleHandle, mapId, mapTaskContext, new ShuffleWriteMetrics() )
+      val records = (1 to numValuesInMap).map(t => (mapId * 1000 + t) -> (mapId * 1000 + t * 2)).iterator
       shuffleWriter.write(records)
       val mapStatus = shuffleWriter.stop(true).get
 
@@ -197,7 +200,13 @@ class RssShuffleManagerTest {
       val startPartition = 0
       val endPartition = 0
       val reduceTaskContext = new MockTaskContext( shuffleId, startPartition )
-      val shuffleReader = executorShuffleManager.getReader( shuffleHandle, startPartition, endPartition, reduceTaskContext, new TempShuffleReadMetrics() )
+      val shuffleReader = executorShuffleManager.
+        getReader(
+          shuffleHandle,
+          startPartition,
+          endPartition,
+          reduceTaskContext,
+          new TempShuffleReadMetrics() )
       val readRecords = shuffleReader.read().toList
       assert( readRecords.size === numMaps * numValuesInMap / numPartitions )
     }
@@ -205,7 +214,13 @@ class RssShuffleManagerTest {
       val startPartition = 0
       val endPartition = 1
       val reduceTaskContext = new MockTaskContext( shuffleId, startPartition )
-      val shuffleReader = executorShuffleManager.getReader( shuffleHandle, startPartition, endPartition, reduceTaskContext, new TempShuffleReadMetrics() )
+      val shuffleReader = executorShuffleManager.
+        getReader(
+          shuffleHandle,
+          startPartition,
+          endPartition,
+          reduceTaskContext,
+          new TempShuffleReadMetrics() )
       val readRecords = shuffleReader.read().toList
       assert( readRecords.size === numMaps * numValuesInMap / numPartitions )
     }
@@ -213,9 +228,15 @@ class RssShuffleManagerTest {
       val startPartition = 0
       val endPartition = 2
       val reduceTaskContext = new MockTaskContext( shuffleId, startPartition )
-      val shuffleReader = executorShuffleManager.getReader( shuffleHandle, startPartition, endPartition, reduceTaskContext, new TempShuffleReadMetrics() )
+      val shuffleReader = executorShuffleManager.
+        getReader(
+          shuffleHandle,
+          startPartition,
+          endPartition,
+          reduceTaskContext,
+          new TempShuffleReadMetrics() )
       val readRecords = shuffleReader.read().toList
-      assert( readRecords.size === 2 * numMaps * numValuesInMap / numPartitions )
+      assert(readRecords.size === 2 * numMaps * numValuesInMap / numPartitions)
     }
   }
 
@@ -232,7 +253,7 @@ class RssShuffleManagerTest {
     val partitionId = 0
 
     val rdd = sc.parallelize(1 to 100)
-      .map(t=>(t->t*2))
+      .map(t=> ( t ->t * 2))
       .partitionBy(new HashPartitioner(numPartitions))
     val shuffleDependency = new ShuffleDependency[Int, Int, Int](rdd, rdd.partitioner.get)
 
@@ -247,16 +268,22 @@ class RssShuffleManagerTest {
     shuffleManagers :+= executorShuffleManager
 
     val mapTaskContext = new MockTaskContext(shuffleId, mapId)
-    val shuffleWriter = executorShuffleManager.getWriter[String, String]( shuffleHandle, mapId, mapTaskContext, new ShuffleWriteMetrics() )
+    val shuffleWriter = executorShuffleManager.
+      getWriter[String, String]( shuffleHandle, mapId, mapTaskContext, new ShuffleWriteMetrics() )
     val records = List((null, ""), ("", null), (null, null))
     shuffleWriter.write(records.iterator)
     val mapStatus = shuffleWriter.stop(true).get
     mapOutputTrackerMaster.registerMapOutput(shuffleId, mapId, mapStatus)
 
     val reduceTaskContext = new MockTaskContext( shuffleId, partitionId )
-    val shuffleReader = executorShuffleManager.getReader( shuffleHandle, partitionId, partitionId, reduceTaskContext, new TempShuffleReadMetrics() )
+    val shuffleReader = executorShuffleManager.
+      getReader( shuffleHandle,
+                  partitionId,
+                  partitionId,
+                  reduceTaskContext,
+                  new TempShuffleReadMetrics() )
     val readRecords = shuffleReader.read().toList
-    assert( readRecords.size === 3 )
-    assert( readRecords === records )
+    assert(readRecords.size === 3)
+    assert(readRecords === records)
   }
 }

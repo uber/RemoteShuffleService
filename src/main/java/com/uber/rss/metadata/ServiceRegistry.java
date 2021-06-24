@@ -25,9 +25,10 @@ import com.uber.rss.common.ServerDetail;
  */
 public interface ServiceRegistry extends AutoCloseable {
 
-    String TYPE_ZOOKEEPER = "zookeeper";
-    String TYPE_INMEMORY = "inmemory";
-    String TYPE_STANDALONE = "standalone";
+    String TYPE_ZOOKEEPER       = "zookeeper";
+    String TYPE_INMEMORY        = "inmemory";
+    String TYPE_STANDALONE      = "standalone";
+    String TYPE_SERVER_SEQUENCE = "serverSequence";
     List<String> VALID_TYPES = Arrays.asList(
             TYPE_ZOOKEEPER,
             TYPE_INMEMORY,
