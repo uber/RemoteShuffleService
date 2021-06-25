@@ -26,7 +26,7 @@ import java.util.stream.Collectors;
  * This class contains a collection of task attempts and their states.
  */
 public class TaskAttemptCollection {
-  private Map<Long, TaskAttemptIdAndState> tasks = new HashMap<>();
+  private final Map<Long, TaskAttemptIdAndState> tasks = new HashMap<>();
 
   public TaskAttemptCollection() {
   }

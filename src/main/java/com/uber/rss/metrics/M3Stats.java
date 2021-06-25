@@ -45,7 +45,7 @@ public class M3Stats {
     
     private static final Scope defaultScope;
     private static boolean defaultScopeClosed = false;
-    private static Object defaultScopeClosedLock = new Object();
+    private static final Object defaultScopeClosedLock = new Object();
 
     private static final Gauge numM3Scopes;
     

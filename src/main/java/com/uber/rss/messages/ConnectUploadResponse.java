@@ -18,9 +18,9 @@ import com.uber.rss.util.ByteBufUtils;
 import io.netty.buffer.ByteBuf;
 
 public class ConnectUploadResponse extends ServerResponseMessage {
-    private String serverId;
-    private String serverVersion;
-    private String runningVersion;
+    private final String serverId;
+    private final String serverVersion;
+    private final String runningVersion;
 
     public ConnectUploadResponse(String serverId, String serverVersion, String runningVersion) {
         this.serverId = serverId;

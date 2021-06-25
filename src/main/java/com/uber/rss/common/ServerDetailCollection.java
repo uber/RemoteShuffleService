@@ -51,8 +51,8 @@ public class ServerDetailCollection {
     }
 
     private class DataCenterAndCluster {
-        private String dataCenter;
-        private String cluster;
+        private final String dataCenter;
+        private final String cluster;
 
         public DataCenterAndCluster(String dataCenter, String cluster) {
             this.dataCenter = dataCenter;

@@ -18,11 +18,11 @@ import com.uber.rss.util.ByteBufUtils;
 import io.netty.buffer.ByteBuf;
 
 public class RegisterServerRequestMessage extends ControlMessage {
-    private String dataCenter;
-    private String cluster;
-    private String serverId;
-    private String runningVersion;
-    private String connectionString;
+    private final String dataCenter;
+    private final String cluster;
+    private final String serverId;
+    private final String runningVersion;
+    private final String connectionString;
 
     public RegisterServerRequestMessage(String dataCenter, String cluster, String serverId, String runningVersion, String connectionString) {
         this.dataCenter = dataCenter;

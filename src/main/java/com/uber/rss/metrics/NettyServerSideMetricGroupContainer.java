@@ -17,7 +17,7 @@ package com.uber.rss.metrics;
 import java.util.function.Function;
 
 public class NettyServerSideMetricGroupContainer <M extends MetricGroup<NettyServerSideMetricsKey>>  {
-    private MetricGroupContainer<NettyServerSideMetricsKey, M> metricGroupContainer;
+    private final MetricGroupContainer<NettyServerSideMetricsKey, M> metricGroupContainer;
     
     public NettyServerSideMetricGroupContainer(Function<NettyServerSideMetricsKey, ? extends M> createFunction) {
         this.metricGroupContainer = new MetricGroupContainer<NettyServerSideMetricsKey, M>(createFunction);

@@ -439,8 +439,8 @@ public class ReplicatedReadClient implements MultiServerReadClient {
   }
 
   private static class ExceptionLogInfo {
-    private String logMsg;
-    private Throwable exception;
+    private final String logMsg;
+    private final Throwable exception;
 
     public ExceptionLogInfo(String logMsg, Throwable exception) {
       this.logMsg = logMsg;

@@ -65,7 +65,7 @@ public class StreamServerMessageDecoder extends ByteToMessageDecoder {
   private static final int INVALID_SESSION_ID = -1;
   private static final int INVALID_TASK_ATTEMPT_ID = -1;
 
-  private static NettyServerSideMetricGroupContainer<ServerHandlerMetrics> metricGroupContainer =
+  private static final NettyServerSideMetricGroupContainer<ServerHandlerMetrics> metricGroupContainer =
       new NettyServerSideMetricGroupContainer<>(ServerHandlerMetrics::new);
 
   private enum State {
@@ -87,7 +87,7 @@ public class StreamServerMessageDecoder extends ByteToMessageDecoder {
   // store bytes for taskAttemptId to speed up serialization in DataBlockHeader.serializeToBytes
   private final byte[] taskAttemptIdBytes = new byte[Long.BYTES];
 
-  private long startTime = System.currentTimeMillis();
+  private final long startTime = System.currentTimeMillis();
   private long numIncomingBytes = 0;
 
   private String user = "uninitialized";

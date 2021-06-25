@@ -46,13 +46,13 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class DownloadChannelInboundHandler extends ChannelInboundHandlerAdapter {
     private static final Logger logger = LoggerFactory.getLogger(DownloadChannelInboundHandler.class);
 
-    private static Counter numChannelActive = M3Stats.getDefaultScope().counter("numDownloadChannelActive");
-    private static Counter numChannelInactive = M3Stats.getDefaultScope().counter("numDownloadChannelInactive");
+    private static final Counter numChannelActive = M3Stats.getDefaultScope().counter("numDownloadChannelActive");
+    private static final Counter numChannelInactive = M3Stats.getDefaultScope().counter("numDownloadChannelInactive");
 
-    private static AtomicInteger concurrentChannelsAtomicInteger = new AtomicInteger();
-    private static Gauge numConcurrentChannels = M3Stats.getDefaultScope().gauge("numConcurrentDownloadChannels");
+    private static final AtomicInteger concurrentChannelsAtomicInteger = new AtomicInteger();
+    private static final Gauge numConcurrentChannels = M3Stats.getDefaultScope().gauge("numConcurrentDownloadChannels");
 
-    private static Counter closedIdleDownloadChannels = M3Stats.getDefaultScope().counter("closedIdleDownloadChannels");
+    private static final Counter closedIdleDownloadChannels = M3Stats.getDefaultScope().counter("closedIdleDownloadChannels");
 
     private final String serverId;
     private final String runningVersion;

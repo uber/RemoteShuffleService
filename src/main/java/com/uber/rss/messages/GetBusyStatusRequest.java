@@ -18,7 +18,7 @@ import com.uber.rss.util.ByteBufUtils;
 import io.netty.buffer.ByteBuf;
 
 public class GetBusyStatusRequest extends BaseMessage {
-    private String user;
+    private final String user;
 
     public GetBusyStatusRequest(String user) {
         this.user = user;

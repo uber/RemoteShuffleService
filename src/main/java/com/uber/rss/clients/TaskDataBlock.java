@@ -25,7 +25,7 @@ import java.util.Objects;
 public class TaskDataBlock {
     private final byte[] payload;
     
-    private long taskAttemptId;
+    private final long taskAttemptId;
 
     public TaskDataBlock(byte[] payload, long taskAttemptId) {
         this.payload = payload;

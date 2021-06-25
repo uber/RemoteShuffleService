@@ -45,7 +45,7 @@ public class ExceptionUtils {
   // Throw out an exception without needing to add throws declaration on method signature
   // see https://stackoverflow.com/questions/4519557/is-there-a-way-to-throw-an-exception-without-adding-the-throws-declaration/4519576
   public static void throwException(Throwable exception) {
-    ExceptionUtils.<RuntimeException>throwException1(exception);
+    ExceptionUtils.throwException1(exception);
   }
 
   public static void closeWithoutException(AutoCloseable closeable) {

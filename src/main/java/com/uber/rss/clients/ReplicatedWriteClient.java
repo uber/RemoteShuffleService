@@ -190,8 +190,8 @@ public class ReplicatedWriteClient implements MultiServerWriteClient {
   }
 
   private static class ExceptionLogInfo {
-    private String logMsg;
-    private Throwable exception;
+    private final String logMsg;
+    private final Throwable exception;
 
     public ExceptionLogInfo(String logMsg, Throwable exception) {
       this.logMsg = logMsg;

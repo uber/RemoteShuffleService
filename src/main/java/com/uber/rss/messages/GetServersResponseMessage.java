@@ -21,7 +21,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class GetServersResponseMessage extends ServerResponseMessage {
-    private List<ServerDetail> servers;
+    private final List<ServerDetail> servers;
 
     public GetServersResponseMessage(List<ServerDetail> servers) {
         this.servers = servers;

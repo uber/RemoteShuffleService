@@ -20,7 +20,7 @@ import java.io.OutputStream;
 public class CountedOutputStream extends OutputStream {
     private long writtenBytes = 0;
 
-    private OutputStream underlyingStream;
+    private final OutputStream underlyingStream;
 
     public CountedOutputStream(OutputStream underlyingStream) {
         this.underlyingStream = underlyingStream;

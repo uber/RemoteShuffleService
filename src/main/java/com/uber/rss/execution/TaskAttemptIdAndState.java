@@ -27,7 +27,7 @@ public class TaskAttemptIdAndState {
     COMMITTED
   }
 
-  private long taskAttemptId;
+  private final long taskAttemptId;
   private TaskAttemptState state = TaskAttemptState.NOT_STARTED;
 
   public TaskAttemptIdAndState(long taskAttemptId) {

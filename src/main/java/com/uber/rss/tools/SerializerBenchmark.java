@@ -46,17 +46,17 @@ public class SerializerBenchmark {
     private SerializerInstance serializer;
 
     // Total number of test objects to serialize
-    private int numTestObjects = 10000;
+    private final int numTestObjects = 10000;
 
     // Max length for test string values to uses
-    private int maxStringValueLen = 10000;
+    private final int maxStringValueLen = 10000;
 
-    private List<HashMap<String, String>> testObjects = new ArrayList<>();
+    private final List<HashMap<String, String>> testObjects = new ArrayList<>();
 
     private ByteArrayOutputStream byteArrayOutputStream;
     private byte[] bytesBuffer;
 
-    private Random random = new Random();
+    private final Random random = new Random();
 
     public void setSerializer(SerializerInstance serializer) {
         this.serializer = serializer;

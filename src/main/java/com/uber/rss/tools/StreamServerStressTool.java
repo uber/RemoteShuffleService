@@ -66,7 +66,7 @@ public class StreamServerStressTool {
     private ScheduledExecutorService scheduler;
     private ScheduledMetricCollector scheduledMetricCollector;
     
-    private List<StreamServer> servers = new ArrayList<>();
+    private final List<StreamServer> servers = new ArrayList<>();
 
     // store servers to shut down, this is to simulate failed servers during shuffle write/read, when there are shuffle replicas.
     private final List<String> serverIdsToShutdownDuringShuffleWrite = new ArrayList<>();
@@ -75,7 +75,7 @@ public class StreamServerStressTool {
     private List<String> serverHosts = new ArrayList<>();
     private List<Integer> serverPorts = new ArrayList<>();
     private List<String> serverRootDirs = new ArrayList<>();
-    private List<ServerDetail> serverDetails = new ArrayList<>();
+    private final List<ServerDetail> serverDetails = new ArrayList<>();
 
     private boolean useEpoll = false;
     
@@ -149,27 +149,27 @@ public class StreamServerStressTool {
 
     private ServiceRegistry serviceRegistry = new InMemoryServiceRegistry();
     
-    private Random random = new Random();
+    private final Random random = new Random();
     
     // Total written bytes in shuffle files
-    private AtomicLong totalShuffleWrittenBytes = new AtomicLong();
+    private final AtomicLong totalShuffleWrittenBytes = new AtomicLong();
     // Total written records in shuffle files
-    private AtomicLong totalShuffleWrittenRecords = new AtomicLong();
+    private final AtomicLong totalShuffleWrittenRecords = new AtomicLong();
 
     // Successfully written records (by last mapper task attempt) in shuffle files
-    private AtomicLong successShuffleWrittenRecords = new AtomicLong();
+    private final AtomicLong successShuffleWrittenRecords = new AtomicLong();
     
     // Total bytes sent through socket
-    private AtomicLong totalSocketBytes = new AtomicLong();
+    private final AtomicLong totalSocketBytes = new AtomicLong();
 
     // Threads for all map tasks
-    private List<Thread> allMapThreads = new ArrayList<>();
+    private final List<Thread> allMapThreads = new ArrayList<>();
     
     private AppShuffleId appShuffleId;
     
-    private AtomicLong mapThreadErrors = new AtomicLong();
+    private final AtomicLong mapThreadErrors = new AtomicLong();
 
-    private ConcurrentHashMap<Integer, Object> usedPartitionIds = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<Integer, Object> usedPartitionIds = new ConcurrentHashMap<>();
 
     public void setServerHosts(List<String> serverHosts) {
         this.serverHosts = serverHosts;

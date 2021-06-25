@@ -18,9 +18,9 @@ import com.uber.rss.util.ByteBufUtils;
 import io.netty.buffer.ByteBuf;
 
 public class GetServersRequestMessage extends ControlMessage {
-    private String dataCenter;
-    private String cluster;
-    private int maxCount;
+    private final String dataCenter;
+    private final String cluster;
+    private final int maxCount;
 
     public GetServersRequestMessage(String dataCenter, String cluster, int maxCount) {
         this.dataCenter = dataCenter;

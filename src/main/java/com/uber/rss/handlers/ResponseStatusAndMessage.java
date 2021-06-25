@@ -19,8 +19,8 @@ package com.uber.rss.handlers;
  * @param <T>
  */
 public class ResponseStatusAndMessage<T> {
-    private byte status;
-    private T message;
+    private final byte status;
+    private final T message;
 
     public ResponseStatusAndMessage(byte status, T message) {
         this.status = status;

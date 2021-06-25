@@ -15,9 +15,9 @@
 package com.uber.rss.metrics;
 
 public class NotifyServerMetricsContainer {
-    private MetricGroupContainer<ApplicationJobStatusMetricsKey, ApplicationJobStatusMetrics> applicationJobStatusMetricsContainer;
+    private final MetricGroupContainer<ApplicationJobStatusMetricsKey, ApplicationJobStatusMetrics> applicationJobStatusMetricsContainer;
 
-    private MetricGroupContainer<ApplicationMetricsKey, ApplicationMetrics> applicationMetricsContainer;
+    private final MetricGroupContainer<ApplicationMetricsKey, ApplicationMetrics> applicationMetricsContainer;
     
     public NotifyServerMetricsContainer() {
         this.applicationJobStatusMetricsContainer = new MetricGroupContainer<>(

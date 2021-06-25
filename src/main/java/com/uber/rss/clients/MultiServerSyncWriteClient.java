@@ -192,8 +192,8 @@ public class MultiServerSyncWriteClient implements MultiServerWriteClient {
     }
 
     private static class ServerConnectionInfo {
-        private int index;
-        private ServerReplicationGroup server;
+        private final int index;
+        private final ServerReplicationGroup server;
 
         public ServerConnectionInfo(int index, ServerReplicationGroup server) {
             this.index = index;

@@ -15,7 +15,7 @@
 package com.uber.rss.exceptions;
 
 public class RssMaxConnectionsException extends Exception {
-    private String message;
+    private final String message;
     private int currentConnections = -1;
     private int maxConnections = -1;
 

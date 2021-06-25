@@ -18,8 +18,8 @@ import com.uber.rss.util.ByteBufUtils;
 import io.netty.buffer.ByteBuf;
 
 public class FinishApplicationAttemptRequestMessage extends ControlMessage {
-    private String appId;
-    private String appAttempt;
+    private final String appId;
+    private final String appAttempt;
 
     public FinishApplicationAttemptRequestMessage(String appId, String appAttempt) {
         this.appId = appId;

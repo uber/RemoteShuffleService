@@ -35,7 +35,7 @@ public class ShuffleFileOutputStream implements ShuffleOutputStream {
     private final String filePath;
     private OutputStream outputStream;
     private long initialFileSize = 0L;
-    private CountedOutputStream internalCountedOutputStream;
+    private final CountedOutputStream internalCountedOutputStream;
 
     public ShuffleFileOutputStream(File file) {
         this.filePath = file.getAbsolutePath();

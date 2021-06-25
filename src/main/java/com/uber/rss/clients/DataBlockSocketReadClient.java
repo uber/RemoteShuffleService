@@ -326,7 +326,7 @@ public class DataBlockSocketReadClient extends com.uber.rss.clients.ClientBase {
 
     byte[] bytes = StreamUtils.readBytes(inputStream, header.getLength());
     if (bytes == null) {
-      throw new RssEndOfStreamException("Failed to read data block: " + this.toString());
+      throw new RssEndOfStreamException("Failed to read data block: " + this);
     }
 
     return new DataBlock(header, bytes);
