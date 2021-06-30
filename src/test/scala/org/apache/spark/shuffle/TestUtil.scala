@@ -50,7 +50,7 @@ object TestUtil {
 
   def newSparkConfWithSequenceServerRegistryServer(appId: String): SparkConf ={
     val conf = TestUtil.newSparkConfWithStandAloneRegistryServer(appId, "")
-    var testStreamServer: TestStreamServer =
+    val testStreamServer: TestStreamServer =
       TestStreamServer.createRunningServerWithLocalStandaloneRegistryServer(appId)
     conf.set("spark.shuffle.rss.serviceRegistry.type", "serverSequence")
     conf.set("spark.shuffle.rss.serverSequence.connectionString",

@@ -93,3 +93,9 @@ spark.shuffle.rss.dataCenter=dc1
 ```
 
 - Run your Spark application
+
+## K8 discovery
+Currently K8 branch does not have service registry as we dont want ZK in K* environment. Currently all servers 
+are passed using configuration to clients and client have the static entry of rss1->server mapping
+This is been used by clients randomly. This will be changed in future versions.
+
