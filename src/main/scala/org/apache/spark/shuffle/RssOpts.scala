@@ -14,7 +14,6 @@
 package org.apache.spark.shuffle
 
 import com.uber.rss.messages.MessageConstants
-import com.uber.rss.storage.ShuffleFileStorage
 import org.apache.spark.internal.config.{ConfigBuilder, ConfigEntry}
 
 object RssOpts {
@@ -35,12 +34,14 @@ object RssOpts {
       .createWithDefault(20)
   val writerQueueSize: ConfigEntry[Int] =
     ConfigBuilder("spark.shuffle.rss.writer.queueSize")
-      .doc("writer queue size for shuffle writer to store shuffle records and send them to shuffle server in background threads.")
+      .doc("writer queue size for shuffle writer to store shuffle records and send them to " +
+        "shuffle server in background threads.")
       .intConf
       .createWithDefault(0)
   val writerMaxThreads: ConfigEntry[Int] =
     ConfigBuilder("spark.shuffle.rss.writer.maxThreads")
-      .doc("max number of threads for shuffle writer to store shuffle records and send them to shuffle server in background threads.")
+      .doc("max number of threads for shuffle writer to store shuffle records and send them to" +
+        " shuffle server in background threads.")
       .intConf
       .createWithDefault(2)
   val writerAsyncFinish: ConfigEntry[Boolean] =
@@ -55,13 +56,15 @@ object RssOpts {
       .createWithDefault(MessageConstants.DEFAULT_SHUFFLE_DATA_MESSAGE_SIZE)
   val writerBufferMax: ConfigEntry[Int] =
     ConfigBuilder("spark.shuffle.rss.writer.bufferMax")
-      .doc("Internal buffer max limit for shuffle writer. The buffer could temporarily grow to this size if there " +
+      .doc("Internal buffer max limit for shuffle writer. The buffer could temporarily" +
+        " grow to this size if there " +
         "is a single large shuffle record to serialize into the buffer.")
       .intConf
       .createWithDefault(512 * 1024 * 1024)
   val writerBufferSpill: ConfigEntry[Int] =
     ConfigBuilder("spark.shuffle.rss.writer.bufferSpill")
-      .doc("The threshold for shuffle writer buffer to spill data. Here spill means removing the data out of the buffer " +
+      .doc("The threshold for shuffle writer buffer to spill data. " +
+        "Here spill means removing the data out of the buffer " +
         "and send to shuffle server.")
       .intConf
       .createWithDefault(32 * 1024 * 1024)
@@ -82,19 +85,21 @@ object RssOpts {
       .createWithDefault(5)
   val maxWaitTime: ConfigEntry[Long] =
     ConfigBuilder("spark.shuffle.rss.maxWaitTime")
-      .doc("maximum wait time (milliseconds) for shuffle client, e.g. retry connecting to busy remote shuffle server.")
+      .doc("maximum wait time (milliseconds) for shuffle client, e.g. retry connecting to " +
+        "busy remote shuffle server.")
       .longConf
-      .createWithDefault(3*60*1000L)
+      .createWithDefault(3 * 60 * 1000L)
   val pollInterval: ConfigEntry[Int] =
     ConfigBuilder("spark.shuffle.rss.pollInterval")
-      .doc("poll interval (milliseconds) to query remote shuffle server for status update, e.g. whether a map task's data flushed.")
+      .doc("poll interval (milliseconds) to query remote shuffle server for status update, " +
+        "e.g. whether a map task's data flushed.")
       .intConf
       .createWithDefault(200)
   val readerDataAvailableWaitTime: ConfigEntry[Long] =
     ConfigBuilder("spark.shuffle.rss.reader.dataAvailableWaitTime")
       .doc("max wait time in shuffle reader to wait data ready in the shuffle server.")
       .longConf
-      .createWithDefault(5*60*1000L)
+      .createWithDefault(5 * 60 * 1000L)
   val readerSorterBufferSize: ConfigEntry[String] =
     ConfigBuilder("spark.shuffle.rss.reader.sorterBufferSize")
       .doc("buffer size for the sorter used in shuffle reader")
@@ -107,7 +112,7 @@ object RssOpts {
       .createWithDefault(20 * 1024 * 1024)
   val dataCenter: ConfigEntry[String] =
     ConfigBuilder("spark.shuffle.rss.dataCenter")
-      .doc("data center for RSS cluster. If not specified, will try to get value from the environment.")
+      .doc("data center for RSS cluster.")
       .stringConf
       .createWithDefault("")
   val cluster: ConfigEntry[String] =
@@ -130,11 +135,32 @@ object RssOpts {
       .doc("Registry server host:port addresses.")
       .stringConf
       .createWithDefault("")
+  val serverSequenceServerId: ConfigEntry[String] =
+    ConfigBuilder("spark.shuffle.rss.serverSequence.serverId")
+      .doc("Server ID format for server sequence")
+      .stringConf
+      .createWithDefault("rss-%s")
+  val serverSequenceConnectionString: ConfigEntry[String] =
+    ConfigBuilder("spark.shuffle.rss.serverSequence.connectionString")
+      .doc("Connection string format for server sequence")
+      .stringConf
+      .createWithDefault("rss-%s.rss.remote-shuffle-service.svc.cluster.local:9338")
+  val serverSequenceStartIndex: ConfigEntry[Int] =
+    ConfigBuilder("spark.shuffle.rss.serverSequence.startIndex")
+      .doc("Server sequence start index")
+      .intConf
+      .createWithDefault(0)
+  val serverSequenceEndIndex: ConfigEntry[Int] =
+    ConfigBuilder("spark.shuffle.rss.serverSequence.endIndex")
+      .doc("Server sequence end index")
+      .intConf
+      .createWithDefault(0)
+
   val minSplits: ConfigEntry[Int] =
-  ConfigBuilder("spark.shuffle.rss.minSplits")
-    .doc("min number of splits for each shuffle partition on each shuffle server.")
-    .intConf
-    .createWithDefault(1)
+    ConfigBuilder("spark.shuffle.rss.minSplits")
+      .doc("min number of splits for each shuffle partition on each shuffle server.")
+      .intConf
+      .createWithDefault(1)
   val maxSplits: ConfigEntry[Int] =
     ConfigBuilder("spark.shuffle.rss.maxSplits")
       .doc("max number of splits for each shuffle partition on each shuffle server.")
@@ -154,7 +180,8 @@ object RssOpts {
       .createWithDefault(1)
   val checkReplicaConsistency: ConfigEntry[Boolean] =
     ConfigBuilder("spark.shuffle.rss.checkReplicaConsistency")
-      .doc("Check replica data consistency when reading replicas. If set to true, it will consume more memory to track the data in client side.")
+      .doc("Check replica data consistency when reading replicas. If set to true, " +
+        "it will consume more memory to track the data in client side.")
       .booleanConf
       .createWithDefault(false)
   val excludeHosts: ConfigEntry[String] =
