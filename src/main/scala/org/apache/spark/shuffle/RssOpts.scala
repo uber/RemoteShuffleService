@@ -152,7 +152,7 @@ object RssOpts {
       .createWithDefault(0)
   val serverSequenceEndIndex: ConfigEntry[Int] =
     ConfigBuilder("spark.shuffle.rss.serverSequence.endIndex")
-      .doc("Server sequence start index")
+      .doc("Server sequence end index")
       .intConf
       .createWithDefault(0)
 
