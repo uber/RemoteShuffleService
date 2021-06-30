@@ -14,7 +14,6 @@
 
 package com.uber.rss;
 
-import com.uber.rss.common.AppShuffleId;
 import com.uber.rss.common.ServerDetail;
 import com.uber.rss.common.ServerDetailCollection;
 import com.uber.rss.decoders.StreamServerVersionDecoder;
@@ -265,8 +264,13 @@ public class StreamServer {
     }
 
     public String getServerId() {
-        // use host name and root directory to uniquely identify a server
-        return String.format("%s:%s", hostName, serverConfig.getRootDirectory());
+        String envValue = System.getenv("RSS_SERVER_ID");
+        if (envValue == null || envValue.isEmpty()) {
+            // use host name and root directory to uniquely identify a server
+            return String.format("%s:%s", hostName, serverConfig.getRootDirectory());
+        } else {
+            return envValue;
+        }
     }
 
     public ServerDetail getServerDetail() {
@@ -335,9 +339,7 @@ public class StreamServer {
             logger.warn("Unable to shutdown writer executor:", e);
             exceptions.add(e);
         }
-
         logger.info(String.format("Number of opened files: %s", SystemUtils.getFileDescriptorCount()));
-        
         if (!exceptions.isEmpty()) {
             throw new RssAggregateException(exceptions);
         }

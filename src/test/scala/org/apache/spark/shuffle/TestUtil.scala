@@ -15,7 +15,7 @@
 package org.apache.spark.shuffle
 
 import com.uber.rss.metadata.ServiceRegistry
-import com.uber.rss.testutil.TestConstants
+import com.uber.rss.testutil.{TestConstants, TestStreamServer}
 import org.apache.spark._
 
 case class LeftIntKV(key: Int, value: Int)
@@ -45,6 +45,17 @@ object TestUtil {
     val conf = newSparkConfWithStandAloneRegistryServer(appId, "")
     conf.set("spark.shuffle.rss.serviceRegistry.type", ServiceRegistry.TYPE_ZOOKEEPER)
     conf.set("spark.shuffle.rss.serviceRegistry.zookeeper.servers", zooKeeperServers)
+    conf
+  }
+
+  def newSparkConfWithSequenceServerRegistryServer(appId: String): SparkConf ={
+    val conf = TestUtil.newSparkConfWithStandAloneRegistryServer(appId, "")
+    val testStreamServer: TestStreamServer =
+      TestStreamServer.createRunningServerWithLocalStandaloneRegistryServer(appId)
+    conf.set("spark.shuffle.rss.serviceRegistry.type", "serverSequence")
+    conf.set("spark.shuffle.rss.serverSequence.connectionString",
+      s"localhost:${testStreamServer.getShufflePort}")
+    conf.set("spark.shuffle.rss.serverSequence.serverId", testStreamServer.getServerId)
     conf
   }
 }
