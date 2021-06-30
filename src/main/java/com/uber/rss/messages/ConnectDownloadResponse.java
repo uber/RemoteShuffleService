@@ -22,16 +22,16 @@ import io.netty.buffer.ByteBuf;
  * This is reponse for ConnectDownloadRequest.
  */
 public class ConnectDownloadResponse extends ServerResponseMessage {
-    private String serverId;
-    private String serverVersion;
-    private String runningVersion;
-    private String compressionCodec;
+    private final String serverId;
+    private final String serverVersion;
+    private final String runningVersion;
+    private final String compressionCodec;
 
     // this could be null
-    private MapTaskCommitStatus mapTaskCommitStatus;
+    private final MapTaskCommitStatus mapTaskCommitStatus;
 
     // if dataAvailable is true, the server sends shuffle data immediately after this message
-    private boolean dataAvailable;
+    private final boolean dataAvailable;
 
     public ConnectDownloadResponse(String serverId, String serverVersion, String runningVersion, String compressionCodec, MapTaskCommitStatus mapTaskCommitStatus, boolean dataAvailable) {
         this.serverId = serverId;

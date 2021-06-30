@@ -33,9 +33,9 @@ public class ServerDetail {
         return new ServerDetail(serverId, runningVesion, connectionString);
     }
 
-    private String serverId;
-    private String runningVersion;
-    private String connectionString;
+    private final String serverId;
+    private final String runningVersion;
+    private final String connectionString;
 
     public ServerDetail(String serverId, String runningVersion, String connectionString) {
         this.serverId = serverId;

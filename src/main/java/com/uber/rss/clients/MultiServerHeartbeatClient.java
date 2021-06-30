@@ -45,7 +45,7 @@ public class MultiServerHeartbeatClient implements AutoCloseable {
   }
 
   private final long networkTimeoutMillis;
-  private ConcurrentHashMap<String, ServerDetail> servers = new ConcurrentHashMap<>();
+  private final ConcurrentHashMap<String, ServerDetail> servers = new ConcurrentHashMap<>();
 
   private volatile boolean keepRunning = true;
 

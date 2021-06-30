@@ -15,8 +15,8 @@
 package com.uber.rss.common;
 
 public class DataBlock {
-  private DataBlockHeader header;
-  private byte[] payload;
+  private final DataBlockHeader header;
+  private final byte[] payload;
 
   public DataBlock(DataBlockHeader header, byte[] payload) {
     this.header = header;

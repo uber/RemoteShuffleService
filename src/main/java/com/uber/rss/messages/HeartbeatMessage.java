@@ -18,10 +18,10 @@ import com.uber.rss.util.ByteBufUtils;
 import io.netty.buffer.ByteBuf;
 
 public class HeartbeatMessage extends BaseMessage {
-    private String user;
-    private String appId;
-    private String appAttempt;
-    private boolean keepLive;
+    private final String user;
+    private final String appId;
+    private final String appAttempt;
+    private final boolean keepLive;
 
     public HeartbeatMessage(String user, String appId, String appAttempt, boolean keepLive) {
         this.user = user;

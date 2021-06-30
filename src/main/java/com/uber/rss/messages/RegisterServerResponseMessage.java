@@ -18,7 +18,7 @@ import com.uber.rss.util.ByteBufUtils;
 import io.netty.buffer.ByteBuf;
 
 public class RegisterServerResponseMessage extends ServerResponseMessage {
-    private String serverId;
+    private final String serverId;
 
     public RegisterServerResponseMessage(String serverId) {
         this.serverId = serverId;

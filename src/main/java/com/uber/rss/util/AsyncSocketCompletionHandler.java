@@ -19,7 +19,7 @@ import java.nio.channels.CompletionHandler;
 import java.util.function.Consumer;
 
 public class AsyncSocketCompletionHandler implements CompletionHandler<Integer, AsyncSocketState> {
-    private Consumer<Throwable> exceptionCallback;
+    private final Consumer<Throwable> exceptionCallback;
     
     public AsyncSocketCompletionHandler(Consumer<Throwable> exceptionCallback) {
         this.exceptionCallback = exceptionCallback;

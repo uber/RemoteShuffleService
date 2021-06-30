@@ -24,9 +24,9 @@ public class FinishUploadMessage extends BaseMessage {
     public static final byte ACK_FLAG_NO_ACK = 0;
     public static final byte ACK_FLAG_HAS_ACK = 1;
 
-    private long taskAttemptId;
-    private long timestamp;
-    private byte ackFlag;
+    private final long taskAttemptId;
+    private final long timestamp;
+    private final byte ackFlag;
 
     public FinishUploadMessage(long taskAttemptId, long timestamp, byte ackFlag) {
         this.taskAttemptId = taskAttemptId;

@@ -94,9 +94,9 @@ public class StreamServerConfig {
 
   private String principal = null;
 
-  private Configuration hadoopConfig = null;
+  private final Configuration hadoopConfig = null;
 
-  private long stateCommitIntervalMillis = 60000;
+  private final long stateCommitIntervalMillis = 60000;
 
   public static StreamServerConfig buildFromArgs(String[] args) throws IOException {
     StreamServerConfig serverConfig = new StreamServerConfig();

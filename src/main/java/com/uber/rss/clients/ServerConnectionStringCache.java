@@ -32,7 +32,7 @@ public class ServerConnectionStringCache {
     return instance;
   }
 
-  private ConcurrentHashMap<String, ServerDetail> servers = new ConcurrentHashMap<>();
+  private final ConcurrentHashMap<String, ServerDetail> servers = new ConcurrentHashMap<>();
 
   public ServerConnectionStringCache() {
   }

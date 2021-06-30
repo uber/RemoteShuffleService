@@ -34,7 +34,7 @@ public class UploadChannelManager {
 
     private static final Logger logger = LoggerFactory.getLogger(UploadChannelManager.class);
 
-    private AtomicInteger numConnections = new AtomicInteger();
+    private final AtomicInteger numConnections = new AtomicInteger();
 
     private int maxConnections = DEFAULT_MAX_CONNECTIONS;
     

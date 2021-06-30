@@ -23,7 +23,7 @@ import java.util.concurrent.atomic.AtomicLongArray;
  */
 public class MovingAverageCalculator {
     private final AtomicLongArray values;
-    private AtomicInteger index = new AtomicInteger(0);
+    private final AtomicInteger index = new AtomicInteger(0);
     private volatile boolean fullyFilled = false;
 
     public MovingAverageCalculator(int capacity) {

@@ -30,9 +30,9 @@ import java.util.function.Supplier;
  * This class wraps a ServiceRegistry instance and add metrics for its method call.
  */
 public class ServiceRegistryWrapper implements ServiceRegistry {
-  private static MetadataClientMetricsContainer metricsContainer = new MetadataClientMetricsContainer();
+  private static final MetadataClientMetricsContainer metricsContainer = new MetadataClientMetricsContainer();
 
-  private ServiceRegistry delegate;
+  private final ServiceRegistry delegate;
 
   public ServiceRegistryWrapper(ServiceRegistry delegate) {
     this.delegate = delegate;

@@ -17,8 +17,8 @@ package com.uber.rss.metrics;
 import java.util.Objects;
 
 public class ApplicationJobStatusMetricsKey {
-    private String user;
-    private String jobStatus;
+    private final String user;
+    private final String jobStatus;
 
     public ApplicationJobStatusMetricsKey(String user, String jobStatus) {
         this.user = user;

@@ -34,7 +34,7 @@ import java.util.Arrays;
 
 public class MultiServerSocketReadClientTest {
 
-  private boolean checkShuffleReplicaConsistency = true;
+  private final boolean checkShuffleReplicaConsistency = true;
 
   @DataProvider(name = "data-provider")
   public Object[][] dataProviderMethod() {

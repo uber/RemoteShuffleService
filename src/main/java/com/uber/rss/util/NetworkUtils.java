@@ -53,7 +53,7 @@ public class NetworkUtils {
             throw new RssNetworkException("Unable to fetch address details for localhost", e);
         }
         String result = address.getCanonicalHostName();
-        if (result.toLowerCase().equals("localhost")) {
+        if (result.equalsIgnoreCase("localhost")) {
             result = address.getHostName();
         }
         return result;

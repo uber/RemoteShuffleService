@@ -34,7 +34,7 @@ import java.util.concurrent.TimeUnit;
 public class PooledWriteClientFactory implements WriteClientFactory {
   private static final Logger logger = LoggerFactory.getLogger(PooledWriteClientFactory.class);
 
-  private static ScheduledExecutorService idleCheckExecutor = Executors.newSingleThreadScheduledExecutor(
+  private static final ScheduledExecutorService idleCheckExecutor = Executors.newSingleThreadScheduledExecutor(
       new ThreadFactoryBuilder()
           .setDaemon(true)
           .setNameFormat("PooledWriteClientFactory-idle-check")

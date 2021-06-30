@@ -23,10 +23,10 @@ import io.netty.buffer.ByteBuf;
 public class GetDataAvailabilityResponse extends BaseMessage {
 
     // this could be null
-    private MapTaskCommitStatus mapTaskCommitStatus;
+    private final MapTaskCommitStatus mapTaskCommitStatus;
 
     // if dataAvailable is true, the server sends shuffle data immediately after this message
-    private boolean dataAvailable;
+    private final boolean dataAvailable;
 
     public GetDataAvailabilityResponse(MapTaskCommitStatus mapTaskCommitStatus, boolean dataAvailable) {
         this.mapTaskCommitStatus = mapTaskCommitStatus;

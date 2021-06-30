@@ -30,8 +30,8 @@ import java.io.InputStream;
  */
 public class PartitionFileChecker {
   private String filePath;
-  private String fileCompressCodec = "lz4";
-  private String blockCompressCodec = "lz4";
+  private final String fileCompressCodec = "lz4";
+  private final String blockCompressCodec = "lz4";
 
   public void run() {
     ByteBuf dataBlockStreamData = Unpooled.buffer(1000);

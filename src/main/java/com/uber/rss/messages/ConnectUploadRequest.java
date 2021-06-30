@@ -18,9 +18,9 @@ import com.uber.rss.util.ByteBufUtils;
 import io.netty.buffer.ByteBuf;
 
 public class ConnectUploadRequest extends BaseMessage {
-    private String user;
-    private String appId;
-    private String appAttempt;
+    private final String user;
+    private final String appId;
+    private final String appAttempt;
 
     public ConnectUploadRequest(String user, String appId, String appAttempt) {
         this.user = user;

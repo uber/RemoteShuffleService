@@ -34,7 +34,7 @@ public class RssZookeeperCluster {
 
     private List<String> streamServerRootDirs = new ArrayList<>();
     private String cluster;
-    private List<StreamServer> streamServers = new ArrayList<>();
+    private final List<StreamServer> streamServers = new ArrayList<>();
 
     public RssZookeeperCluster(int numRssServers, String cluster) {
         List<String> rootDirs = StreamServerTestUtils.createTempDirectories(numRssServers);

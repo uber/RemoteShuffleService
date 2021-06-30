@@ -17,8 +17,8 @@ package com.uber.rss.metrics;
 import java.util.Objects;
 
 public class ShuffleClientStageMetricsKey {
-    private String user;
-    private String queue;
+    private final String user;
+    private final String queue;
 
     public ShuffleClientStageMetricsKey(String user, String queue) {
         this.user = user;

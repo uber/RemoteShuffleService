@@ -18,7 +18,7 @@ import com.uber.rss.util.ByteBufUtils;
 import io.netty.buffer.ByteBuf;
 
 public class ConnectNotifyRequest extends BaseMessage {
-    private String user;
+    private final String user;
 
     public ConnectNotifyRequest(String user) {
         this.user = user;

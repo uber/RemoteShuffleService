@@ -40,22 +40,22 @@ public class FsyncPerfTest {
     private String[] filePaths;
     private FileOutputStream[] fileStreams;
 
-    private int numTestValues = 1000;
+    private final int numTestValues = 1000;
     private int maxTestValueSize = 10000;
     private byte[][] testValues;
 
     private int numWrites = 10000;
 
     private double[] fsyncMillisValues;
-    private AtomicInteger fsyncMillisValuesIndex = new AtomicInteger();
+    private final AtomicInteger fsyncMillisValuesIndex = new AtomicInteger();
 
-    private Random random = new Random();
+    private final Random random = new Random();
 
-    private AtomicLong totalOperationCount = new AtomicLong();
+    private final AtomicLong totalOperationCount = new AtomicLong();
 
-    private AtomicLong totalWriteTime = new AtomicLong();
-    private AtomicLong totalFlushTime = new AtomicLong();
-    private AtomicLong totalFsyncTime = new AtomicLong();
+    private final AtomicLong totalWriteTime = new AtomicLong();
+    private final AtomicLong totalFlushTime = new AtomicLong();
+    private final AtomicLong totalFsyncTime = new AtomicLong();
 
     private void prepare() {
         filePaths = new String[numFiles];

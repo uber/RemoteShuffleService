@@ -15,7 +15,7 @@
 package com.uber.rss.metrics;
 
 public class ExceptionMetricGroupContainer  {
-    private MetricGroupContainer<ExceptionMetricsKey, ExceptionMetrics> metricGroupContainer;
+    private final MetricGroupContainer<ExceptionMetricsKey, ExceptionMetrics> metricGroupContainer;
     
     public ExceptionMetricGroupContainer() {
         this.metricGroupContainer = new MetricGroupContainer<>(

@@ -18,7 +18,7 @@ import com.uber.rss.util.ByteBufUtils;
 import io.netty.buffer.ByteBuf;
 
 public class ConnectRegistryRequest extends BaseMessage {
-    private String user;
+    private final String user;
 
     public ConnectRegistryRequest(String user) {
         this.user = user;

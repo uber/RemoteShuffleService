@@ -18,12 +18,12 @@ import com.uber.rss.util.ByteBufUtils;
 import io.netty.buffer.ByteBuf;
 
 public class FinishApplicationJobRequestMessage extends ControlMessage {
-    private String appId;
-    private String appAttempt;
-    private int jobId;
-    private String jobStatus;
-    private String exceptionName;
-    private String exceptionDetail;
+    private final String appId;
+    private final String appAttempt;
+    private final int jobId;
+    private final String jobStatus;
+    private final String exceptionName;
+    private final String exceptionDetail;
 
     public FinishApplicationJobRequestMessage(String appId, String appAttempt, int jobId, String jobStatus, String exceptionName, String exceptionDetail) {
         this.appId = appId;

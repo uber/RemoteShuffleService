@@ -17,7 +17,7 @@ package com.uber.rss.metrics;
 import java.util.Objects;
 
 public class NettyServerSideMetricsKey {
-    private String user;
+    private final String user;
 
     public NettyServerSideMetricsKey(String user) {
         this.user = user;

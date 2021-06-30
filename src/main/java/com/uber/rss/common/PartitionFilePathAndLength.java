@@ -17,9 +17,9 @@ package com.uber.rss.common;
 import java.util.Objects;
 
 public class PartitionFilePathAndLength {
-  private int partition;
-  private String path;
-  private long length;
+  private final int partition;
+  private final String path;
+  private final long length;
 
   public PartitionFilePathAndLength(int partition, String path, long length) {
     this.partition = partition;

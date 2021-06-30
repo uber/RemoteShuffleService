@@ -53,7 +53,7 @@ public class ServerSequenceServiceRegistry implements ServiceRegistry {
                     .addServer(DEFAULT_DATA_CENTER, DEFAULT_CLUSTER, serverDetail);
         }
 
-        logger.info("Created " + this.toString());
+        logger.info("Created " + this);
     }
 
     @Override
@@ -103,6 +103,6 @@ public class ServerSequenceServiceRegistry implements ServiceRegistry {
                 this.serverIdFormat,
                 this.connectionStringFormat,
                 this.sequenceStartIndex,this.sequenceEndIndex,
-                this.serverCollection.toString());
+                this.serverCollection);
     }
 }

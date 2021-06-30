@@ -60,7 +60,7 @@ public class StreamReadClientVerify {
 
     private Map<Integer, Long> expectedTotalRecordsForEachPartition;
 
-    private int maxValueLen = 10000;
+    private final int maxValueLen = 10000;
 
     private Runnable actionToSimulateBadServer = null;
 

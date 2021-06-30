@@ -53,14 +53,14 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class UploadChannelInboundHandler extends ChannelInboundHandlerAdapter {
     private static final Logger logger = LoggerFactory.getLogger(UploadChannelInboundHandler.class);
 
-    private static Counter numChannelActive = M3Stats.getDefaultScope().counter("numUploadChannelActive");
-    private static Counter numChannelInactive = M3Stats.getDefaultScope().counter("numUploadChannelInactive");
+    private static final Counter numChannelActive = M3Stats.getDefaultScope().counter("numUploadChannelActive");
+    private static final Counter numChannelInactive = M3Stats.getDefaultScope().counter("numUploadChannelInactive");
 
-    private static AtomicInteger concurrentChannelsAtomicInteger = new AtomicInteger();
-    private static Gauge numConcurrentChannels = M3Stats.getDefaultScope().gauge("numConcurrentUploadChannels");
-    private static Gauge finishUploadRequestLag = M3Stats.getDefaultScope().gauge("finishUploadRequestLag");
+    private static final AtomicInteger concurrentChannelsAtomicInteger = new AtomicInteger();
+    private static final Gauge numConcurrentChannels = M3Stats.getDefaultScope().gauge("numConcurrentUploadChannels");
+    private static final Gauge finishUploadRequestLag = M3Stats.getDefaultScope().gauge("finishUploadRequestLag");
 
-    private static Counter closedIdleUploadChannels = M3Stats.getDefaultScope().counter("closedIdleUploadChannels");
+    private static final Counter closedIdleUploadChannels = M3Stats.getDefaultScope().counter("closedIdleUploadChannels");
 
     private final String serverId;
     private final String runningVersion;

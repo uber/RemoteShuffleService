@@ -26,7 +26,7 @@ public class ZooKeeperTestCluster {
     private static final Logger logger = LoggerFactory.getLogger(ZooKeeperTestCluster.class);
 
     private int port;
-    private TestingServer testingServer;
+    private final TestingServer testingServer;
 
     public ZooKeeperTestCluster() {
         try {

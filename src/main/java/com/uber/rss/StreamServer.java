@@ -68,7 +68,7 @@ public class StreamServer {
     private EventLoopGroup healthCheckEventLoopGroup;
 
     private UploadChannelManager channelManager;
-    private List<Channel> channels = new ArrayList<>(2);
+    private final List<Channel> channels = new ArrayList<>(2);
 
     // this is used when the shuffle server could serve as a registry server
     private final ServerDetailCollection serverDetailCollection = new ServerDetailCollection();

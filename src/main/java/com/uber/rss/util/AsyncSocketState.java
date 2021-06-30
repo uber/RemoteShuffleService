@@ -19,8 +19,8 @@ import java.nio.channels.AsynchronousSocketChannel;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class AsyncSocketState {
-    private AsynchronousSocketChannel socket;
-    private ConcurrentLinkedQueue<ByteBuffer> byteBuffers = new ConcurrentLinkedQueue<>();
+    private final AsynchronousSocketChannel socket;
+    private final ConcurrentLinkedQueue<ByteBuffer> byteBuffers = new ConcurrentLinkedQueue<>();
 
     public AsyncSocketState(AsynchronousSocketChannel socket) {
         this.socket = socket;

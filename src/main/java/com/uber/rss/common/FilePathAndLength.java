@@ -17,8 +17,8 @@ package com.uber.rss.common;
 import java.util.Objects;
 
 public class FilePathAndLength {
-  private String path;
-  private long length;
+  private final String path;
+  private final long length;
 
   public FilePathAndLength(String path, long length) {
     this.path = path;

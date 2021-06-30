@@ -19,13 +19,13 @@ import io.netty.buffer.ByteBuf;
 
 public class StartUploadMessage extends BaseMessage {
 
-    private int shuffleId;
-    private int mapId;
-    private long attemptId;
-    private int numMaps;
-    private int numPartitions;
-    private String fileCompressionCodec;
-    private short numSplits;
+    private final int shuffleId;
+    private final int mapId;
+    private final long attemptId;
+    private final int numMaps;
+    private final int numPartitions;
+    private final String fileCompressionCodec;
+    private final short numSplits;
 
     public StartUploadMessage(int shuffleId, int mapId, long attemptId, int numMaps, int numPartitions, String fileCompressionCodec, short numSplits) {
         this.shuffleId = shuffleId;

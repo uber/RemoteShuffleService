@@ -15,9 +15,9 @@
 package com.uber.rss.common;
 
 public class ServerCandidate {
-  private ServerDetail serverDetail;
-  private long requestLatency;
-  private long concurrentConnections;
+  private final ServerDetail serverDetail;
+  private final long requestLatency;
+  private final long concurrentConnections;
 
   public ServerCandidate(ServerDetail serverDetail, long requestLatency, long concurrentConnections) {
     this.serverDetail = serverDetail;

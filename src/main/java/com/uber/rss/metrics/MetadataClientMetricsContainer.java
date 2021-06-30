@@ -15,7 +15,7 @@
 package com.uber.rss.metrics;
 
 public class MetadataClientMetricsContainer {
-    private MetricGroupContainer<MetadataClientMetricsKey, MetadataClientMetrics> metricGroupContainer;
+    private final MetricGroupContainer<MetadataClientMetricsKey, MetadataClientMetrics> metricGroupContainer;
     
     public MetadataClientMetricsContainer() {
         this.metricGroupContainer = new MetricGroupContainer<>(

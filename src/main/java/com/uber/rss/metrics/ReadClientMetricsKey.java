@@ -17,8 +17,8 @@ package com.uber.rss.metrics;
 import java.util.Objects;
 
 public class ReadClientMetricsKey {
-    private String source;
-    private String user;
+    private final String source;
+    private final String user;
 
     public ReadClientMetricsKey(String source, String user) {
         this.source = source;
