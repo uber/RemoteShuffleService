@@ -20,7 +20,6 @@ import java.util.Random
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicLong
 import java.util.function.Consumer
-
 import com.uber.rss.clients._
 import com.uber.rss.common._
 import com.uber.rss.metadata.ServiceRegistry
@@ -28,7 +27,7 @@ import com.uber.rss.metrics.{ShuffleClientStageMetrics, ShuffleClientStageMetric
 import com.uber.rss.storage.ShuffleFileStorage
 import com.uber.rss.{StreamServer, StreamServerConfig}
 import org.apache.commons.lang3.StringUtils
-import org.apache.spark.executor.ShuffleWriteMetrics
+import org.apache.spark.executor.{ShuffleWriteMetrics, TaskMetrics}
 import org.apache.spark.internal.Logging
 import org.apache.spark.serializer.KryoSerializer
 import org.apache.spark.shuffle.{MockTaskContext, RssOpts, RssShuffleReader, RssShuffleWriter}
@@ -327,7 +326,7 @@ class RssStressTool extends Logging {
       bufferOptions = BufferManagerOptions(writerBufferSize, 256 * 1024 * 1024, writerBufferSpill),
       shuffleDependency = shuffleDependency,
       stageMetrics = new ShuffleClientStageMetrics(new ShuffleClientStageMetricsKey("user1", "queue=1")),
-      shuffleWriteMetrics = new ShuffleWriteMetrics(),
+      taskMetrics = new TaskMetrics(),
       conf = sparkConf
     )
 
