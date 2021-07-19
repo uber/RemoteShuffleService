@@ -218,7 +218,7 @@ public class ZooKeeperServiceRegistry implements ServiceRegistry {
             bytes = zk.getData().forPath(nodePath);
         } catch (Exception e) {
             M3Stats.addException(e, this.getClass().getSimpleName());
-            throw new RssException(String.format("Failed to get node data for zookeeper node: %s", nodePath), e);
+            throw new RssException(String.format("Failed to get RSS node data from zookeeper %s", nodePath), e);
         }
 
         if (bytes == null) {

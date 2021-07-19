@@ -79,7 +79,8 @@ class RssShuffleWriter[K, V, C](
   }
 
   override def write(records: Iterator[Product2[K, V]]): Unit = {
-    logInfo(s"Writing shuffle records ($mapInfo), map side combine: ${shuffleDependency.mapSideCombine}")
+    logInfo(s"Started processing records in Shuffle Map Task ($mapInfo), " +
+      s"map side combine: ${shuffleDependency.mapSideCombine}")
 
     var numRecords = 0
 
