@@ -37,7 +37,7 @@ class LazyWriteClientTest {
     appId = UUID.randomUUID().toString()
     val rootDirs = StreamServerTestUtils.createTempDirectories(numRssServers)
     val streamServerConfig = new StreamServerConfig()
-    //    streamServerConfig.setIdleTimeoutMillis(100);
+    streamServerConfig.setIdleTimeoutMillis(100)
     rssTestCluster = new RssMiniCluster(rootDirs, appId, streamServerConfig)
   }
 
