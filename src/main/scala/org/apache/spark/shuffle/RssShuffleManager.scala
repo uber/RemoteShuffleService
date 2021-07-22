@@ -17,9 +17,8 @@ package org.apache.spark.shuffle
 import java.util
 import java.util.Random
 import java.util.function.Supplier
-
 import com.uber.rss.{RssBuildInfo, StreamServerConfig}
-import com.uber.rss.clients.{MultiServerAsyncWriteClient, MultiServerHeartbeatClient, MultiServerSyncWriteClient, MultiServerWriteClient, PooledWriteClientFactory, ServerConnectionCacheUpdateRefresher, ServerConnectionStringCache, ServerConnectionStringResolver, ServerReplicationGroupUtil, ShuffleWriteConfig}
+import com.uber.rss.clients.{LazyWriteClient, MultiServerAsyncWriteClient, MultiServerHeartbeatClient, MultiServerSyncWriteClient, MultiServerWriteClient, PooledWriteClientFactory, ServerConnectionCacheUpdateRefresher, ServerConnectionStringCache, ServerConnectionStringResolver, ServerReplicationGroupUtil, ShuffleWriteConfig}
 import com.uber.rss.common.{AppShuffleId, AppTaskAttemptId, ServerDetail, ServerList}
 import com.uber.rss.exceptions.{RssException, RssInvalidStateException, RssNoServerAvailableException, RssServerResolveException}
 import com.uber.rss.metadata.{ServiceRegistry, ServiceRegistryUtils, StandaloneServiceRegistryClient, ZooKeeperServiceRegistry}
@@ -233,7 +232,7 @@ class RssShuffleManager(conf: SparkConf) extends ShuffleManager with Logging {
 
         RetryUtils.retry(pollInterval, pollInterval * 10, maxWaitMillis, "create write client", new Supplier[ShuffleWriter[K, V]] {
           override def get(): ShuffleWriter[K, V] = {
-            val writeClient: MultiServerWriteClient =
+            var writeClient: MultiServerWriteClient =
               if (writerQueueSize == 0) {
                 logInfo(s"Use replicated sync writer, $rssNumSplits splits, ${rssShuffleHandle.partitionFanout} partition fanout, $serverReplicationGroups, finishUploadAck: $finishUploadAck")
                 new MultiServerSyncWriteClient(
@@ -270,6 +269,13 @@ class RssShuffleManager(conf: SparkConf) extends ShuffleManager with Logging {
                   shuffleWriteConfig)
               }
 
+            val createLazyClientConnection: Boolean = conf.get(RssOpts.enableLazyMapperClientConnection)
+            if (createLazyClientConnection) {
+              writeClient = new LazyWriteClient(writeClient, mapInfo,
+                rssShuffleHandle.numMaps, rssShuffleHandle.dependency.partitioner.numPartitions,
+                pollInterval, maxWaitMillis)
+            }
+
             try {
               writeClient.connect()
 
@@ -283,7 +289,7 @@ class RssShuffleManager(conf: SparkConf) extends ShuffleManager with Logging {
                 bufferOptions,
                 rssShuffleHandle.dependency,
                 shuffleClientStageMetrics,
-                context.taskMetrics().shuffleWriteMetrics,
+                context.taskMetrics(),
                 conf)
             } catch {
               case ex: Throwable => {

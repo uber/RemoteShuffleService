@@ -33,6 +33,7 @@ public class RssMiniCluster {
     private List<String> streamServerRootDirs = new ArrayList<>();
     private String cluster;
     private List<StreamServer> streamServers = new ArrayList<>();
+    private StreamServerConfig streamServerConfig = new StreamServerConfig();
 
     public RssMiniCluster(int numRssServers, String cluster) {
         List<String> rootDirs = StreamServerTestUtils.createTempDirectories(numRssServers);
@@ -40,6 +41,11 @@ public class RssMiniCluster {
     }
 
     public RssMiniCluster(Collection<String> rootDirs, String cluster) {
+        construct(rootDirs, cluster);
+    }
+
+    public RssMiniCluster(Collection<String> rootDirs, String cluster, StreamServerConfig streamServerConfig) {
+        this.streamServerConfig = streamServerConfig;
         construct(rootDirs, cluster);
     }
 
@@ -77,6 +83,7 @@ public class RssMiniCluster {
         // Start first RSS server which acts as registry server as well
         try {
             StreamServerConfig streamServerConfig = new StreamServerConfig();
+            streamServerConfig.setIdleTimeoutMillis(this.streamServerConfig.getIdleTimeoutMillis());
             streamServerConfig.setServiceRegistryType(ServiceRegistry.TYPE_STANDALONE);
             streamServerConfig.setDataCenter(ServiceRegistry.DEFAULT_DATA_CENTER);
             streamServerConfig.setCluster(cluster);
@@ -98,6 +105,7 @@ public class RssMiniCluster {
             String rootDir = streamServerRootDirs.get(i);
             try {
                 StreamServerConfig streamServerConfig = new StreamServerConfig();
+                streamServerConfig.setIdleTimeoutMillis(this.streamServerConfig.getIdleTimeoutMillis());
                 streamServerConfig.setServiceRegistryType(ServiceRegistry.TYPE_STANDALONE);
                 streamServerConfig.setRegistryServer(registryServer);
                 streamServerConfig.setDataCenter(ServiceRegistry.DEFAULT_DATA_CENTER);

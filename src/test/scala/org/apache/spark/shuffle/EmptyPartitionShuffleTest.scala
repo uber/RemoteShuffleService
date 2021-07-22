@@ -17,6 +17,7 @@ package org.apache.spark.shuffle
 import java.util.UUID
 
 import com.uber.rss.testutil.{RssMiniCluster, RssZookeeperCluster}
+
 import org.apache.spark.{HashPartitioner, MapOutputTrackerMaster, ShuffleDependency, SparkConf, SparkContext, SparkEnv}
 import org.scalatest.Assertions._
 import org.testng.annotations._

@@ -172,4 +172,9 @@ object RssOpts {
       .doc("Initial memory to allocate each mapper for performing map side aggregation")
       .longConf
       .createWithDefault(5 * 1024 * 1024L)
+  val enableLazyMapperClientConnection: ConfigEntry[Boolean] =
+    ConfigBuilder("spark.shuffle.rss.server.createLazyMapperClientConnection")
+      .doc("Create lazy connections from mappers to RSS servers just before sending the shuffle data")
+      .booleanConf
+      .createWithDefault(true)
 }
