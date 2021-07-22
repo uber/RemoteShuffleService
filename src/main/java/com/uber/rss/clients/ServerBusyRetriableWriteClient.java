@@ -76,7 +76,7 @@ public class ServerBusyRetriableWriteClient implements SingleServerWriteClient {
                 break;
             } catch (RssServerBusyException ex) {
                 if (System.currentTimeMillis() - startTime < maxTryingMillis) {
-                    logger.info(String.format("Server busy, will close current client and wait %s milliseconds to retry", waitMillis));
+                    logger.info("Server busy, will close current client and wait {} milliseconds to retry", waitMillis);
                     closeDelegate();
                     delegate = null;
                     try {
@@ -139,7 +139,7 @@ public class ServerBusyRetriableWriteClient implements SingleServerWriteClient {
         try {
             delegate.close();
         } catch (Throwable e) {
-            logger.warn(String.format("Failed to close delegate client %s", delegate), e);
+            logger.warn("Failed to close delegate client {}", delegate, e);
         }
     }
 }

@@ -43,7 +43,7 @@ public class BlockingQueueReadClient implements BlockingSingleServerReadClient {
         this.delegate = delegate;
 
         this.recordQueue = new ArrayBlockingQueue<>(queueSize);
-        logger.info(String.format("Created blocking queue with size: %s", queueSize));
+        logger.info("Created blocking queue with size: {}", queueSize);
 
         this.maxBlockingMillis = maxBlockingMillis;
     }
@@ -65,8 +65,7 @@ public class BlockingQueueReadClient implements BlockingSingleServerReadClient {
                 recordQueue.put(new EofRecordKeyValuePair());
             } catch (Throwable ex) {
                 M3Stats.addException(ex, this.getClass().getSimpleName());
-                String logStr = String.format("Failed to read record, %s", delegate.toString());
-                logger.warn(logStr, ex);
+                logger.warn("Failed to read record, {}", delegate, ex);
                 recordQueue.clear();
                 recordQueue.add(new FailedFetchRecordKeyValuePair(ex));
             }

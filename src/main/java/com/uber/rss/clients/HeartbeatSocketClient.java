@@ -41,7 +41,7 @@ public class HeartbeatSocketClient extends ClientBase {
 
   public void sendHeartbeat() {
     if (socket == null) {
-      logger.debug(String.format("Connecting to server for heartbeat: %s", connectionInfo));
+      logger.debug("Connecting to server for heartbeat: {}", connectionInfo);
       connectSocket();
 
       write(MessageConstants.UPLOAD_UPLINK_MAGIC_BYTE);

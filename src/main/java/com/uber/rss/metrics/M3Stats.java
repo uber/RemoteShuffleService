@@ -132,7 +132,7 @@ public class M3Stats {
         if (scopeBuilderClassName == null || scopeBuilderClassName.isEmpty()) {
             scopeBuilderClassName = M3DummyScopeBuilder.class.getName();
         }
-        logger.info(String.format("Using scope builder: %s", scopeBuilderClassName));
+        logger.info("Using scope builder: {}", scopeBuilderClassName);
 
         ScopeBuilder scopeBuilder;
         try {

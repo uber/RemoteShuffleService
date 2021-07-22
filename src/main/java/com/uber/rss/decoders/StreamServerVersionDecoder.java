@@ -100,11 +100,11 @@ public class StreamServerVersionDecoder extends ByteToMessageDecoder {
                     "Invalid upload version %d for link type %s from client %s",
                     version, type, clientInfo));
             ctx.close();
-            logger.info(String.format("Closed connection to client %s", clientInfo));
+            logger.info("Closed connection to client {}", clientInfo);
             return;
         }
-        logger.debug(String.format("Using version %d protocol for client %s",
-                version, NettyUtils.getServerConnectionInfo(ctx)));
+        logger.debug("Using version {} protocol for client {}",
+                version, NettyUtils.getServerConnectionInfo(ctx));
         ctx.pipeline().replace(this, decoderName, newDecoder);
         ctx.pipeline().addAfter(decoderName, handlerName, newHandler);
     }
@@ -130,11 +130,9 @@ public class StreamServerVersionDecoder extends ByteToMessageDecoder {
                 break;
             default:
                 String clientInfo = NettyUtils.getServerConnectionInfo(ctx);
-                logger.warn(String.format(
-                        "Invalid magic byte %d from client %s",
-                        magicByte, clientInfo));
+                logger.warn("Invalid magic byte {} from client {}", magicByte, clientInfo);
                 ctx.close();
-                logger.info(String.format("Closed connection to client %s", clientInfo));
+                logger.info("Closed connection to client {}", clientInfo);
                 break;
         }
     }

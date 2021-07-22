@@ -583,7 +583,7 @@ public class ShuffleExecutor {
                 logger.info("Deleting expired application directory: {}", appDir);
                 storage.deleteDirectory(appDir);
             } catch (Throwable ex) {
-                logger.warn(String.format("Failed to delete expired application directory: %s", appDir), ex);
+                logger.warn("Failed to delete expired application directory: {}", appDir, ex);
             }
         }
     }
@@ -736,7 +736,7 @@ public class ShuffleExecutor {
             corruptedStages.add(stageCorruptionStateItem.getAppShuffleId());
         } else {
             stateLoadWarnings.inc(1);
-            logger.warn(String.format("Got unsupported state item: %s", stateItem));
+            logger.warn("Got unsupported state item: {}", stateItem);
         }
     }
 }

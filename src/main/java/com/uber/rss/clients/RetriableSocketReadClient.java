@@ -69,7 +69,7 @@ public class RetriableSocketReadClient implements SingleServerReadClient {
         return delegate.connect();
       } catch (RssNetworkException ex) {
         lastException = ex;
-        logger.warn(String.format("Failed to connect to server: %s", delegate), ex);
+        logger.warn("Failed to connect to server: {}", delegate, ex);
         closeDelegate();
         long retryRemainingMillis = startTime + retryOptions.getRetryMaxMillis() - System.currentTimeMillis();
         if (retryRemainingMillis <= 0) {
@@ -77,8 +77,8 @@ public class RetriableSocketReadClient implements SingleServerReadClient {
         } else {
           delegate = retryClientCreator.get();
           long waitMillis = Math.min(retryOptions.getRetryIntervalMillis(), retryRemainingMillis);
-          logger.info(String.format("Waiting %s milliseconds (total retry milliseconds: %s, remaining milliseconds: %s) and retry to connect to server: %s",
-              waitMillis, retryOptions.getRetryMaxMillis(), retryRemainingMillis, delegate));
+          logger.info("Waiting {} milliseconds (total retry milliseconds: {}, remaining milliseconds: {}) and retry to connect to server: {}",
+              waitMillis, retryOptions.getRetryMaxMillis(), retryRemainingMillis, delegate);
           ThreadUtils.sleep(waitMillis);
         }
         continue;

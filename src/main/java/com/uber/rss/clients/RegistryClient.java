@@ -47,7 +47,7 @@ public class RegistryClient extends com.uber.rss.clients.ClientBase {
       throw new RssInvalidStateException(String.format("Already connected to server, cannot connect again: %s", connectionInfo));
     }
 
-    logger.debug(String.format("Connecting to server: %s", connectionInfo));
+    logger.debug("Connecting to server: {}", connectionInfo);
 
     connectSocket();
 
@@ -60,7 +60,7 @@ public class RegistryClient extends com.uber.rss.clients.ClientBase {
 
     ConnectRegistryResponse connectResponse = readResponseMessage(MessageConstants.MESSAGE_ConnectRegistryResponse, ConnectRegistryResponse::deserialize);
 
-    logger.info(String.format("Connected to server: %s, response: %s", connectionInfo, connectResponse));
+    logger.info("Connected to server: {}, response: {}", connectionInfo, connectResponse);
 
     return connectResponse;
   }

@@ -109,11 +109,11 @@ public class LocalFileStateStoreIterator implements Iterator<BaseMessage>, AutoC
       currentFile = files.get(nextFileIndex++);
 
       try {
-        logger.info(String.format("Opening state file: %s", currentFile));
+        logger.info("Opening state file: {}", currentFile);
         fileStream = new FileInputStream(currentFile);
         fileSize = fileStream.getChannel().size();
       } catch (IOException e) {
-        logger.warn(String.format("Failed to open state file %s", currentFile), e);
+        logger.warn("Failed to open state file {}", currentFile, e);
         fileStream = null;
         fileSize = 0;
         continue;
@@ -190,7 +190,7 @@ public class LocalFileStateStoreIterator implements Iterator<BaseMessage>, AutoC
         return bytes;
       }
     } catch (Throwable e) {
-      logger.warn(String.format("Failed to read state file %s", currentFile), e);
+      logger.warn("Failed to read state file {}", currentFile, e);
       return null;
     }
   }
@@ -201,10 +201,10 @@ public class LocalFileStateStoreIterator implements Iterator<BaseMessage>, AutoC
     }
 
     try {
-      logger.info(String.format("Closing state file: %s", currentFile));
+      logger.info("Closing state file: {}", currentFile);
       fileStream.close();
     } catch (IOException e) {
-      logger.warn(String.format("Failed to close state file: %s", currentFile), e);
+      logger.warn("Failed to close state file: {}", currentFile, e);
     }
     fileStream = null;
     fileSize = 0;

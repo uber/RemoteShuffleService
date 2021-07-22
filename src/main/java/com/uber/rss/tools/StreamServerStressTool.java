@@ -489,12 +489,12 @@ public class StreamServerStressTool {
                 
                 if (deleteFiles) {
                     try {
-                        logger.info(String.format("Deleting files: %s", StringUtils.join(serverRootDirs, ", ")));
+                        logger.info("Deleting files: {}", String.join(", ", serverRootDirs));
                         deleteDirectories(serverRootDirs);
-                        logger.info(String.format("Deleted files: %s", StringUtils.join(serverRootDirs, ", ")));
+                        logger.info("Deleted files: {}", String.join(", ", serverRootDirs));
                     } catch (Throwable ex) {
                         M3Stats.addException(ex, M3Stats.TAG_VALUE_STRESS_TOOL);
-                        logger.info("Got some error when deleting files: %s, ignored them");
+                        logger.info("Got some error when deleting files: {}, ignored them", String.join(", ", serverRootDirs));
                     }
                 }
             }
@@ -558,7 +558,7 @@ public class StreamServerStressTool {
                                     ConcurrentHashMap<Integer, AtomicLong> numPartitionRecords) {
         if (mapDelay > 0) {
             int delayMillis = random.nextInt(mapDelay);
-            logger.info(String.format("Delaying map %s: %s", appMapId, delayMillis));
+            logger.info("Delaying map {}: {}", appMapId, delayMillis);
             try {
                 Thread.sleep(delayMillis);
             } catch (InterruptedException e) {
@@ -586,7 +586,7 @@ public class StreamServerStressTool {
             writeClient.startUpload(new AppTaskAttemptId(appMapId, taskAttemptId), numMaps, numPartitions);
         }
 
-        logger.info(String.format("Map %s attempt %s started, write client: %s", appMapId, taskAttemptId, writeClient));
+        logger.info("Map {} attempt {} started, write client: {}", appMapId, taskAttemptId, writeClient);
 
         if (!simulateEmptyData) {
             int partitionId = random.nextInt(numPartitions);
@@ -654,7 +654,7 @@ public class StreamServerStressTool {
                         synchronized (serverIdsToShutdownDuringShuffleWrite) {
                             for (String serverId : serverIdsToShutdownDuringShuffleWrite) {
                                 StreamServer server = servers.stream().filter(t -> t != null).filter(t -> t.getServerId().equals(serverId)).findFirst().get();
-                                logger.info(String.format("Simulate bad server during shuffle write by shutting down server: %s", server));
+                                logger.info("Simulate bad server during shuffle write by shutting down server: {}", server);
                                 shutdownServer(server);
 
                                 int index = servers.indexOf(server);
@@ -676,11 +676,11 @@ public class StreamServerStressTool {
             Double rate = rateCounter.addValueAndGetRate(bytes);
             if (rate != null) {
                 long mapUploadedBytes = rateCounter.getOverallValue();
-                logger.info(String.format("Map %s uploaded bytes: %s, rate: %s mb/s", appMapId, mapUploadedBytes, rate*(1000.0/(1024.0*1024.0))));
+                logger.info("Map {} uploaded bytes: {}, rate: {} mb/s", appMapId, mapUploadedBytes, rate*(1000.0/(1024.0*1024.0)));
             }
 
             try {
-                logger.info(String.format("Closing write client: %s", writeClient));
+                logger.info("Closing write client: {}", writeClient);
                 writeClient.close();
             } catch (Exception e) {
                 M3Stats.addException(e, M3Stats.TAG_VALUE_STRESS_TOOL);
@@ -692,11 +692,11 @@ public class StreamServerStressTool {
             if (isLastTaskAttempt) {
                 throw ex;
             } else {
-                logger.debug(String.format("Got ignorable error from stale map task: %s", ExceptionUtils.getSimpleMessage(ex)));
+                logger.debug("Got ignorable error from stale map task", ex);
             }
         }
 
-        logger.info(String.format("Map %s attempt %s finished", appMapId, taskAttemptId));
+        logger.info("Map {} attempt {} finished", appMapId, taskAttemptId);
 
         double overallBytesMb = rateCounter.getOverallValue()/(1024.0*1024.0);
         double overallRate = rateCounter.getOverallRate()*(1000.0/(1024.0*1024.0));
@@ -739,7 +739,7 @@ public class StreamServerStressTool {
     }
 
     private void shutdownServer(StreamServer server) {
-        logger.info(String.format("Shutting down server: %s", server));
+        logger.info("Shutting down server: {}", server);
         server.shutdown(true);
     }
 
@@ -825,6 +825,6 @@ public class StreamServerStressTool {
         
         M3Stats.closeDefaultScope();
 
-        logger.info(String.format("%s finished", StreamServerStressToolLongRun.class.getSimpleName()));
+        logger.info("{} finished", StreamServerStressToolLongRun.class.getSimpleName());
     }
 }

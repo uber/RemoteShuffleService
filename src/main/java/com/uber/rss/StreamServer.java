@@ -159,10 +159,10 @@ public class StreamServer {
     }
 
     private Pair<Channel, Integer> bindPort(ServerBootstrap bootstrap, int port) throws InterruptedException, BindException {
-        logger.info(String.format("Binding to specified port: %s", port));
+        logger.info("Binding to specified port: {}", port);
         Channel channel = bootstrap.bind(port).sync().channel();
         InetSocketAddress localAddress = (InetSocketAddress)channel.localAddress();
-        logger.info(String.format("Bound to local address: %s", localAddress));
+        logger.info("Bound to local address: {}", localAddress);
         return Pair.of(channel, localAddress.getPort());
     }
 
@@ -186,7 +186,7 @@ public class StreamServer {
     }
 
     public void run() throws InterruptedException, BindException {
-        logger.info(String.format("Number of opened files: %s", SystemUtils.getFileDescriptorCount()));
+        logger.info("Number of opened files: {}", SystemUtils.getFileDescriptorCount());
 
         String serverId = getServerId();
 
@@ -213,12 +213,12 @@ public class StreamServer {
         Pair<Channel, Integer> channelAndPort = bindPort(streamServerBootstrap, serverConfig.getShufflePort());
         channels.add(channelAndPort.getKey());
         shufflePort = channelAndPort.getValue();
-        logger.info(String.format("ShuffleServer: %s:%s", hostName, shufflePort));
+        logger.info("ShuffleServer: {}:{}", hostName, shufflePort);
 
         if (this.serviceRegistry == null && serverConfig.getServiceRegistryType().
                 equalsIgnoreCase(ServiceRegistry.TYPE_STANDALONE)) {
-            logger.info(String.format("Creating registry client connecting to local stream server: %s:%s",
-                    hostName, shufflePort));
+            logger.info("Creating registry client connecting to local stream server: {}:{}",
+                    hostName, shufflePort);
             this.serviceRegistry = new StandaloneServiceRegistryClient(this.hostName, shufflePort,
                     serverConfig.getNetworkTimeout(), "streamServer");
         }
@@ -299,7 +299,7 @@ public class StreamServer {
             try {
                 c.close();
             } catch (Throwable e) {
-                logger.warn(String.format("Unable to shutdown channel %s:", c), e);
+                logger.warn("Unable to shutdown channel {}", c, e);
                 exceptions.add(e);
             }
         }
@@ -365,8 +365,8 @@ public class StreamServer {
 
     public static void main(String[] args) throws Exception {
         StreamServerConfig serverConfig = StreamServerConfig.buildFromArgs(args);
-        logger.info(String.format("Starting server (version: %s, revision: %s) with config: %s",
-                RssBuildInfo.Version, RssBuildInfo.Revision, serverConfig));
+        logger.info("Starting server (version: {}, revision: {}) with config: {}",
+                RssBuildInfo.Version, RssBuildInfo.Revision, serverConfig);
         StreamServer server = new StreamServer(serverConfig);
         server.run();
         addShutdownHook(server);

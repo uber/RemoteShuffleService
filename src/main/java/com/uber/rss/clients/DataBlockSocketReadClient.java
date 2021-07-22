@@ -130,7 +130,7 @@ public class DataBlockSocketReadClient extends com.uber.rss.clients.ClientBase {
         throw new RssShuffleCorruptedException("Shuffle data corrupted for: " + appShufflePartitionId, ex);
       } catch (RssMissingShuffleWriteConfigException | RssShuffleStageNotStartedException ex) {
         exceptionWrapper.setException(ex);
-        logger.warn(String.format("Did not find data in server side, server may not run fast enough to get data from client or server hits some issue, %s", appShufflePartitionId), ex);
+        logger.warn("Did not find data in server side, server may not run fast enough to get data from client or server hits some issue, {}", appShufflePartitionId, ex);
         return null;
       }
     });
@@ -203,7 +203,7 @@ public class DataBlockSocketReadClient extends com.uber.rss.clients.ClientBase {
       if (getDataAvailabilityRetryResult != null && getDataAvailabilityRetryResult.getMapTaskCommitStatus() != null) {
         MapTaskCommitStatus mapTaskCommitStatus = getDataAvailabilityRetryResult.getMapTaskCommitStatus();
         if (mapTaskCommitStatus.getTaskAttemptIds().isEmpty()) {
-          taskAttemptIdInfo = String.format("no task attempt committed");
+          taskAttemptIdInfo = "no task attempt committed";
         } else {
           List<Long> taskAttemptIds = mapTaskCommitStatus.getTaskAttemptIds().values().stream().collect(Collectors.toList());
           Collections.sort(taskAttemptIds);
@@ -266,7 +266,7 @@ public class DataBlockSocketReadClient extends com.uber.rss.clients.ClientBase {
       super.close();
       closeMetrics();
     } catch (Throwable ex) {
-      logger.warn(String.format("Failed to close read client %s", this), ex);
+      logger.warn("Failed to close read client {}", this, ex);
     }
   }
 

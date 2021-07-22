@@ -94,7 +94,7 @@ public class ServerIdAwareSocketReadClient implements SingleServerReadClient {
             try {
                 readClient.close();
             } catch (Throwable ex) {
-                logger.warn(String.format("Failed to close underlying client %s", readClient), ex);
+                logger.warn("Failed to close underlying client {}", readClient, ex);
             }
             readClient = null;
         }

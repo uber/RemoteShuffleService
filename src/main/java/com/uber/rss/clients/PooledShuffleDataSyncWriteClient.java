@@ -135,12 +135,12 @@ public class PooledShuffleDataSyncWriteClient implements ShuffleDataSyncWriteCli
   }
 
   public void closeWithoutReuse() {
-    logger.info(String.format("Closing connection %s without reuse", this));
+    logger.info("Closing connection {} without reuse", this);
     reusable = false;
     try {
       delegate.close();
     } catch (Exception e) {
-      logger.warn(String.format("Failed to close underlying client %s", delegate), e);
+      logger.warn("Failed to close underlying client {}", delegate, e);
     }
   }
 

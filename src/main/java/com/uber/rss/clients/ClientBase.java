@@ -82,7 +82,7 @@ public abstract class ClientBase implements AutoCloseable {
         this.port = port;
         this.timeoutMillis = timeoutMillis;
         this.connectionInfo = String.format("%s %s [%s -> %s:%s]", this.getClass().getSimpleName(), internalClientId, NetworkUtils.getLocalHostName(), host, port);
-        logger.debug(String.format("Created instance (timeout: %s millis): %s", timeoutMillis, this));
+        logger.debug("Created instance (timeout: {} millis): {}", timeoutMillis, this);
     }
 
     @Override
@@ -148,7 +148,7 @@ public abstract class ClientBase implements AutoCloseable {
             while (System.currentTimeMillis() - startTime <= timeoutMillis) {
                 ClientConnectMetrics metrics = metricGroupContainer.getMetricGroup(getClientConnectMetricsKey());
                 if (triedTimes >= 1) {
-                    logger.info(String.format("Retrying connect to %s:%s, total retrying times: %s, elapsed milliseconds: %s", host, port, triedTimes, System.currentTimeMillis() - startTime));
+                    logger.info("Retrying connect to {}:{} total retrying times: {}, elapsed milliseconds: {}", host, port, triedTimes, System.currentTimeMillis() - startTime);
                     metrics.getSocketConnectRetries().update(triedTimes);
                 }
                 triedTimes++;
@@ -167,7 +167,7 @@ public abstract class ClientBase implements AutoCloseable {
                     M3Stats.addException(socketException, this.getClass().getSimpleName());
                     socket = null;
                     lastException = socketException;
-                    logger.info(String.format("Failed to connect to %s:%s, %s", host, port, ExceptionUtils.getSimpleMessage(socketException)));
+                    logger.info("Failed to connect to {}:{}", host, port, socketException);
 
                     long elapsedTime = System.currentTimeMillis() - startTime;
                     if (elapsedTime < timeoutMillis) {
@@ -236,7 +236,7 @@ public abstract class ClientBase implements AutoCloseable {
     }
 
     protected void writeControlMessageNotWaitResponseStatus(BaseMessage msg) {
-        logger.debug(String.format("Writing control message: %s, connection: %s", msg, connectionInfo));
+        logger.debug("Writing control message: {}, connection: {}", msg, connectionInfo);
         try {
             outputStream.write(ByteBufUtils.convertIntToBytes(msg.getMessageType()));
         } catch (IOException e) {
@@ -252,7 +252,7 @@ public abstract class ClientBase implements AutoCloseable {
         writeControlMessageNotWaitResponseStatus(msg);
 
         readResponseStatus();
-        logger.debug(String.format("Got OK response for control message: %s, connection: %s", msg, connectionInfo));
+        logger.debug("Got OK response for control message: {}, connection: {}", msg, connectionInfo);
     }
 
     private int readStatus() {

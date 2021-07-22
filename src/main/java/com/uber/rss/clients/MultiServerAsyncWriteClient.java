@@ -25,7 +25,6 @@ import com.uber.rss.exceptions.RssQueueNotReadyException;
 import com.uber.rss.metrics.M3Stats;
 import com.uber.rss.metrics.WriteClientMetrics;
 import com.uber.rss.metrics.WriteClientMetricsKey;
-import com.uber.rss.util.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -119,7 +118,7 @@ public class MultiServerAsyncWriteClient implements MultiServerWriteClient {
                 this.servers.size()));
         }
 
-        logger.info(String.format("Created %s, threads: %s, queue size: %s", this.getClass().getSimpleName(), numThreads, writeQueueSize));
+        logger.info("Created {}, threads: {}, queue size: {}", this.getClass().getSimpleName(), numThreads, writeQueueSize);
     }
 
     @Override
@@ -140,7 +139,7 @@ public class MultiServerAsyncWriteClient implements MultiServerWriteClient {
         for (int i = 0; i < threads.length; i++) {
             final int threadIndex = i;
             Thread thread = new Thread(() -> {
-                logger.info(String.format("Record Thread %s started", threadIndex));
+                logger.info("Record Thread {} started", threadIndex);
                 BlockingQueue<Record> recordQueue = recordQueues[threadIndex];
                 try {
                     // TODO optimize the max wait time for poll
@@ -163,7 +162,7 @@ public class MultiServerAsyncWriteClient implements MultiServerWriteClient {
                         }
                     }
                 } catch (Throwable e) {
-                    logger.warn(String.format("Record Thread %s got exception, %s", threadIndex, ExceptionUtils.getSimpleMessage(e)), e);
+                    logger.warn("Record Thread {} got exception", threadIndex, e);
                     M3Stats.addException(e, this.getClass().getSimpleName());
                     exceptions.add(e);
                 }
@@ -172,7 +171,7 @@ public class MultiServerAsyncWriteClient implements MultiServerWriteClient {
                     exceptions.add(new RssQueueNotReadyException(String.format("Record queue %s has %s remaining records not sent out", threadIndex, remainingRecords)));
                 }
                 recordQueue.clear();
-                logger.info(String.format("Record Thread %s finished, remaining records: %s", threadIndex, remainingRecords));
+                logger.info("Record Thread {} finished, remaining records: {}", threadIndex, remainingRecords);
             });
             thread.setName("Record Thread " + i);
             threads[threadIndex] = thread;
@@ -219,7 +218,7 @@ public class MultiServerAsyncWriteClient implements MultiServerWriteClient {
         long currentTime = System.currentTimeMillis();
         if (currentTime - lastLogTime > logInterval) {
             for (int i = 0; i < recordQueues.length; i++) {
-                logger.info(String.format("Record queue %s size: %s", i, recordQueues[i].size()));
+                logger.info("Record queue {} size: {}", i, recordQueues[i].size());
             }
             lastLogTime = currentTime;
         }
@@ -246,13 +245,13 @@ public class MultiServerAsyncWriteClient implements MultiServerWriteClient {
 
             long underlyingClientFinishUploadTime = System.nanoTime() - underlyingClientFinishUploadStartTime;
 
-            logger.info(String.format("WriteClientTime (%s), queue insert seconds: %s, queue poll seconds: %s, socket seconds: %s, stop thread seconds: %s, finish upload seconds: %s",
+            logger.info("WriteClientTime ({}), queue insert seconds: {}, queue poll seconds: {}, socket seconds: {}, stop thread seconds: {}, finish upload seconds: {}",
                 currentAppTaskAttemptId,
                 TimeUnit.NANOSECONDS.toSeconds(queueInsertTime.get()),
                 TimeUnit.NANOSECONDS.toSeconds(queuePollTime.get()),
                 TimeUnit.NANOSECONDS.toSeconds(socketTime.get()),
                 TimeUnit.NANOSECONDS.toSeconds(stopThreadTime),
-                TimeUnit.NANOSECONDS.toSeconds(underlyingClientFinishUploadTime)));
+                TimeUnit.NANOSECONDS.toSeconds(underlyingClientFinishUploadTime));
         } finally {
             stopwatch.stop();
         }
@@ -308,7 +307,7 @@ public class MultiServerAsyncWriteClient implements MultiServerWriteClient {
     private void closeClient(ReplicatedWriteClient client) {
         try {
             if (client != null) {
-                logger.debug(String.format("Closing client: %s", client));
+                logger.debug("Closing client: {}", client);
                 client.close();
             }
         } catch (Throwable ex) {
@@ -327,7 +326,7 @@ public class MultiServerAsyncWriteClient implements MultiServerWriteClient {
                 if (!inserted) {
                     throw new RssQueueNotReadyException(String.format("stopThreads: Record queue has no space available after waiting %s millis", networkTimeoutMillis));
                 }
-                logger.debug(String.format("Inserted stop marker to record queue %s", i));
+                logger.debug("Inserted stop marker to record queue {}", i);
             } catch (InterruptedException e) {
                 throw new RssException("Interrupted when inserting stop marker to record queue", e);
             }
@@ -370,7 +369,7 @@ public class MultiServerAsyncWriteClient implements MultiServerWriteClient {
             metrics.close();
         } catch (Throwable e) {
             M3Stats.addException(e, this.getClass().getSimpleName());
-            logger.warn(String.format("Failed to close metrics: %s", this), e);
+            logger.warn("Failed to close metrics: {}", this, e);
         }
     }
 

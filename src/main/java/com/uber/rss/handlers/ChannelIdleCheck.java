@@ -37,7 +37,7 @@ public class ChannelIdleCheck implements Runnable {
 
       checkIdle(ctx);
     } catch (Throwable ex) {
-      logger.warn(String.format("Failed to run idle check, %s", NettyUtils.getServerConnectionInfo(ctx)), ex);
+      logger.warn("Failed to run idle check, {}", NettyUtils.getServerConnectionInfo(ctx), ex);
     }
   }
 

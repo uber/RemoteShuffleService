@@ -89,7 +89,7 @@ public class MultiServerSyncWriteClient implements MultiServerWriteClient {
                 this.servers.size()));
         }
 
-        logger.info(String.format("Created %s", this.getClass().getSimpleName()));
+        logger.info("Created {}", this.getClass().getSimpleName());
     }
 
     @Override
@@ -174,7 +174,7 @@ public class MultiServerSyncWriteClient implements MultiServerWriteClient {
     private void closeClient(ReplicatedWriteClient client) {
         try {
             if (client != null) {
-                logger.debug(String.format("Closing client: %s", client));
+                logger.debug("Closing client: {}", client);
                 client.close();
             }
         } catch (Throwable ex) {
@@ -187,7 +187,7 @@ public class MultiServerSyncWriteClient implements MultiServerWriteClient {
             metrics.close();
         } catch (Throwable e) {
             M3Stats.addException(e, this.getClass().getSimpleName());
-            logger.warn(String.format("Failed to close metrics: %s", this), e);
+            logger.warn("Failed to close metrics: {}", this, e);
         }
     }
 
