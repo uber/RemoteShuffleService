@@ -51,7 +51,7 @@ public class DataBlockSyncWriteClient extends com.uber.rss.clients.ClientBase {
   private long totalWriteBytes = 0;
   private long startUploadShuffleByteSnapshot = 0;
 
-  private WriteClientMetrics metrics = null;
+  private final WriteClientMetrics metrics;
 
   public DataBlockSyncWriteClient(String host, int port, int timeoutMillis, String user, String appId, String appAttempt) {
     this(host, port, timeoutMillis, true, user, appId, appAttempt);
@@ -66,7 +66,7 @@ public class DataBlockSyncWriteClient extends com.uber.rss.clients.ClientBase {
 
     this.metrics = new WriteClientMetrics(new WriteClientMetricsKey(
         this.getClass().getSimpleName(), user));
-    metrics.getNumClients().inc(1);
+    this.metrics.getNumClients().inc(1);
   }
 
   public ConnectUploadResponse connect() {
@@ -171,22 +171,15 @@ public class DataBlockSyncWriteClient extends com.uber.rss.clients.ClientBase {
   @Override
   public void close() {
     super.close();
-    closeMetrics();
+    try {
+        metrics.close();
+    } catch (Throwable e) {
+      M3Stats.addException(e, this.getClass().getSimpleName());
+      logger.warn("Failed to close metrics: {}", connectionInfo, e);
+    }
   }
 
   public long getShuffleWriteBytes() {
     return totalWriteBytes - startUploadShuffleByteSnapshot;
-  }
-
-  private void closeMetrics() {
-    try {
-      if (metrics != null) {
-        metrics.close();
-        metrics = null;
-      }
-    } catch (Throwable e) {
-      M3Stats.addException(e, this.getClass().getSimpleName());
-      logger.warn(String.format("Failed to close metrics: %s", connectionInfo), e);
-    }
   }
 }
