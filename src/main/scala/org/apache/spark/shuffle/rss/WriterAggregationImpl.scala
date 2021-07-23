@@ -15,13 +15,13 @@
 package org.apache.spark.shuffle.rss
 
 import com.esotericsoftware.kryo.io.Output
+import com.uber.rss.clients.ShuffleDataWriter
 import org.apache.spark.internal.Logging
 import org.apache.spark.{ShuffleDependency, SparkConf}
 import org.apache.spark.serializer.Serializer
 import org.apache.spark.shuffle.RssOpts
 import org.apache.spark.util.collection.PartitionedAppendOnlyMap
 
-import scala.collection.mutable
 
 /**
  * Does a best effort map side aggregation. Even if the partial aggregation is not complete, reducer side combiners
@@ -33,13 +33,18 @@ import scala.collection.mutable
  * The map can grow up to the size of up to [[RssOpts.initialMemoryThresholdInBytes]], Once the
  * allocated memory is exhausted, data is spilled (sent to RSS servers).
  */
-private[rss] class WriterAggregationImpl[K, V, C](shuffleDependency: ShuffleDependency[K, V, C],
+private[rss] class WriterAggregationImpl[K, V, C](shuffleWriter: WriterAggregationManager[K, V, C],
+                                                  shuffleDependency: ShuffleDependency[K, V, C],
                                                   serializer: Serializer,
                                                   bufferOptions: BufferManagerOptions,
-                                                  conf: SparkConf) extends Logging {
+                                                  conf: SparkConf)
+  extends Logging {
 
-  private var map = new PartitionedAppendOnlyMap[K, C]
+  private var mapRef = new PartitionedAppendOnlyMap[K, C]
+  private var recordsReadCnt: Int = 0
   private var recordsWrittenCnt: Int = 0
+  private var totalSerializationTime: Long = 0L
+  private var serializationStartTime: Long = 0L
 
   private val mergeValue = shuffleDependency.aggregator.get.mergeValue
   private val createCombiner = shuffleDependency.aggregator.get.createCombiner
@@ -60,27 +65,30 @@ private[rss] class WriterAggregationImpl[K, V, C](shuffleDependency: ShuffleDepe
   private val initialMemoryThreshold: Long = conf.get(RssOpts.initialMemoryThresholdInBytes) / 2
   private val serializerInstance = serializer.newInstance()
 
-  private[rss] def numberOfRecordsInMap: Int = map.size
-  private[rss] def recordsWritten: Int = recordsWrittenCnt
+  private[rss] def numberOfRecordsInMap: Int = mapRef.size
+  def numberOfRecordsWritten: Int = recordsWrittenCnt
 
-  private def changeValue(key: (Int, K), updateFunc: (Boolean, C) => C): C = map.changeValue(key, updateFunc)
+  private def changeValue(key: (Int, K), updateFunc: (Boolean, C) => C): C = mapRef.changeValue(key, updateFunc)
 
   /**
    * Checks if the record with key, `(partitionId, aggregationKey)` is present in the map and if it does,
    * merge it with the existing value in the map for that key.
    */
-  private[rss] def addRecord(partitionId: Int, record: Product2[K, V]): Seq[(Int, Array[Byte])] = {
+  private[rss] def insert(partitionId: Int, record: Product2[K, V]): Unit = {
+    recordsReadCnt += 1
+    serializationStartTime = System.nanoTime()
     currentRecord = record
     changeValue((partitionId, currentRecord._1), update)
     spillIfRequired()
   }
 
 
-  private def spillIfRequired(): Seq[(Int, Array[Byte])] = {
-    val estimatedSize = map.estimateSize()
+  private def spillIfRequired(): Unit = {
+    val estimatedSize = mapRef.estimateSize()
     if (estimatedSize >= initialMemoryThreshold) {
       spillMap()
     } else {
+      totalSerializationTime += System.nanoTime() - serializationStartTime;
       Seq.empty
     }
   }
@@ -98,15 +106,25 @@ private[rss] class WriterAggregationImpl[K, V, C](shuffleDependency: ShuffleDepe
    *  (partition2, Byte Array of serialized records for partition 2),
    *  .....]
    */
-  private[rss] def spillMap(): Seq[(Int, Array[Byte])] = {
-    val result = mutable.Buffer[(Int, Array[Byte])]()
+  private[rss] def spillMap(): Unit = {
     val output = new Output(initialMemoryThreshold.toInt, bufferOptions.individualBufferMax)
     val stream = serializerInstance.serializeStream(output)
-    try {
-      // Sort the data only by the partition ID
-      val partitionItr = getGroupedPartitionIterator(map.partitionedDestructiveSortedIterator(None))
-      // Iterate over partitions
-      while (partitionItr.hasNext) {
+    // Sort the data only by the partition ID
+    val partitionItr = getGroupedPartitionIterator(mapRef.partitionedDestructiveSortedIterator(None))
+
+    val spillDataItr = new Iterator[(Int, Array[Byte], Int)] {
+      override def hasNext: Boolean = {
+        val hasRecords = partitionItr.hasNext
+        if (!hasRecords) {
+          mapRef = new PartitionedAppendOnlyMap[K, C]
+        }
+        hasRecords
+      }
+
+      override def next(): (Int, Array[Byte], Int) = {
+        if (!hasNext) {
+          throw new NoSuchElementException
+        }
         val nxt = partitionItr.next()
         val partition = nxt._1
         // Iterate over all values for a given partition
@@ -119,19 +137,15 @@ private[rss] class WriterAggregationImpl[K, V, C](shuffleDependency: ShuffleDepe
           recordsWrittenCnt += 1
         }
         stream.flush()
-        result.append((partition, output.toBytes))
-        output.clear()
+        if (output.position() != 0) {
+          (partition, output.toBytes, -1)
+        } else {
+          (partition, null, -1)
+        }
       }
-    } catch {
-      case e: Throwable =>
-        logError(s"Error while spilling the hashmap: ${e.getMessage}")
-        result.clear()
-        throw e
-    } finally {
-      stream.close()
-      map = new PartitionedAppendOnlyMap[K, C]
     }
-    result
+    totalSerializationTime += System.nanoTime() - serializationStartTime;
+    shuffleWriter.sendDataBlocks(spillDataItr)
   }
 
   private def getGroupedPartitionIterator(data: Iterator[((Int, K), C)]) : Iterator[(Int, Iterator[Product2[K, C]])] = {
@@ -140,8 +154,8 @@ private[rss] class WriterAggregationImpl[K, V, C](shuffleDependency: ShuffleDepe
     (0 until numPartitions).iterator.map(p => (p, new IteratorForPartition(p, buffered)))
   }
 
-  private[this] class IteratorForPartition(partitionId: Int, data: BufferedIterator[((Int, K), C)])
-    extends Iterator[Product2[K, C]]
+  private[this] class IteratorForPartition(partitionId: Int,
+                                           data: BufferedIterator[((Int, K), C)]) extends Iterator[Product2[K, C]]
   {
     override def hasNext: Boolean = data.hasNext && data.head._1._1 == partitionId
 
@@ -154,11 +168,19 @@ private[rss] class WriterAggregationImpl[K, V, C](shuffleDependency: ShuffleDepe
     }
   }
 
-  private[rss] def collectionSizeInBytes: Int = {
-    if (map.isEmpty) {
+  private[rss] def mapSizeInBytes: Int = {
+    if (mapRef.isEmpty) {
       0
     } else {
-      map.estimateSize().toInt
+      mapRef.estimateSize().toInt
     }
+  }
+
+  private[rss] lazy val shuffleWriteTimeMetadata =
+    ShuffleWriteTimeMetadata(totalSerializationTime,  shuffleWriter.totalCompressionTime, shuffleWriter.totalUploadTime, 0)
+
+  private[rss] lazy val shuffleWriteMetrics = {
+    // TODO: Fix number of bytes written
+    ShuffleWriteMetadata(recordsReadCnt, recordsReadCnt, 0l, shuffleWriter.getNumOfSpills(), shuffleWriter.partitionLengths)
   }
 }

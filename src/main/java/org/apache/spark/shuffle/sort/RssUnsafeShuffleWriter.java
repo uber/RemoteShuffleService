@@ -226,7 +226,6 @@ public class RssUnsafeShuffleWriter<K, V, C> extends RssShuffleWriteManager<K, V
     }
 
     @Override
-//    closeAndWriteOutput
     public void clear() {
         try {
             assert(sorter != null);
@@ -235,9 +234,6 @@ public class RssUnsafeShuffleWriter<K, V, C> extends RssShuffleWriteManager<K, V
             serBuffer = null;
             serOutputStream = null;
             metadata = sorter.spillAndFreeMemory();
-//            System.out.println("%%%%%%%%%%%%%%%%");
-//            System.out.println(sorter.numRecords);
-//            System.out.println("%%%%%%%%%%%%%%%%");
             sorter = null;
         } catch (IOException e) {
             logger.error(e.getMessage());

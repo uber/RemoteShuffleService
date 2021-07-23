@@ -14,9 +14,12 @@
 
 package org.apache.spark.shuffle.rss
 
+import com.uber.rss.clients.ShuffleDataWriter
 import org.apache.spark.{ShuffleDependency, SparkConf}
 import org.apache.spark.internal.Logging
+import org.apache.spark.memory.TaskMemoryManager
 import org.apache.spark.serializer.Serializer
+import org.apache.spark.shuffle.RssOpts
 
 /**
  * An aggregation manager which tries to do a best effort map side aggregation.
@@ -26,17 +29,18 @@ import org.apache.spark.serializer.Serializer
  * [[org.apache.spark.shuffle.rss.WriterNoAggregationManager]] when the reduction
  * factor is very low.
  */
-class WriterAggregationManager[K, V, C](shuffleDependency: ShuffleDependency[K, V, C],
+class WriterAggregationManager[K, V, C](client: ShuffleDataWriter,
+                                        shuffleDependency: ShuffleDependency[K, V, C],
                                         serializer: Serializer,
                                         bufferOptions: BufferManagerOptions,
                                         conf: SparkConf)
-  extends WriteBufferManager[K, V, C](serializer, bufferOptions) with Logging {
+  extends RssShuffleWriteManager[K, V, C](client, conf, shuffleDependency.partitioner.numPartitions) with Logging {
 
   private var recordsRead: Int = 0
 
-  private val aggImpl = new WriterAggregationImpl(shuffleDependency, serializer, bufferOptions, conf)
+  override def recordsWritten: Int = aggImpl.numberOfRecordsWritten
 
-  override def recordsWritten: Int = aggImpl.recordsWritten
+  private val aggImpl = new WriterAggregationImpl(this, shuffleDependency, serializer, bufferOptions, conf)
 
   // Fraction of the total records which were aggregated
   override def reductionFactor: Double = {
@@ -47,23 +51,30 @@ class WriterAggregationManager[K, V, C](shuffleDependency: ShuffleDependency[K, 
       // Since the records in the map are already aggregated, total records post
       // aggregation would be sum of records written to RSS servers so far (because of spill if any)
       // and number of records in the map
-      val recordsCountPostAgg = recordsWritten + aggImpl.numberOfRecordsInMap
+      val recordsCountPostAgg = aggImpl.numberOfRecordsWritten + aggImpl.numberOfRecordsInMap
       assert(recordsRead >= recordsCountPostAgg)
       1.0 - (recordsCountPostAgg / recordsRead.toDouble)
     }
   }
 
-
-  override def addRecord(partitionId: Int, record: Product2[K, V]): Seq[(Int, Array[Byte])] = {
-    recordsRead += 1
-    aggImpl.addRecord(partitionId, record)
-  }
-
-  override def clear(): Seq[(Int, Array[Byte])] = {
+  override def clear(): Unit = {
     aggImpl.spillMap()
   }
 
   override def collectionSizeInBytes: Int = {
-    aggImpl.collectionSizeInBytes
+    aggImpl.mapSizeInBytes
+  }
+
+  override def getShuffleWriteTimeMetadata(): ShuffleWriteTimeMetadata = {
+    aggImpl.shuffleWriteTimeMetadata
+  }
+
+  override def getShuffleWriteMetadata(): ShuffleWriteMetadata = {
+    aggImpl.shuffleWriteMetrics
+  }
+
+  override def addRecord(partitionId: Int, record: Product2[K, V]): Unit = {
+    recordsRead += 1
+    aggImpl.insert(partitionId, record)
   }
 }
