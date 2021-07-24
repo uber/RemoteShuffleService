@@ -40,7 +40,8 @@ class WriterBufferManager [K, V, C](writeClient: ShuffleDataWriter,
                                     taskMetrics: TaskMetrics)
   extends RssShuffleWriteManager[K, V, C](writeClient, conf, numPartitions) with Logging {
 
-  def this(writeClient: ShuffleDataWriter, conf: SparkConf, numPartitions: Int, serializer: Serializer, bufferOptions: BufferManagerOptions, taskMetrics: TaskMetrics) {
+  def this(writeClient: ShuffleDataWriter, conf: SparkConf, numPartitions: Int, serializer: Serializer,
+           bufferOptions: BufferManagerOptions, taskMetrics: TaskMetrics) {
     this(writeClient, conf, numPartitions, serializer, bufferOptions.individualBufferSize,
       bufferOptions.individualBufferMax, bufferOptions.bufferSpillThreshold, taskMetrics)
   }

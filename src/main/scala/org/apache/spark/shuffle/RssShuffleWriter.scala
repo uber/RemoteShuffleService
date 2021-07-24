@@ -24,7 +24,7 @@ import org.apache.spark.executor.TaskMetrics
 import org.apache.spark.internal.Logging
 import org.apache.spark.scheduler.MapStatus
 import org.apache.spark.serializer.Serializer
-import org.apache.spark.shuffle.rss.{BufferManagerOptions, RssShuffleWriteManager, RssUtils, WriterAggregationManager, WriterBufferManager}
+import org.apache.spark.shuffle.rss.{BufferManagerOptions, RssShuffleWriteManager, RssUtils, WriterAggregationManager, WriterBufferManager, WriterNoAggregationManager}
 import org.apache.spark.shuffle.sort.RssUnsafeShuffleWriter
 
 class RssShuffleWriter[K, V, C](
@@ -56,8 +56,10 @@ class RssShuffleWriter[K, V, C](
   val useUnsafeShuffleWriter = conf.get(RssOpts.useUnsafeShuffleWriter)
 
   val env = SparkEnv.get
-  private val writerManager: RssShuffleWriteManager[K, V, C] = if (shuffleDependency.mapSideCombine) {
+  private val writerManager: RssShuffleWriteManager[K, V, C] = if (enableMapSideAggregation) {
     new WriterAggregationManager[K, V, C](writeClient, shuffleDependency, serializer, bufferOptions, conf)
+  } else if (shuffleDependency.mapSideCombine) {
+    new WriterNoAggregationManager(shuffleDependency, serializer, bufferOptions, writeClient, conf, taskMetrics)
   } else if (useUnsafeShuffleWriter) {
     new RssUnsafeShuffleWriter[K, V, C](writeClient, env.blockManager, context.taskMemoryManager(),
       shuffleDependency, context, conf)
