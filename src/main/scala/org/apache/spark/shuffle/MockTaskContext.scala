@@ -15,8 +15,7 @@
 package org.apache.spark.shuffle
 
 import java.util.Properties
-
-import org.apache.spark.TaskContext
+import org.apache.spark.{SparkConf, TaskContext}
 import org.apache.spark.executor.TaskMetrics
 import org.apache.spark.memory.TaskMemoryManager
 import org.apache.spark.metrics.source.Source
@@ -67,7 +66,9 @@ class MockTaskContext(val mockStageId: Int, val mockPartitionId: Int, val mockTa
     None
   }
 
-  override private[spark] def taskMemoryManager(): TaskMemoryManager = ???
+  val testMemoryManager = new RssTestMemoryManager(new SparkConf())
+
+  override private[spark] def taskMemoryManager(): TaskMemoryManager = new TaskMemoryManager(testMemoryManager, 0)
 
   override private[spark] def registerAccumulator(a: AccumulatorV2[_, _]): Unit = {}
 

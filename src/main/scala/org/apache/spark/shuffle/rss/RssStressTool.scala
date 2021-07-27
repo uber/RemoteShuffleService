@@ -327,7 +327,8 @@ class RssStressTool extends Logging {
       shuffleDependency = shuffleDependency,
       stageMetrics = new ShuffleClientStageMetrics(new ShuffleClientStageMetricsKey("user1", "queue=1")),
       taskMetrics = new TaskMetrics(),
-      conf = sparkConf
+      conf = sparkConf,
+      context = new MockTaskContext(1, 0, taskAttemptIdSeed.incrementAndGet())
     )
 
     logInfo(s"Map $appMapId attempt $taskAttemptId started, write client: $writeClient")

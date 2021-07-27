@@ -14,7 +14,9 @@
 
 package org.apache.spark.shuffle.rss
 
-import org.apache.spark.ShuffleDependency
+import com.uber.rss.clients.ShuffleDataWriter
+import org.apache.spark.{ShuffleDependency, SparkConf}
+import org.apache.spark.executor.TaskMetrics
 import org.apache.spark.internal.Logging
 import org.apache.spark.serializer.Serializer
 
@@ -39,12 +41,16 @@ import org.apache.spark.serializer.Serializer
  */
 class WriterNoAggregationManager[K, V, C](shuffleDependency: ShuffleDependency[K, V, C],
                                           serializer: Serializer,
-                                          bufferOptions: BufferManagerOptions)
-  extends WriteBufferManager[K, V, C](serializer, bufferOptions) with Logging {
+                                          bufferOptions: BufferManagerOptions,
+                                          writeClient: ShuffleDataWriter,
+                                          conf: SparkConf,
+                                          taskMetrics: TaskMetrics)
+  extends WriterBufferManager[K, V, C](writeClient, conf, shuffleDependency.partitioner.numPartitions,
+    serializer, bufferOptions, taskMetrics) with Logging {
 
   private val createCombiner = shuffleDependency.aggregator.get.createCombiner
 
-  override def addRecord(partitionId: Int, record: Product2[K, V]): Seq[(Int, Array[Byte])] = {
+  override def addRecord(partitionId: Int, record: Product2[K, V]): Unit = {
     val combinedValue = createCombiner(record._2)
     addRecordImpl(partitionId, (record._1, combinedValue))
   }
