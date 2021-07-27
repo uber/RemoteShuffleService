@@ -56,12 +56,7 @@ final class RssShuffleExternalSorter extends MemoryConsumer {
 
     private static final Logger logger = LoggerFactory.getLogger(RssShuffleExternalSorter.class);
 
-    @VisibleForTesting
-    static final int DISK_WRITE_BUFFER_SIZE = 1024 * 1024;
-
-    private final int numPartitions;
     private final TaskMemoryManager taskMemoryManager;
-    private final BlockManager blockManager;
     private final TaskContext taskContext;
     private final ShuffleWriteMetrics writeMetrics;
 
@@ -104,14 +99,11 @@ final class RssShuffleExternalSorter extends MemoryConsumer {
 
     long bytesWritten = 0l;
     long totalSerializationTime = 0l;
-    int maxRecordSize = Integer.MIN_VALUE;
 
     RssShuffleExternalSorter(
             TaskMemoryManager memoryManager,
-            BlockManager blockManager,
             TaskContext taskContext,
             int initialSize,
-            int numPartitions,
             SparkConf conf,
             ShuffleWriteMetrics writeMetrics,
             RssShuffleWriteManager writer) {
@@ -119,17 +111,16 @@ final class RssShuffleExternalSorter extends MemoryConsumer {
                 (int) Math.min(RssPackedRecordPointer.MAXIMUM_PAGE_SIZE_BYTES, memoryManager.pageSizeBytes()),
                 memoryManager.getTungstenMemoryMode());
         this.taskMemoryManager = memoryManager;
-        this.blockManager = blockManager;
         this.taskContext = taskContext;
-        this.numPartitions = numPartitions;
         this.numElementsForSpillThreshold =
                 (int) conf.get(package$.MODULE$.SHUFFLE_SPILL_NUM_ELEMENTS_FORCE_SPILL_THRESHOLD());
         this.writeMetrics = writeMetrics;
 
         this.inMemSorter = new RssShuffleInMemorySorter(
-                this, initialSize, conf.getBoolean("spark.shuffle.sort.useRadixSort", true), true);
+                this, initialSize, conf.getBoolean("spark.shuffle.sort.useRadixSort", true));
         this.peakMemoryUsedBytes = getMemoryUsage();
         this.writeManager = writer;
+        // TODO: Use RssOpts instead
         this.writeBufferSize = conf.getLong("spark.shuffle.rss.unsafe.writer.bufferSize", 5 * 1024 * 1024l);
         this.sizeThreshold = Long.MAX_VALUE;
     }
@@ -137,9 +128,6 @@ final class RssShuffleExternalSorter extends MemoryConsumer {
     private void writeIterator() {
 
         // TODO: Fix metrics
-        final ShuffleWriteMetrics writeMetricsToUse;
-
-        writeMetricsToUse = writeMetrics;
 
         // This call performs the actual sort.
         final RssShuffleInMemorySorter.RssShuffleSorterIterator sortedRecords =

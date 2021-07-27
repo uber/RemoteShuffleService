@@ -61,7 +61,7 @@ class RssShuffleWriter[K, V, C](
   } else if (shuffleDependency.mapSideCombine) {
     new WriterNoAggregationManager(shuffleDependency, serializer, bufferOptions, writeClient, conf, taskMetrics)
   } else if (useUnsafeShuffleWriter) {
-    new RssUnsafeShuffleWriter[K, V, C](writeClient, env.blockManager, context.taskMemoryManager(),
+    new RssUnsafeShuffleWriter[K, V, C](writeClient,  context.taskMemoryManager(),
       shuffleDependency, context, conf)
   } else {
     new WriterBufferManager[K, V, C](writeClient, conf, shuffleDependency.partitioner.numPartitions, serializer, bufferOptions, taskMetrics)

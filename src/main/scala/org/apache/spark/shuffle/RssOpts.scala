@@ -179,12 +179,12 @@ object RssOpts {
       .createWithDefault(true)
   val useUnsafeShuffleWriter: ConfigEntry[Boolean] =
     ConfigBuilder("spark.shuffle.rss.unsafe.writer")
-      .doc("Use unsafe shuffle writer")
+      .doc("Use unsafe shuffle writer for sending map output data to RSS servers")
       .booleanConf
       .createWithDefault(true)
   val unsafeShuffleWriterBufferSize: ConfigEntry[Long] =
     ConfigBuilder("spark.shuffle.rss.unsafe.writer.bufferSize")
-      .doc("Use unsafe shuffle writer")
+      .doc("Size of the buffer to be used for reading the data from memory before sending to RSS servers")
       .longConf
       .createWithDefault(5*1024l*1024)
 }

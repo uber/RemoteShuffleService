@@ -31,8 +31,6 @@ abstract class RssShuffleWriteManager[K, V, C](writeClient: ShuffleDataWriter, c
   var totalBufferedSize: Long = 0
   var totalSendDataBlockTime: Long = 0
 
-  private val writerBufferSize = conf.get(RssOpts.unsafeShuffleWriterBufferSize);
-
   def getNumOfSpills(): Long = {
     numberOfSpills
   }

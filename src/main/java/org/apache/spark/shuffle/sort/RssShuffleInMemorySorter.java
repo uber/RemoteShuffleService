@@ -67,7 +67,7 @@ public final class RssShuffleInMemorySorter {
 
     private final int initialSize;
 
-    public RssShuffleInMemorySorter(MemoryConsumer consumer, int initialSize, boolean useRadixSort, boolean a) {
+    public RssShuffleInMemorySorter(MemoryConsumer consumer, int initialSize, boolean useRadixSort) {
         this.consumer = consumer;
         assert (initialSize > 0);
         this.initialSize = initialSize;

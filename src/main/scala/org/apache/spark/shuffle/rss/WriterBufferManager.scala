@@ -58,11 +58,9 @@ class WriterBufferManager [K, V, C](writeClient: ShuffleDataWriter,
 
   private var totalSerializationTime: Long = 0l
 
-  private var totalMemoryFethcWaitTime: Long = 0l
+  private var totalMemoryFetchWaitTime: Long = 0l
 
   private val serializerInstance = serializer.newInstance()
-
-  var totalLookUpTime = 0L
 
   override def addRecord(partitionId: Int, record: Product2[K, V]): Unit = {
     addRecordImpl(partitionId, record)
@@ -74,7 +72,6 @@ class WriterBufferManager [K, V, C](writeClient: ShuffleDataWriter,
     recordsWrittenCount += 1
     val lookUpStartTime = System.nanoTime()
     val rr = map.get(partitionId)
-    totalLookUpTime += System.nanoTime() - lookUpStartTime
     rr match {
       case Some(v) =>
         val stream = v.serializeStream
@@ -105,10 +102,10 @@ class WriterBufferManager [K, V, C](writeClient: ShuffleDataWriter,
             override def hasNext: Boolean = hasMore
             override def next(): (Int, Array[Byte], Int) = {
               hasMore = false
-              val ss = System.nanoTime()
-              val aa = (partitionId, output.toBytes, -1)
-              totalMemoryFethcWaitTime += System.nanoTime() - ss
-              aa
+              val fetchStartTime = System.nanoTime()
+              val data = (partitionId, output.toBytes, -1)
+              totalMemoryFetchWaitTime += System.nanoTime() - fetchStartTime
+              data
             }
           })
         } else {
@@ -153,7 +150,7 @@ class WriterBufferManager [K, V, C](writeClient: ShuffleDataWriter,
         mapRef(partitionId).serializeStream.close()
         mapRef.remove(partitionId)
         currentPartitionIndex += 1
-        totalMemoryFethcWaitTime += System.nanoTime() - ss
+        totalMemoryFetchWaitTime += System.nanoTime() - ss
         elem
       }
     }
@@ -185,7 +182,7 @@ class WriterBufferManager [K, V, C](writeClient: ShuffleDataWriter,
   override def stop(): Unit = {}
 
   override def getShuffleWriteTimeMetadata(): ShuffleWriteTimeMetadata = {
-    ShuffleWriteTimeMetadata(totalSerializationTime, totalCompressionTime, totalUploadTime, totalMemoryFethcWaitTime)
+    ShuffleWriteTimeMetadata(totalSerializationTime, totalCompressionTime, totalUploadTime, totalMemoryFetchWaitTime)
   }
 
   override def getShuffleWriteMetadata(): ShuffleWriteMetadata = {

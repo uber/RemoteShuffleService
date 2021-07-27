@@ -58,7 +58,6 @@ public class RssUnsafeShuffleWriter<K, V, C> extends RssShuffleWriteManager<K, V
     static final int DEFAULT_INITIAL_SORT_BUFFER_SIZE = 4096;
     static final int DEFAULT_INITIAL_SER_BUFFER_SIZE = 1024 * 1024;
 
-    private final BlockManager blockManager;
     private final TaskMemoryManager memoryManager;
     private final SerializerInstance serializer;
     private final Partitioner partitioner;
@@ -67,10 +66,6 @@ public class RssUnsafeShuffleWriter<K, V, C> extends RssShuffleWriteManager<K, V
     private final SparkConf sparkConf;
     private final int initialSortBufferSize;
 
-    private long bytesWritten = 0l;
-    private long spillCount = 0l;
-
-    @Nullable private MapStatus mapStatus;
     @Nullable private RssShuffleExternalSorter sorter;
     private long peakMemoryUsedBytes = 0;
     private int recordsWritten = 0;
@@ -94,7 +89,6 @@ public class RssUnsafeShuffleWriter<K, V, C> extends RssShuffleWriteManager<K, V
 
     public RssUnsafeShuffleWriter(
             ShuffleDataWriter client,
-            BlockManager blockManager,
             TaskMemoryManager memoryManager,
             ShuffleDependency<K, V, C> dependency,
             TaskContext taskContext,
@@ -107,7 +101,6 @@ public class RssUnsafeShuffleWriter<K, V, C> extends RssShuffleWriteManager<K, V
                             SortShuffleManager.MAX_SHUFFLE_OUTPUT_PARTITIONS_FOR_SERIALIZED_MODE() +
                             " reduce partitions");
         }
-        this.blockManager = blockManager;
         this.memoryManager = memoryManager;
         this.serializer = dependency.serializer().newInstance();
         this.partitioner = dependency.partitioner();
@@ -167,7 +160,7 @@ public class RssUnsafeShuffleWriter<K, V, C> extends RssShuffleWriteManager<K, V
         // Keep track of success so we know if we encountered an exception
         // We do this rather than a standard try/catch/re-throw to handle
         // generic throwables.
-        // TODO: recordsWritten fix this
+        // TODO: Fix recordsWritten
         recordsWritten += 1;
         try {
             insertRecordIntoSorter(record);
@@ -184,10 +177,8 @@ public class RssUnsafeShuffleWriter<K, V, C> extends RssShuffleWriteManager<K, V
         assert (sorter == null);
         sorter = new RssShuffleExternalSorter(
                 memoryManager,
-                blockManager,
                 taskContext,
                 initialSortBufferSize,
-                partitioner.numPartitions(),
                 sparkConf,
                 writeMetrics,
                 this);
