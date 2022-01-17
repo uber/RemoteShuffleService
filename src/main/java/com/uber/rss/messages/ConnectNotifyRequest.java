@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2020 Uber Technologies, Inc.
+ * This file is copied from Uber Remote Shuffle Service
+ * (https://github.com/uber/RemoteShuffleService) and modified.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,35 +19,35 @@ import com.uber.rss.util.ByteBufUtils;
 import io.netty.buffer.ByteBuf;
 
 public class ConnectNotifyRequest extends BaseMessage {
-    private String user;
+  private String user;
 
-    public ConnectNotifyRequest(String user) {
-        this.user = user;
-    }
+  public ConnectNotifyRequest(String user) {
+    this.user = user;
+  }
 
-    @Override
-    public int getMessageType() {
-        return MessageConstants.MESSAGE_ConnectNotifyRequest;
-    }
+  @Override
+  public int getMessageType() {
+    return MessageConstants.MESSAGE_ConnectNotifyRequest;
+  }
 
-    @Override
-    public void serialize(ByteBuf buf) {
-        ByteBufUtils.writeLengthAndString(buf, user);
-    }
+  @Override
+  public void serialize(ByteBuf buf) {
+    ByteBufUtils.writeLengthAndString(buf, user);
+  }
 
-    public static ConnectNotifyRequest deserialize(ByteBuf buf) {
-        String user = ByteBufUtils.readLengthAndString(buf);
-        return new ConnectNotifyRequest(user);
-    }
+  public static ConnectNotifyRequest deserialize(ByteBuf buf) {
+    String user = ByteBufUtils.readLengthAndString(buf);
+    return new ConnectNotifyRequest(user);
+  }
 
-    public String getUser() {
-        return user;
-    }
+  public String getUser() {
+    return user;
+  }
 
-    @Override
-    public String toString() {
-        return "ConnectNotifyRequest{" +
-                "user='" + user + '\'' +
-                '}';
-    }
+  @Override
+  public String toString() {
+    return "ConnectNotifyRequest{" +
+        "user='" + user + '\'' +
+        '}';
+  }
 }

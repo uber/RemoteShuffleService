@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2020 Uber Technologies, Inc.
+ * This file is copied from Uber Remote Shuffle Service
+ * (https://github.com/uber/RemoteShuffleService) and modified.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,30 +23,30 @@ import java.util.Map;
 
 public class ApplicationJobStatusMetrics extends MetricGroup<ApplicationJobStatusMetricsKey> {
 
-    private final Counter numApplicationJobs;
-    private final Counter numRssExceptionJobs;
-    
-    public ApplicationJobStatusMetrics(ApplicationJobStatusMetricsKey key) {
-        super(key);
+  private final Counter numApplicationJobs;
+  private final Counter numRssExceptionJobs;
 
-        this.numApplicationJobs = scope.counter("numApplicationJobs2");
-        this.numRssExceptionJobs = scope.counter("numRssExceptionJobs");
-    }
+  public ApplicationJobStatusMetrics(ApplicationJobStatusMetricsKey key) {
+    super(key);
 
-    public Counter getNumApplicationJobs() {
-        return numApplicationJobs;
-    }
+    this.numApplicationJobs = scope.counter("numApplicationJobs2");
+    this.numRssExceptionJobs = scope.counter("numRssExceptionJobs");
+  }
 
-    public Counter getNumRssExceptionJobs() {
-        return numRssExceptionJobs;
-    }
+  public Counter getNumApplicationJobs() {
+    return numApplicationJobs;
+  }
 
-    @Override
-    protected Scope createScope(ApplicationJobStatusMetricsKey key) {
-        Map<String, String> tags = new HashMap<>();
-        tags.put(M3Stats.TAG_NAME_USER, key.getUser());
-        tags.put(M3Stats.TAG_NAME_JOB_STATUS, key.getJobStatus());
+  public Counter getNumRssExceptionJobs() {
+    return numRssExceptionJobs;
+  }
 
-        return M3Stats.createSubScope(tags);
-    }
+  @Override
+  protected Scope createScope(ApplicationJobStatusMetricsKey key) {
+    Map<String, String> tags = new HashMap<>();
+    tags.put(M3Stats.TAG_NAME_USER, key.getUser());
+    tags.put(M3Stats.TAG_NAME_JOB_STATUS, key.getJobStatus());
+
+    return M3Stats.createSubScope(tags);
+  }
 }

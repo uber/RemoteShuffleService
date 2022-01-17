@@ -1,10 +1,13 @@
 /*
- * Copyright (c) 2020 Uber Technologies, Inc.
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -18,80 +21,83 @@ import com.uber.rss.util.ByteBufUtils;
 import io.netty.buffer.ByteBuf;
 
 public class FinishApplicationJobRequestMessage extends ControlMessage {
-    private String appId;
-    private String appAttempt;
-    private int jobId;
-    private String jobStatus;
-    private String exceptionName;
-    private String exceptionDetail;
+  private String appId;
+  private String appAttempt;
+  private int jobId;
+  private String jobStatus;
+  private String exceptionName;
+  private String exceptionDetail;
 
-    public FinishApplicationJobRequestMessage(String appId, String appAttempt, int jobId, String jobStatus, String exceptionName, String exceptionDetail) {
-        this.appId = appId;
-        this.appAttempt = appAttempt;
-        this.jobId = jobId;
-        this.jobStatus = jobStatus;
-        this.exceptionName = exceptionName;
-        this.exceptionDetail = exceptionDetail;
-    }
+  public FinishApplicationJobRequestMessage(String appId, String appAttempt, int jobId,
+                                            String jobStatus, String exceptionName,
+                                            String exceptionDetail) {
+    this.appId = appId;
+    this.appAttempt = appAttempt;
+    this.jobId = jobId;
+    this.jobStatus = jobStatus;
+    this.exceptionName = exceptionName;
+    this.exceptionDetail = exceptionDetail;
+  }
 
-    @Override
-    public int getMessageType() {
-        return MessageConstants.MESSAGE_FinishApplicationJobRequest;
-    }
+  @Override
+  public int getMessageType() {
+    return MessageConstants.MESSAGE_FinishApplicationJobRequest;
+  }
 
-    @Override
-    public void serialize(ByteBuf buf) {
-        ByteBufUtils.writeLengthAndString(buf, appId);
-        ByteBufUtils.writeLengthAndString(buf, appAttempt);
-        buf.writeInt(jobId);
-        ByteBufUtils.writeLengthAndString(buf, jobStatus);
-        ByteBufUtils.writeLengthAndString(buf, exceptionName);
-        ByteBufUtils.writeLengthAndString(buf, exceptionDetail);
-    }
+  @Override
+  public void serialize(ByteBuf buf) {
+    ByteBufUtils.writeLengthAndString(buf, appId);
+    ByteBufUtils.writeLengthAndString(buf, appAttempt);
+    buf.writeInt(jobId);
+    ByteBufUtils.writeLengthAndString(buf, jobStatus);
+    ByteBufUtils.writeLengthAndString(buf, exceptionName);
+    ByteBufUtils.writeLengthAndString(buf, exceptionDetail);
+  }
 
-    public static FinishApplicationJobRequestMessage deserialize(ByteBuf buf) {
-        String appId = ByteBufUtils.readLengthAndString(buf);
-        String appAttempt = ByteBufUtils.readLengthAndString(buf);
-        int jobId = buf.readInt();
-        String jobStatus = ByteBufUtils.readLengthAndString(buf);
-        String exceptionName = ByteBufUtils.readLengthAndString(buf);
-        String exceptionDetail = ByteBufUtils.readLengthAndString(buf);
-        return new FinishApplicationJobRequestMessage(appId, appAttempt, jobId, jobStatus, exceptionName, exceptionDetail);
-    }
+  public static FinishApplicationJobRequestMessage deserialize(ByteBuf buf) {
+    String appId = ByteBufUtils.readLengthAndString(buf);
+    String appAttempt = ByteBufUtils.readLengthAndString(buf);
+    int jobId = buf.readInt();
+    String jobStatus = ByteBufUtils.readLengthAndString(buf);
+    String exceptionName = ByteBufUtils.readLengthAndString(buf);
+    String exceptionDetail = ByteBufUtils.readLengthAndString(buf);
+    return new FinishApplicationJobRequestMessage(appId, appAttempt, jobId, jobStatus,
+        exceptionName, exceptionDetail);
+  }
 
-    public String getAppId() {
-        return appId;
-    }
+  public String getAppId() {
+    return appId;
+  }
 
-    public String getAppAttempt() {
-        return appAttempt;
-    }
+  public String getAppAttempt() {
+    return appAttempt;
+  }
 
-    public int getJobId() {
-        return jobId;
-    }
+  public int getJobId() {
+    return jobId;
+  }
 
-    public String getJobStatus() {
-        return jobStatus;
-    }
+  public String getJobStatus() {
+    return jobStatus;
+  }
 
-    public String getExceptionName() {
-        return exceptionName;
-    }
+  public String getExceptionName() {
+    return exceptionName;
+  }
 
-    public String getExceptionDetail() {
-        return exceptionDetail;
-    }
+  public String getExceptionDetail() {
+    return exceptionDetail;
+  }
 
-    @Override
-    public String toString() {
-        return "FinishApplicationJobRequestMessage{" +
-                "appId='" + appId + '\'' +
-                ", appAttempt='" + appAttempt + '\'' +
-                ", jobId=" + jobId +
-                ", jobStatus=" + jobStatus +
-                ", exceptionName=" + exceptionName +
-                ", exceptionDetail=" + exceptionDetail +
-                '}';
-    }
+  @Override
+  public String toString() {
+    return "FinishApplicationJobRequestMessage{" +
+        "appId='" + appId + '\'' +
+        ", appAttempt='" + appAttempt + '\'' +
+        ", jobId=" + jobId +
+        ", jobStatus=" + jobStatus +
+        ", exceptionName=" + exceptionName +
+        ", exceptionDetail=" + exceptionDetail +
+        '}';
+  }
 }

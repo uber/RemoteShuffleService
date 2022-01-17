@@ -1,10 +1,13 @@
 /*
- * Copyright (c) 2020 Uber Technologies, Inc.
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -61,7 +64,8 @@ public class LocalFileStateStoreStressTest {
     AppShuffleId appShuffleId = new AppShuffleId("app1", "1", 2);
     AppTaskAttemptId appTaskAttemptId = new AppTaskAttemptId(appShuffleId, 1, 99L);
     ShuffleWriteConfig shuffleWriteConfig = new ShuffleWriteConfig((short) 6);
-    PartitionFilePathAndLength partitionFilePathAndLength = new PartitionFilePathAndLength(1, "file1", 123);
+    PartitionFilePathAndLength partitionFilePathAndLength =
+        new PartitionFilePathAndLength(1, "file1", 123);
 
     ConcurrentLinkedQueue<Throwable> exceptions = new ConcurrentLinkedQueue<>();
 
@@ -76,7 +80,8 @@ public class LocalFileStateStoreStressTest {
           switch (randomInt) {
             case 0:
               stateStore.storeStageInfo(appShuffleId,
-                  new StagePersistentInfo(2, 3, shuffleWriteConfig,  ShuffleStageStatus.FILE_STATUS_OK));
+                  new StagePersistentInfo(2, 3, shuffleWriteConfig,
+                      ShuffleStageStatus.FILE_STATUS_OK));
               break;
             case 1:
               stateStore.storeTaskAttemptCommit(appShuffleId,

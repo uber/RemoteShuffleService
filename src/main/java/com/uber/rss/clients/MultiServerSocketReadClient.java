@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2020 Uber Technologies, Inc.
+ * This file is copied from Uber Remote Shuffle Service
+ * (https://github.com/uber/RemoteShuffleService) and modified.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -56,7 +57,7 @@ public class MultiServerSocketReadClient implements MultiServerReadClient {
                                      boolean checkShuffleReplicaConsistency) {
     this(servers,
         timeoutMillis,
-        new ClientRetryOptions(dataOptions.getDataAvailablePollInterval(), timeoutMillis, serverDetail -> serverDetail),
+        new ClientRetryOptions(dataOptions.getDataAvailablePollInterval(), timeoutMillis),
         user,
         appShufflePartitionId,
         dataOptions,
@@ -107,7 +108,9 @@ public class MultiServerSocketReadClient implements MultiServerReadClient {
         connectAndInitializeClient();
         record = currentClient.readDataBlock();
       } else {
-        throw new RssInvalidStateException(String.format("Invalid nextClientIndex value: %s, max value: %s, %s", nextClientIndex, this.servers.size() - 1, this));
+        throw new RssInvalidStateException(String
+            .format("Invalid nextClientIndex value: %s, max value: %s, %s", nextClientIndex,
+                this.servers.size() - 1, this));
       }
     }
 
@@ -134,41 +137,49 @@ public class MultiServerSocketReadClient implements MultiServerReadClient {
 
   private void connectAndInitializeClient() {
     if (nextClientIndex > servers.size()) {
-      throw new RssException(String.format("Invalid operation, next client index %s, total servers %s", nextClientIndex, servers.size()));
+      throw new RssException(String
+          .format("Invalid operation, next client index %s, total servers %s", nextClientIndex,
+              servers.size()));
     }
 
     ServerReplicationGroup serverReplicationGroup = servers.get(nextClientIndex);
-    logger.info(String.format("Fetching data from server: %s (%s out of %s), partition: %s", serverReplicationGroup, nextClientIndex + 1, servers.size(), appShufflePartitionId));
+    logger.info(String.format("Fetching data from server: %s (%s out of %s), partition: %s",
+        serverReplicationGroup, nextClientIndex + 1, servers.size(), appShufflePartitionId));
 
     ExceptionWrapper<Throwable> exceptionWrapper = new ExceptionWrapper<>();
-    String failMsg = String.format("Failed to connect to server: %s, partition: %s", serverReplicationGroup, appShufflePartitionId);
+    String failMsg = String
+        .format("Failed to connect to server: %s, partition: %s", serverReplicationGroup,
+            appShufflePartitionId);
 
-    ReplicatedReadClient newClient = RetryUtils.retryUntilNotNull(clientRetryOptions.getRetryIntervalMillis(), clientRetryOptions.getRetryIntervalMillis()*10, clientRetryOptions.getRetryMaxMillis(), () -> {
-      ReplicatedReadClient aClient = null;
-      try {
-        aClient = new ReplicatedReadClient(serverReplicationGroup,
-            timeoutMillis,
-            clientRetryOptions,
-            user,
-            appShufflePartitionId,
-            readClientDataOptions,
-            checkShuffleReplicaConsistency);
-        aClient.connect();
-        return aClient;
-      } catch (Throwable ex) {
-        M3Stats.addException(ex, this.getClass().getSimpleName());
-        logger.warn(failMsg, ex);
-        exceptionWrapper.setException(ex);
-        closeClient(aClient);
-        return null;
-      }
-    });
+    ReplicatedReadClient newClient = RetryUtils
+        .retryUntilNotNull(clientRetryOptions.getRetryIntervalMillis(),
+            clientRetryOptions.getRetryIntervalMillis() * 10,
+            clientRetryOptions.getRetryMaxMillis(), () -> {
+              ReplicatedReadClient aClient = null;
+              try {
+                aClient = new ReplicatedReadClient(serverReplicationGroup,
+                    timeoutMillis,
+                    clientRetryOptions,
+                    user,
+                    appShufflePartitionId,
+                    readClientDataOptions,
+                    checkShuffleReplicaConsistency);
+                aClient.connect();
+                return aClient;
+              } catch (Throwable ex) {
+                M3Stats.addException(ex, this.getClass().getSimpleName());
+                logger.warn(failMsg, ex);
+                exceptionWrapper.setException(ex);
+                closeClient(aClient);
+                return null;
+              }
+            });
 
     if (newClient == null) {
       if (exceptionWrapper.getException() == null) {
         throw new RssException(failMsg);
       } else if (exceptionWrapper.getException() instanceof RuntimeException) {
-        throw (RuntimeException)exceptionWrapper.getException();
+        throw (RuntimeException) exceptionWrapper.getException();
       } else {
         throw new RssException(failMsg, exceptionWrapper.getException());
       }

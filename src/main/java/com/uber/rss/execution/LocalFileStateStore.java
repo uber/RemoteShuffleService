@@ -1,10 +1,13 @@
 /*
- * Copyright (c) 2020 Uber Technologies, Inc.
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -16,15 +19,12 @@ package com.uber.rss.execution;
 
 import com.uber.rss.common.AppShuffleId;
 import com.uber.rss.common.PartitionFilePathAndLength;
-import com.uber.rss.exceptions.RssFileCorruptedException;
-import com.uber.rss.exceptions.RssInvalidStateException;
-import com.uber.rss.messages.AppDeletionStateItem;
-import com.uber.rss.messages.BaseMessage;
-import com.uber.rss.messages.StageCorruptionStateItem;
-import com.uber.rss.messages.StageInfoStateItem;
-import com.uber.rss.messages.TaskAttemptCommitStateItem;
+import com.uber.rss.messages.*;
 import com.uber.rss.util.ByteBufUtils;
 import com.uber.rss.util.FileUtils;
+import com.uber.rss.exceptions.RssFileCorruptedException;
+import com.uber.rss.exceptions.RssInvalidStateException;
+import com.uber.rss.messages.*;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import org.apache.commons.lang3.StringUtils;
@@ -39,12 +39,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Date;
-import java.util.List;
-import java.util.TimeZone;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -55,7 +50,8 @@ public class LocalFileStateStore implements StateStore {
   public final static String STATE_FILE_PREFIX = "v1_";
 
   public final static long DEFAULT_ROTATION_MILLIS = 60 * 60 * 1000L;
-  public final static long DEFAULT_RETENTION_MILLIS = ShuffleExecutor.DEFAULT_APP_FILE_RETENTION_MILLIS;
+  public final static long DEFAULT_RETENTION_MILLIS =
+      ShuffleExecutor.DEFAULT_APP_FILE_RETENTION_MILLIS;
 
   private final static TimeZone utcTimeZone;
   private final static DateFormat dateFormat;
@@ -97,8 +93,12 @@ public class LocalFileStateStore implements StateStore {
     writeState(item);
   }
 
-  public void storeTaskAttemptCommit(AppShuffleId appShuffleId, Collection<Long> committedTaskAttempts, Collection<PartitionFilePathAndLength> partitionFilePathAndLengths) {
-    TaskAttemptCommitStateItem item = new TaskAttemptCommitStateItem(appShuffleId, committedTaskAttempts, partitionFilePathAndLengths);
+  public void storeTaskAttemptCommit(AppShuffleId appShuffleId,
+                                     Collection<Long> committedTaskAttempts,
+                                     Collection<PartitionFilePathAndLength> partitionFilePathAndLengths) {
+    TaskAttemptCommitStateItem item =
+        new TaskAttemptCommitStateItem(appShuffleId, committedTaskAttempts,
+            partitionFilePathAndLengths);
     writeState(item);
   }
 
@@ -117,7 +117,8 @@ public class LocalFileStateStore implements StateStore {
       try {
         currentFileStream.flush();
       } catch (IOException e) {
-        throw new RssFileCorruptedException(String.format("Failed to flush state file %s", currentFilePath));
+        throw new RssFileCorruptedException(
+            String.format("Failed to flush state file %s", currentFilePath));
       }
     }
 
@@ -143,7 +144,8 @@ public class LocalFileStateStore implements StateStore {
       logger.warn(String.format("Failed to load state from directory %s", stateDir), e);
       files = Collections.emptyList();
     }
-    logger.info(String.format("Creating iterator to load state: %s", StringUtils.join(files, ',')));
+    logger
+        .info(String.format("Creating iterator to load state: %s", StringUtils.join(files, ',')));
     return new LocalFileStateStoreIterator(files);
   }
 
@@ -178,7 +180,8 @@ public class LocalFileStateStore implements StateStore {
       if (System.currentTimeMillis() - currentFileCreateTime >= fileRotationMillis) {
         closeFileNoLock();
 
-        String fileBaseName = String.format("%s%s", STATE_FILE_PREFIX, dateFormat.format(new Date()));
+        String fileBaseName =
+            String.format("%s%s", STATE_FILE_PREFIX, dateFormat.format(new Date()));
         for (int i = 0; i < 10000; i++) {
           String fileName = String.format("%s.%04d", fileBaseName, i);
           Path path = Paths.get(stateDir, fileName);
@@ -191,7 +194,8 @@ public class LocalFileStateStore implements StateStore {
               logger.info(String.format("Created state file: %s", pathStr));
               return;
             } catch (FileNotFoundException e) {
-              throw new RssFileCorruptedException(String.format("Failed to create state file: %s", path));
+              throw new RssFileCorruptedException(
+                  String.format("Failed to create state file: %s", path));
             }
           }
         }
@@ -226,7 +230,8 @@ public class LocalFileStateStore implements StateStore {
         currentFileStream.write(lengthBytes);
         currentFileStream.write(bytes);
       } catch (IOException e) {
-        throw new RssFileCorruptedException(String.format("Failed to write %s to state file %s", item, this));
+        throw new RssFileCorruptedException(
+            String.format("Failed to write %s to state file %s", item, this));
       }
     }
   }
@@ -238,7 +243,9 @@ public class LocalFileStateStore implements StateStore {
         currentFileStream.close();
         currentFileStream = null;
       } catch (IOException e) {
-        throw new RssFileCorruptedException(String.format("Failed to close old state file %s when trying to create new one", currentFilePath));
+        throw new RssFileCorruptedException(String
+            .format("Failed to close old state file %s when trying to create new one",
+                currentFilePath));
       }
       currentFilePath = null;
       currentFileCreateTime = 0;

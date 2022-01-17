@@ -1,10 +1,13 @@
 /*
- * Copyright (c) 2020 Uber Technologies, Inc.
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -18,7 +21,8 @@ import java.util.UUID
 
 import com.uber.rss.exceptions.RssNetworkException
 import com.uber.rss.testutil.RssMiniCluster
-import org.apache.spark.{HashPartitioner, MapOutputTrackerMaster, ShuffleDependency, SparkConf, SparkContext, SparkEnv}
+import org.apache.spark._
+import org.apache.spark.executor.{ShuffleWriteMetrics, TempShuffleReadMetrics}
 import org.scalatest.Assertions._
 import org.slf4j.LoggerFactory
 import org.testng.annotations._
@@ -31,12 +35,12 @@ class RssShuffleManagerReplicateServerGroupTest {
 
   var appId: String = null
   val numRssServers = 8
-  
+
   var sc: SparkContext = null
-  
+
   var rssTestCluster: RssMiniCluster = null
   private var shuffleManagers = ArrayBuffer[RssShuffleManager]()
-  
+
   @BeforeMethod
   def beforeTestMethod(): Unit = {
     appId = UUID.randomUUID().toString()
@@ -57,20 +61,23 @@ class RssShuffleManagerReplicateServerGroupTest {
 
   @Test
   def runApplication_noRssReplica(): Unit = {
-    val conf = TestUtil.newSparkConfWithStandAloneRegistryServer(appId, rssTestCluster.getRegistryServerConnection)
+    val conf = TestUtil
+      .newSparkConfWithStandAloneRegistryServer(appId, rssTestCluster.getRegistryServerConnection)
     runWithSparkConf(conf)
   }
 
   @Test
   def runApplication_oneRssReplica(): Unit = {
-    val conf = TestUtil.newSparkConfWithStandAloneRegistryServer(appId, rssTestCluster.getRegistryServerConnection)
+    val conf = TestUtil
+      .newSparkConfWithStandAloneRegistryServer(appId, rssTestCluster.getRegistryServerConnection)
     conf.set("spark.shuffle.rss.replicas", "1")
     runWithSparkConf(conf)
   }
 
   @Test
   def runApplication_twoRssReplicas(): Unit = {
-    val conf = TestUtil.newSparkConfWithStandAloneRegistryServer(appId, rssTestCluster.getRegistryServerConnection)
+    val conf = TestUtil
+      .newSparkConfWithStandAloneRegistryServer(appId, rssTestCluster.getRegistryServerConnection)
     conf.set("spark.shuffle.rss.serverRatio", "1")
     conf.set("spark.shuffle.rss.replicas", "2")
     runWithSparkConf(conf)
@@ -78,44 +85,53 @@ class RssShuffleManagerReplicateServerGroupTest {
 
   @Test
   def runApplication_twoRssReplicas_shutDownFirstServerBeforeShuffleWrite(): Unit = {
-    val conf = TestUtil.newSparkConfWithStandAloneRegistryServer(appId, rssTestCluster.getRegistryServerConnection)
+    val conf = TestUtil
+      .newSparkConfWithStandAloneRegistryServer(appId, rssTestCluster.getRegistryServerConnection)
     conf.set("spark.shuffle.rss.serverRatio", "1")
     conf.set("spark.shuffle.rss.replicas", "2")
-    runWithSparkConf(conf, actionBeforeShuffleWrite = rssShuffleHandler => rssTestCluster.shutdownStreamServers(rssShuffleHandler.rssServers(0).serverId))
+    runWithSparkConf(conf, actionBeforeShuffleWrite = rssShuffleHandler => rssTestCluster
+      .shutdownStreamServers(rssShuffleHandler.rssServers(0).serverId))
   }
 
   @Test
   def runApplication_twoRssReplicas_shutDownFirstServerBeforeShuffleRead(): Unit = {
-    val conf = TestUtil.newSparkConfWithStandAloneRegistryServer(appId, rssTestCluster.getRegistryServerConnection)
+    val conf = TestUtil
+      .newSparkConfWithStandAloneRegistryServer(appId, rssTestCluster.getRegistryServerConnection)
     conf.set("spark.shuffle.rss.serverRatio", "1")
     conf.set("spark.shuffle.rss.replicas", "2")
-    runWithSparkConf(conf, actionBeforeShuffleRead = rssShuffleHandler => rssTestCluster.shutdownStreamServers(rssShuffleHandler.rssServers(0).serverId))
+    runWithSparkConf(conf, actionBeforeShuffleRead = rssShuffleHandler => rssTestCluster
+      .shutdownStreamServers(rssShuffleHandler.rssServers(0).serverId))
   }
 
   @Test(expectedExceptions = Array(classOf[RssNetworkException]))
   def runApplication_twoRssReplicas_shutDownAllServersBeforeShuffleWrite(): Unit = {
-    val conf = TestUtil.newSparkConfWithStandAloneRegistryServer(appId, rssTestCluster.getRegistryServerConnection)
+    val conf = TestUtil
+      .newSparkConfWithStandAloneRegistryServer(appId, rssTestCluster.getRegistryServerConnection)
     conf.set("spark.shuffle.rss.serverRatio", "1")
     conf.set("spark.shuffle.rss.replicas", "2")
     runWithSparkConf(conf, actionBeforeShuffleWrite = rssShuffleHandler => {
-      rssShuffleHandler.rssServers.foreach(server => rssTestCluster.shutdownStreamServers(server.serverId))
+      rssShuffleHandler.rssServers
+        .foreach(server => rssTestCluster.shutdownStreamServers(server.serverId))
     })
   }
 
   @Test(expectedExceptions = Array(classOf[FetchFailedException]))
   def runApplication_twoRssReplicas_shutDownAllServersBeforeShuffleRead(): Unit = {
-    val conf = TestUtil.newSparkConfWithStandAloneRegistryServer(appId, rssTestCluster.getRegistryServerConnection)
+    val conf = TestUtil
+      .newSparkConfWithStandAloneRegistryServer(appId, rssTestCluster.getRegistryServerConnection)
     conf.set("spark.shuffle.rss.serverRatio", "1")
     conf.set("spark.shuffle.rss.replicas", "2")
     conf.set("spark.shuffle.rss.networkTimeout", "2000")
     runWithSparkConf(conf, actionBeforeShuffleRead = rssShuffleHandler => {
-      rssShuffleHandler.rssServers.foreach(server => rssTestCluster.shutdownStreamServers(server.serverId))
+      rssShuffleHandler.rssServers
+        .foreach(server => rssTestCluster.shutdownStreamServers(server.serverId))
     })
   }
 
   @Test
   def runApplication_oneRssReplica_eightMinServerCount(): Unit = {
-    val conf = TestUtil.newSparkConfWithStandAloneRegistryServer(appId, rssTestCluster.getRegistryServerConnection)
+    val conf = TestUtil
+      .newSparkConfWithStandAloneRegistryServer(appId, rssTestCluster.getRegistryServerConnection)
     conf.set("spark.shuffle.rss.serverRatio", "1")
     conf.set("spark.shuffle.rss.replicas", "1")
     conf.set("spark.shuffle.rss.minServerCount", "8")
@@ -124,7 +140,8 @@ class RssShuffleManagerReplicateServerGroupTest {
 
   @Test
   def runApplication_twoRssReplicas_eightMinServerCount(): Unit = {
-    val conf = TestUtil.newSparkConfWithStandAloneRegistryServer(appId, rssTestCluster.getRegistryServerConnection)
+    val conf = TestUtil
+      .newSparkConfWithStandAloneRegistryServer(appId, rssTestCluster.getRegistryServerConnection)
     conf.set("spark.shuffle.rss.serverRatio", "1")
     conf.set("spark.shuffle.rss.replicas", "2")
     conf.set("spark.shuffle.rss.minServerCount", "8")
@@ -134,7 +151,7 @@ class RssShuffleManagerReplicateServerGroupTest {
   def runWithSparkConf(conf: SparkConf,
                        actionBeforeShuffleWrite: RssShuffleHandle[Int, Int, Int] => Unit = _ => Unit,
                        actionBeforeShuffleRead: RssShuffleHandle[Int, Int, Int] => Unit = _ => Unit): Unit = {
-    conf.getAll.foreach(t=>logger.info(s"Spark config: ${t._1}=${t._2}"))
+    conf.getAll.foreach(t => logger.info(s"Spark config: ${t._1}=${t._2}"))
     sc = new SparkContext(conf)
 
     val driverShuffleManager = new RssShuffleManager(conf)
@@ -146,14 +163,14 @@ class RssShuffleManagerReplicateServerGroupTest {
     val numPartitions = 2
 
     val rdd = sc.parallelize(1 to 100)
-      .map(t=>(t->t*2))
+      .map(t => (t -> t * 2))
       .partitionBy(new HashPartitioner(numPartitions))
     val shuffleDependency = new ShuffleDependency[Int, Int, Int](rdd, rdd.partitioner.get)
 
-    val shuffleHandle = driverShuffleManager.registerShuffle(shuffleId, numMaps, shuffleDependency)
+    val shuffleHandle = driverShuffleManager.registerShuffle(shuffleId, shuffleDependency)
 
     val mapOutputTrackerMaster = SparkEnv.get.mapOutputTracker.asInstanceOf[MapOutputTrackerMaster]
-    mapOutputTrackerMaster.registerShuffle(shuffleId, numMaps)
+    mapOutputTrackerMaster.registerShuffle(shuffleId, numMaps, numPartitions)
 
     // Spark creates different ShuffleManager instances in driver and executor, thus we create
     // another instance to simulate the situation inside executor
@@ -167,8 +184,10 @@ class RssShuffleManagerReplicateServerGroupTest {
       logger.info(s"Running shuffle writer with map id $mapId")
       val taskAttemptId = mapId + 1000
       val mapTaskContext = new MockTaskContext(shuffleId, mapId, taskAttemptId)
-      val shuffleWriter = executorShuffleManager.getWriter[Int, Int]( shuffleHandle, mapId, mapTaskContext )
-      val records = (1 to numValuesInMap).map(t => (mapId*10000+t) -> (mapId*10000+t*2)).toList
+      val shuffleWriter = executorShuffleManager
+        .getWriter[Int, Int](shuffleHandle, mapId, mapTaskContext, new ShuffleWriteMetrics())
+      val records = (1 to numValuesInMap).map(t => (mapId * 10000 + t) -> (mapId * 10000 + t * 2))
+        .toList
       shuffleWriter.write(records.iterator)
       val mapStatus = shuffleWriter.stop(true).get
       mapOutputTrackerMaster.registerMapOutput(shuffleId, mapId, mapStatus)
@@ -181,8 +200,10 @@ class RssShuffleManagerReplicateServerGroupTest {
       logger.info(s"Stopping shuffle writer with map id $mapId")
       val taskAttemptId = mapId + 2000
       val mapTaskContext = new MockTaskContext(shuffleId, mapId, taskAttemptId)
-      val shuffleWriter = executorShuffleManager.getWriter[Int, Int]( shuffleHandle, mapId, mapTaskContext )
-      val records = (1 to numValuesInMap).map(t => (mapId*10000+t) -> (mapId*10000+t*2)).toList
+      val shuffleWriter = executorShuffleManager
+        .getWriter[Int, Int](shuffleHandle, mapId, mapTaskContext, new ShuffleWriteMetrics())
+      val records = (1 to numValuesInMap).map(t => (mapId * 10000 + t) -> (mapId * 10000 + t * 2))
+        .toList
       allWrittenRecords ++= records
       shuffleWriter.write(records.iterator)
       val mapStatus = shuffleWriter.stop(true).get
@@ -200,9 +221,11 @@ class RssShuffleManagerReplicateServerGroupTest {
       val startPartition = 0
       val endPartition = 0
       logger.info(s"Running shuffle reader with partition [$startPartition, $endPartition)")
-      val reduceTaskContext = new MockTaskContext( shuffleId, startPartition )
-      val shuffleReader = executorShuffleManager.getReader( shuffleHandle, startPartition, endPartition, reduceTaskContext )
-      val readRecords = shuffleReader.read().map(t=>t.asInstanceOf[(Int, Int)]).toList.sorted
+      val reduceTaskContext = new MockTaskContext(shuffleId, startPartition)
+      val shuffleReader = executorShuffleManager
+        .getReader(shuffleHandle, startPartition, endPartition, reduceTaskContext,
+          new TempShuffleReadMetrics())
+      val readRecords = shuffleReader.read().map(t => t.asInstanceOf[(Int, Int)]).toList.sorted
       assert(readRecords.size === numMaps * numValuesInMap / numPartitions)
       assert(readRecords === partition0Records)
     }
@@ -210,9 +233,11 @@ class RssShuffleManagerReplicateServerGroupTest {
       val startPartition = 0
       val endPartition = 1
       logger.info(s"Running shuffle reader with partition [$startPartition, $endPartition)")
-      val reduceTaskContext = new MockTaskContext( shuffleId, startPartition )
-      val shuffleReader = executorShuffleManager.getReader( shuffleHandle, startPartition, endPartition, reduceTaskContext )
-      val readRecords = shuffleReader.read().map(t=>t.asInstanceOf[(Int, Int)]).toList.sorted
+      val reduceTaskContext = new MockTaskContext(shuffleId, startPartition)
+      val shuffleReader = executorShuffleManager
+        .getReader(shuffleHandle, startPartition, endPartition, reduceTaskContext,
+          new TempShuffleReadMetrics())
+      val readRecords = shuffleReader.read().map(t => t.asInstanceOf[(Int, Int)]).toList.sorted
       assert(readRecords.size === numMaps * numValuesInMap / numPartitions)
       assert(readRecords === partition0Records)
     }
@@ -220,9 +245,11 @@ class RssShuffleManagerReplicateServerGroupTest {
       val startPartition = 1
       val endPartition = 2
       logger.info(s"Running shuffle reader with partition [$startPartition, $endPartition)")
-      val reduceTaskContext = new MockTaskContext( shuffleId, startPartition )
-      val shuffleReader = executorShuffleManager.getReader( shuffleHandle, startPartition, endPartition, reduceTaskContext )
-      val readRecords = shuffleReader.read().map(t=>t.asInstanceOf[(Int, Int)]).toList.sorted
+      val reduceTaskContext = new MockTaskContext(shuffleId, startPartition)
+      val shuffleReader = executorShuffleManager
+        .getReader(shuffleHandle, startPartition, endPartition, reduceTaskContext,
+          new TempShuffleReadMetrics())
+      val readRecords = shuffleReader.read().map(t => t.asInstanceOf[(Int, Int)]).toList.sorted
       assert(readRecords.size === numMaps * numValuesInMap / numPartitions)
       assert(readRecords === partition1Records)
     }
@@ -230,9 +257,11 @@ class RssShuffleManagerReplicateServerGroupTest {
       val startPartition = 0
       val endPartition = 2
       logger.info(s"Running shuffle reader with partition [$startPartition, $endPartition)")
-      val reduceTaskContext = new MockTaskContext( shuffleId, startPartition )
-      val shuffleReader = executorShuffleManager.getReader( shuffleHandle, startPartition, endPartition, reduceTaskContext )
-      val readRecords = shuffleReader.read().map(t=>t.asInstanceOf[(Int, Int)]).toList.sorted
+      val reduceTaskContext = new MockTaskContext(shuffleId, startPartition)
+      val shuffleReader = executorShuffleManager
+        .getReader(shuffleHandle, startPartition, endPartition, reduceTaskContext,
+          new TempShuffleReadMetrics())
+      val readRecords = shuffleReader.read().map(t => t.asInstanceOf[(Int, Int)]).toList.sorted
       assert(readRecords.size === numMaps * numValuesInMap)
       assert(readRecords === allWrittenRecords.sorted)
     }

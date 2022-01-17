@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2020 Uber Technologies, Inc.
+ * This file is copied from Uber Remote Shuffle Service
+ * (https://github.com/uber/RemoteShuffleService) and modified.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,27 +20,27 @@ package com.uber.rss.handlers;
  * @param <T>
  */
 public class ResponseStatusAndMessage<T> {
-    private byte status;
-    private T message;
+  private byte status;
+  private T message;
 
-    public ResponseStatusAndMessage(byte status, T message) {
-        this.status = status;
-        this.message = message;
-    }
+  public ResponseStatusAndMessage(byte status, T message) {
+    this.status = status;
+    this.message = message;
+  }
 
-    public byte getStatus() {
-        return status;
-    }
+  public byte getStatus() {
+    return status;
+  }
 
-    public T getMessage() {
-        return message;
-    }
+  public T getMessage() {
+    return message;
+  }
 
-    @Override
-    public String toString() {
-        return "ResponseStatusAndMessage{" +
-                "status=" + status +
-                ", message=" + message +
-                '}';
-    }
+  @Override
+  public String toString() {
+    return "ResponseStatusAndMessage{" +
+        "status=" + status +
+        ", message=" + message +
+        '}';
+  }
 }

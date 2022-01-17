@@ -1,10 +1,13 @@
 /*
- * Copyright (c) 2020 Uber Technologies, Inc.
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -23,29 +26,29 @@ import java.util.Map;
 
 public class ClientConnectMetrics extends MetricGroup<ClientConnectMetricsKey> {
 
-    private final Timer socketConnectLatency;
-    private final Gauge socketConnectRetries;
+  private final Timer socketConnectLatency;
+  private final Gauge socketConnectRetries;
 
-    public ClientConnectMetrics(ClientConnectMetricsKey key) {
-        super(key);
+  public ClientConnectMetrics(ClientConnectMetricsKey key) {
+    super(key);
 
-        this.socketConnectLatency = scope.timer("socketConnectLatency");
-        this.socketConnectRetries = scope.gauge("socketConnectRetries");
-    }
+    this.socketConnectLatency = scope.timer("socketConnectLatency");
+    this.socketConnectRetries = scope.gauge("socketConnectRetries");
+  }
 
-    public Timer getSocketConnectLatency() {
-        return socketConnectLatency;
-    }
+  public Timer getSocketConnectLatency() {
+    return socketConnectLatency;
+  }
 
-    public Gauge getSocketConnectRetries() {
-        return socketConnectRetries;
-    }
+  public Gauge getSocketConnectRetries() {
+    return socketConnectRetries;
+  }
 
-    @Override
-    protected Scope createScope(ClientConnectMetricsKey key) {
-        Map<String, String> tags = new HashMap<>();
-        tags.put(M3Stats.TAG_NAME_SOURCE, key.getSource());
-        tags.put(M3Stats.TAG_NAME_REMOTE, key.getRemote());
-        return M3Stats.createSubScope(tags);
-    }
+  @Override
+  protected Scope createScope(ClientConnectMetricsKey key) {
+    Map<String, String> tags = new HashMap<>();
+    tags.put(M3Stats.TAG_NAME_SOURCE, key.getSource());
+    tags.put(M3Stats.TAG_NAME_REMOTE, key.getRemote());
+    return M3Stats.createSubScope(tags);
+  }
 }

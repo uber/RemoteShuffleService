@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2020 Uber Technologies, Inc.
+ * This file is copied from Uber Remote Shuffle Service
+ * (https://github.com/uber/RemoteShuffleService) and modified.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,8 +24,10 @@ public class ReadClientDataOptions {
   private final long dataAvailablePollInterval;
   private final long dataAvailableWaitTime;
 
-  public ReadClientDataOptions(Collection<Long> fetchTaskAttemptIds, long dataAvailablePollInterval, long dataAvailableWaitTime) {
-    this.fetchTaskAttemptIds = Collections.unmodifiableCollection(new ArrayList<>(fetchTaskAttemptIds));
+  public ReadClientDataOptions(Collection<Long> fetchTaskAttemptIds,
+                               long dataAvailablePollInterval, long dataAvailableWaitTime) {
+    this.fetchTaskAttemptIds =
+        Collections.unmodifiableCollection(new ArrayList<>(fetchTaskAttemptIds));
     this.dataAvailablePollInterval = dataAvailablePollInterval;
     this.dataAvailableWaitTime = dataAvailableWaitTime;
   }

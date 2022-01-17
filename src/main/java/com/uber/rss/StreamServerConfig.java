@@ -1,10 +1,13 @@
 /*
- * Copyright (c) 2020 Uber Technologies, Inc.
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -15,11 +18,9 @@
 package com.uber.rss;
 
 import com.uber.rss.clients.ClientConstants;
-import com.uber.rss.common.Compression;
 import com.uber.rss.execution.ShuffleExecutor;
 import com.uber.rss.handlers.UploadChannelManager;
 import com.uber.rss.metadata.ServiceRegistry;
-import com.uber.rss.metadata.ZooKeeperServiceRegistry;
 import com.uber.rss.storage.ShuffleFileStorage;
 import com.uber.rss.storage.ShuffleStorage;
 import org.apache.commons.lang3.StringUtils;
@@ -27,7 +28,6 @@ import org.apache.hadoop.conf.Configuration;
 
 import java.io.IOException;
 import java.nio.file.Files;
-import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
 
 public class StreamServerConfig {
@@ -72,10 +72,6 @@ public class StreamServerConfig {
   private String dataCenter;
 
   private String cluster = ServiceRegistry.DEFAULT_TEST_CLUSTER;
-
-  private String zooKeeperServers = ZooKeeperServiceRegistry.getDefaultServers();
-
-  private String zooKeeperServersBackup = null;
 
   private String registryServer = null;
 
@@ -144,10 +140,6 @@ public class StreamServerConfig {
         serverConfig.dataCenter = args[i++];
       } else if (argName.equalsIgnoreCase("-cluster")) {
         serverConfig.cluster = args[i++];
-      } else if (argName.equalsIgnoreCase("-zooKeeperServers")) {
-        serverConfig.zooKeeperServers = args[i++];
-      } else if (argName.equalsIgnoreCase("-zooKeeperServersBackup")) {
-        serverConfig.zooKeeperServersBackup = args[i++];
       } else if (argName.equalsIgnoreCase("-registryServer")) {
         serverConfig.registryServer = args[i++];
       } else {
@@ -156,7 +148,8 @@ public class StreamServerConfig {
     }
 
     if (!ServiceRegistry.VALID_TYPES.contains(serverConfig.serviceRegistryType)) {
-      throw new IllegalArgumentException("Unsupported value for -serviceRegistry: " + serverConfig.serviceRegistryType);
+      throw new IllegalArgumentException(
+          "Unsupported value for -serviceRegistry: " + serverConfig.serviceRegistryType);
     }
 
     if (serverConfig.rootDir.isEmpty()) {
@@ -312,22 +305,6 @@ public class StreamServerConfig {
     return StringUtils.isBlank(cluster) ? ServiceRegistry.DEFAULT_TEST_CLUSTER : cluster;
   }
 
-  public String getZooKeeperServers() {
-    return zooKeeperServers;
-  }
-
-  public void setZooKeeperServers(String zooKeeperServers) {
-    this.zooKeeperServers = zooKeeperServers;
-  }
-
-  public String getZooKeeperServersBackup() {
-    return zooKeeperServersBackup;
-  }
-
-  public void setZooKeeperServersBackup(String value) {
-    this.zooKeeperServersBackup = zooKeeperServersBackup;
-  }
-
   public String getRegistryServer() {
     return registryServer;
   }
@@ -380,7 +357,6 @@ public class StreamServerConfig {
         ", serviceRegistry='" + serviceRegistryType + '\'' +
         ", dataCenter='" + dataCenter + '\'' +
         ", cluster='" + cluster + '\'' +
-        ", zooKeeperServers='" + zooKeeperServers + '\'' +
         ", maxConnections=" + maxConnections +
         ", idleTimeoutMillis=" + idleTimeoutMillis +
         ", keytab='" + keytab + '\'' +

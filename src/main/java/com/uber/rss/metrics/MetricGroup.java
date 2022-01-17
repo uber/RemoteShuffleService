@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2020 Uber Technologies, Inc.
+ * This file is copied from Uber Remote Shuffle Service
+ * (https://github.com/uber/RemoteShuffleService) and modified.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,19 +17,19 @@ package com.uber.rss.metrics;
 
 import com.uber.m3.tally.Scope;
 
-public abstract class MetricGroup <K> implements AutoCloseable {
-    protected final K key;
-    protected final Scope scope;
+public abstract class MetricGroup<K> implements AutoCloseable {
+  protected final K key;
+  protected final Scope scope;
 
-    public MetricGroup(K key) {
-        this.key = key;
-        this.scope = createScope(key);
-    }
+  public MetricGroup(K key) {
+    this.key = key;
+    this.scope = createScope(key);
+  }
 
-    abstract protected Scope createScope(K key);
-    
-    @Override
-    public void close() {
-        M3Stats.decreaseNumM3Scopes();
-    }
+  abstract protected Scope createScope(K key);
+
+  @Override
+  public void close() {
+    M3Stats.decreaseNumM3Scopes();
+  }
 }

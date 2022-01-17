@@ -1,10 +1,13 @@
 /*
- * Copyright (c) 2020 Uber Technologies, Inc.
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -17,7 +20,6 @@ package com.uber.rss.clients;
 import com.uber.rss.common.ServerDetail;
 import com.uber.rss.common.ServerReplicationGroup;
 import com.uber.rss.exceptions.RssInvalidStateException;
-import com.uber.rss.exceptions.RssException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -30,27 +32,32 @@ public class ServerReplicationGroupUtil {
 
   /**
    * Create a list of replication groups from given servers
+   *
    * @param servers
    * @param numReplicas
    * @return
    */
-  public static List<ServerReplicationGroup> createReplicationGroups(Collection<ServerDetail> servers, int numReplicas) {
+  public static List<ServerReplicationGroup> createReplicationGroups(
+      Collection<ServerDetail> servers, int numReplicas) {
     if (servers.isEmpty()) {
       throw new IllegalArgumentException("Invalid argument: servers is empty");
     }
 
     if (numReplicas <= 0) {
-      throw new IllegalArgumentException(String.format("Invalid argument: numReplicas: %s", numReplicas));
+      throw new IllegalArgumentException(
+          String.format("Invalid argument: numReplicas: %s", numReplicas));
     }
 
     if (servers.size() < numReplicas) {
-      throw new RssInvalidStateException(String.format("Lack of enough servers (%s) to support %s replicas", servers.size(), numReplicas));
+      throw new RssInvalidStateException(String
+          .format("Lack of enough servers (%s) to support %s replicas", servers.size(),
+              numReplicas));
     }
 
     List<ServerDetail> serverList = new ArrayList<>(servers);
 
     List<ServerReplicationGroup> result = new ArrayList<>(servers.size());
-    for (int i = 0; i < servers.size(); i+=numReplicas) {
+    for (int i = 0; i < servers.size(); i += numReplicas) {
       // do not use remaining servers if they are not enough for the replicas
       if (servers.size() - i < numReplicas) {
         continue;
@@ -73,9 +80,11 @@ public class ServerReplicationGroupUtil {
    * @param partitionFanout
    * @return
    */
-  public static List<ServerReplicationGroup> createReplicationGroupsForPartition(Collection<ServerDetail> servers, int numReplicas, int partition, int partitionFanout) {
+  public static List<ServerReplicationGroup> createReplicationGroupsForPartition(
+      Collection<ServerDetail> servers, int numReplicas, int partition, int partitionFanout) {
     List<ServerReplicationGroup> result = new ArrayList<>();
-    List<ServerReplicationGroup> serverReplicationGroups = createReplicationGroups(servers, numReplicas);
+    List<ServerReplicationGroup> serverReplicationGroups =
+        createReplicationGroups(servers, numReplicas);
     if (partitionFanout > serverReplicationGroups.size()) {
       throw new RssInvalidStateException(String.format(
           "Cannot get server replication groups for partition %s, number of servers: %s, replicas: %s, partition fanout: %s",

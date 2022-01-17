@@ -1,10 +1,13 @@
 /*
- * Copyright (c) 2020 Uber Technologies, Inc.
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -40,9 +43,16 @@ public class ShuffleDataSocketReadClient implements AutoCloseable, SingleServerR
 
   private ReadClientMetrics metrics = null;
 
-  protected ShuffleDataSocketReadClient(String host, int port, int timeoutMillis, String user, AppShufflePartitionId appShufflePartitionId, Collection<Long> fetchTaskAttemptIds, long dataAvailablePollInterval, long dataAvailableWaitTime) {
-    this.dataBlockSocketReadClient = new DataBlockSocketReadClient(host, port, timeoutMillis, user, appShufflePartitionId, fetchTaskAttemptIds, dataAvailablePollInterval, dataAvailableWaitTime);
-    this.metrics = new ReadClientMetrics(new ReadClientMetricsKey(this.getClass().getSimpleName(), user));
+  protected ShuffleDataSocketReadClient(String host, int port, int timeoutMillis, String user,
+                                        AppShufflePartitionId appShufflePartitionId,
+                                        Collection<Long> fetchTaskAttemptIds,
+                                        long dataAvailablePollInterval,
+                                        long dataAvailableWaitTime) {
+    this.dataBlockSocketReadClient =
+        new DataBlockSocketReadClient(host, port, timeoutMillis, user, appShufflePartitionId,
+            fetchTaskAttemptIds, dataAvailablePollInterval, dataAvailableWaitTime);
+    this.metrics =
+        new ReadClientMetrics(new ReadClientMetricsKey(this.getClass().getSimpleName(), user));
   }
 
   @Override
@@ -51,8 +61,8 @@ public class ShuffleDataSocketReadClient implements AutoCloseable, SingleServerR
       ConnectDownloadResponse connectDownloadResponse = dataBlockSocketReadClient.connect();
       DownloadServerVerboseInfo downloadServerVerboseInfo = new DownloadServerVerboseInfo();
       downloadServerVerboseInfo.setId(connectDownloadResponse.getServerId());
-      downloadServerVerboseInfo.setRunningVersion(connectDownloadResponse.getRunningVersion());
-      downloadServerVerboseInfo.setMapTaskCommitStatus(connectDownloadResponse.getMapTaskCommitStatus());
+      downloadServerVerboseInfo
+          .setMapTaskCommitStatus(connectDownloadResponse.getMapTaskCommitStatus());
       return downloadServerVerboseInfo;
     } catch (RuntimeException ex) {
       logger.warn(String.format("Failed to connect %s", this), ex);

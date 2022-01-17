@@ -1,10 +1,13 @@
 /*
- * Copyright (c) 2020 Uber Technologies, Inc.
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -21,47 +24,47 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class GetServersResponseMessage extends ServerResponseMessage {
-    private List<ServerDetail> servers;
+  private List<ServerDetail> servers;
 
-    public GetServersResponseMessage(List<ServerDetail> servers) {
-        this.servers = servers;
-    }
+  public GetServersResponseMessage(List<ServerDetail> servers) {
+    this.servers = servers;
+  }
 
-    @Override
-    public int getMessageType() {
-        return MessageConstants.MESSAGE_GetServersResponse;
-    }
+  @Override
+  public int getMessageType() {
+    return MessageConstants.MESSAGE_GetServersResponse;
+  }
 
-    @Override
-    public void serialize(ByteBuf buf) {
-        if (servers != null) {
-            buf.writeInt(servers.size());
-            for (ServerDetail s : servers) {
-                s.serialize(buf);
-            }
-        } else {
-            buf.writeInt(0);
-        }
+  @Override
+  public void serialize(ByteBuf buf) {
+    if (servers != null) {
+      buf.writeInt(servers.size());
+      for (ServerDetail s : servers) {
+        s.serialize(buf);
+      }
+    } else {
+      buf.writeInt(0);
     }
+  }
 
-    public static GetServersResponseMessage deserialize(ByteBuf buf) {
-        int count = buf.readInt();
-        List<ServerDetail> servers = new ArrayList<>();
-        for (int i = 0; i < count; i++) {
-            ServerDetail serverDetail = ServerDetail.deserialize(buf);
-            servers.add(serverDetail);
-        }
-        return new GetServersResponseMessage(servers);
+  public static GetServersResponseMessage deserialize(ByteBuf buf) {
+    int count = buf.readInt();
+    List<ServerDetail> servers = new ArrayList<>();
+    for (int i = 0; i < count; i++) {
+      ServerDetail serverDetail = ServerDetail.deserialize(buf);
+      servers.add(serverDetail);
     }
+    return new GetServersResponseMessage(servers);
+  }
 
-    public List<ServerDetail> getServers() {
-        return servers;
-    }
+  public List<ServerDetail> getServers() {
+    return servers;
+  }
 
-    @Override
-    public String toString() {
-        return "GetServersResponseMessage{" +
-                "servers=" + servers +
-                '}';
-    }
+  @Override
+  public String toString() {
+    return "GetServersResponseMessage{" +
+        "servers=" + servers +
+        '}';
+  }
 }

@@ -1,10 +1,13 @@
 /*
- * Copyright (c) 2020 Uber Technologies, Inc.
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -19,45 +22,45 @@ import java.nio.channels.CompletionHandler;
 import java.util.function.Consumer;
 
 public class AsyncSocketCompletionHandler implements CompletionHandler<Integer, AsyncSocketState> {
-    private Consumer<Throwable> exceptionCallback;
-    
-    public AsyncSocketCompletionHandler(Consumer<Throwable> exceptionCallback) {
-        this.exceptionCallback = exceptionCallback;
+  private Consumer<Throwable> exceptionCallback;
+
+  public AsyncSocketCompletionHandler(Consumer<Throwable> exceptionCallback) {
+    this.exceptionCallback = exceptionCallback;
+  }
+
+  @Override
+  public void completed(Integer result, AsyncSocketState attachment) {
+    ByteBuffer byteBuffer;
+
+    synchronized (attachment) {
+      byteBuffer = attachment.peekBuffer();
+      if (byteBuffer == null) {
+        return;
+      }
     }
-    
-    @Override
-    public void completed(Integer result, AsyncSocketState attachment) {
-        ByteBuffer byteBuffer;
-        
-        synchronized (attachment) {
-            byteBuffer = attachment.peekBuffer();
-            if (byteBuffer == null) {
-                return;
-            }
+
+    if (byteBuffer.remaining() == 0) {
+      synchronized (attachment) {
+        ByteBuffer removed = attachment.removeBuffer();
+        if (removed != byteBuffer) {
+          throw new RuntimeException("Removed buffer not same as expected, something is wrong!");
         }
-        
-        if (byteBuffer.remaining() == 0) {
-            synchronized (attachment) {
-                ByteBuffer removed = attachment.removeBuffer();
-                if (removed != byteBuffer) {
-                    throw new RuntimeException("Removed buffer not same as expected, something is wrong!");
-                }
 
-                byteBuffer = attachment.peekBuffer();
-                if (byteBuffer == null) {
-                    return;
-                }
-            }
-
-            attachment.getSocket().write(byteBuffer, attachment, this);
-            return;
+        byteBuffer = attachment.peekBuffer();
+        if (byteBuffer == null) {
+          return;
         }
-        
-        attachment.getSocket().write(byteBuffer, attachment, this);
+      }
+
+      attachment.getSocket().write(byteBuffer, attachment, this);
+      return;
     }
 
-    @Override
-    public void failed(Throwable exc, AsyncSocketState attachment) {
-        this.exceptionCallback.accept(exc);
-    }
+    attachment.getSocket().write(byteBuffer, attachment, this);
+  }
+
+  @Override
+  public void failed(Throwable exc, AsyncSocketState attachment) {
+    this.exceptionCallback.accept(exc);
+  }
 }

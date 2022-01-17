@@ -22,12 +22,13 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <java.version>1.8</java.version>
-        <maven.compiler.source>1.8</maven.compiler.source>
-        <maven.compiler.target>1.8</maven.compiler.target>
+        <maven.compiler.source>${java.version}</maven.compiler.source>
+        <maven.compiler.target>${java.version}</maven.compiler.target>
         <hadoop.version>2.7.1</hadoop.version>
-        <spark.version>2.4.3</spark.version>
-        <scala.version>2.11.8</scala.version>
-        <scala.compat.version>2.11</scala.compat.version>
+        <spark.version>3.2.0</spark.version>
+        <scala.version>2.12.10</scala.version>
+        <commons.httpclient.version>4.5.13</commons.httpclient.version>
+        <scala.compat.version>2.12</scala.compat.version>
         <jacoco.version>0.8.2</jacoco.version>
         <guava.version>15.0</guava.version>
         <test.runner.version>2.22.1</test.runner.version>
@@ -89,6 +90,18 @@
             </exclusions>
         </dependency>
         <dependency>
+            <groupId>org.apache.httpcomponents</groupId>
+            <artifactId>httpclient</artifactId>
+            <version>${commons.httpclient.version}</version>
+            <scope>${dependency.scope}</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-log4j12</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
             <groupId>com.uber.m3</groupId>
             <artifactId>tally-core</artifactId>
             <version>0.2.1</version>
@@ -133,6 +146,12 @@
             <scope>test</scope>
         </dependency>
         <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>4.13.1</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>org.assertj</groupId>
             <artifactId>assertj-core</artifactId>
             <version>3.10.0</version>
@@ -147,7 +166,7 @@
         <dependency>
             <groupId>org.scalatest</groupId>
             <artifactId>scalatest_${scala.compat.version}</artifactId>
-            <version>2.2.4</version>
+            <version>3.2.10</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -189,7 +208,7 @@
                         <name>listener</name>
                         <value>org.apache.spark.shuffle.LogListener</value>
                     </property>
-                    <argLine>@{argLine} -Drss.scopeBuilder=com.uber.rss.metrics.M3DummyScopeBuilder</argLine>
+                    <argLine>@{argLine} -Xmx4096m -Drss.scopeBuilder=com.uber.rss.metrics.M3DummyScopeBuilder</argLine>
                     <trimStackTrace>false</trimStackTrace>
                     <enableAssertions>true</enableAssertions>
                     <excludes>
@@ -296,7 +315,7 @@
             <plugin>
                 <groupId>net.alchim31.maven</groupId>
                 <artifactId>scala-maven-plugin</artifactId>
-                <version>3.2.2</version>
+                <version>4.3.0</version>
                 <executions>
                     <execution>
                         <id>scala-compile</id>

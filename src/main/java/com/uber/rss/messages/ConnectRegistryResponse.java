@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2020 Uber Technologies, Inc.
+ * This file is copied from Uber Remote Shuffle Service
+ * (https://github.com/uber/RemoteShuffleService) and modified.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,35 +19,35 @@ import com.uber.rss.util.ByteBufUtils;
 import io.netty.buffer.ByteBuf;
 
 public class ConnectRegistryResponse extends ServerResponseMessage {
-    private String serverId;
+  private String serverId;
 
-    public ConnectRegistryResponse(String serverId) {
-        this.serverId = serverId;
-    }
+  public ConnectRegistryResponse(String serverId) {
+    this.serverId = serverId;
+  }
 
-    @Override
-    public int getMessageType() {
-        return MessageConstants.MESSAGE_ConnectRegistryResponse;
-    }
+  @Override
+  public int getMessageType() {
+    return MessageConstants.MESSAGE_ConnectRegistryResponse;
+  }
 
-    @Override
-    public void serialize(ByteBuf buf) {
-        ByteBufUtils.writeLengthAndString(buf, serverId);
-    }
+  @Override
+  public void serialize(ByteBuf buf) {
+    ByteBufUtils.writeLengthAndString(buf, serverId);
+  }
 
-    public static ConnectRegistryResponse deserialize(ByteBuf buf) {
-        String serverId = ByteBufUtils.readLengthAndString(buf);
-        return new ConnectRegistryResponse(serverId);
-    }
+  public static ConnectRegistryResponse deserialize(ByteBuf buf) {
+    String serverId = ByteBufUtils.readLengthAndString(buf);
+    return new ConnectRegistryResponse(serverId);
+  }
 
-    public String getServerId() {
-        return serverId;
-    }
+  public String getServerId() {
+    return serverId;
+  }
 
-    @Override
-    public String toString() {
-        return "ConnectRegistryResponse{" +
-                "serverId='" + serverId + '\'' +
-                '}';
-    }
+  @Override
+  public String toString() {
+    return "ConnectRegistryResponse{" +
+        "serverId='" + serverId + '\'' +
+        '}';
+  }
 }

@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2020 Uber Technologies, Inc.
+ * This file is copied from Uber Remote Shuffle Service
+ * (https://github.com/uber/RemoteShuffleService) and modified.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,9 +23,9 @@ public class TestConstants {
   public static final int DATA_AVAILABLE_POLL_INTERVAL = 10;
   public static final int DATA_AVAILABLE_TIMEOUT = 30000;
 
-  public static final int COMPRESSION_BUFFER_SIZE = 64*1024;
+  public static final int COMPRESSION_BUFFER_SIZE = 64 * 1024;
 
-  public static final ShuffleWriteConfig SHUFFLE_WRITE_CONFIG = new ShuffleWriteConfig((short)3);
+  public static final ShuffleWriteConfig SHUFFLE_WRITE_CONFIG = new ShuffleWriteConfig((short) 3);
 
   public static final long CONNECTION_IDLE_TIMEOUT_MILLIS = 30 * 1000;
 }

@@ -1,10 +1,13 @@
 /*
- * Copyright (c) 2020 Uber Technologies, Inc.
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -15,24 +18,18 @@
 package com.uber.rss.execution;
 
 import com.uber.rss.clients.ShuffleWriteConfig;
-import com.uber.rss.common.AppMapId;
-import com.uber.rss.common.FilePathAndLength;
-import com.uber.rss.common.MapTaskCommitStatus;
-import com.uber.rss.common.PartitionFilePathAndLength;
-import com.uber.rss.exceptions.RssFileCorruptedException;
+import com.uber.rss.common.*;
 import com.uber.rss.messages.ShuffleStageStatus;
 import com.uber.rss.storage.ShuffleFileUtils;
 import com.uber.rss.storage.ShuffleStorage;
-import com.uber.rss.common.AppShuffleId;
-import com.uber.rss.common.AppShufflePartitionId;
-import com.uber.rss.common.AppTaskAttemptId;
+import com.uber.rss.common.*;
+import com.uber.rss.exceptions.RssFileCorruptedException;
 import com.uber.rss.exceptions.RssInvalidDataException;
 import com.uber.rss.exceptions.RssInvalidStateException;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -79,7 +76,8 @@ public class ExecutorShuffleStageState {
    * @param appConfig shuffle write config
    * @param fileStartIndex start index for file name suffix
    */
-  public ExecutorShuffleStageState(AppShuffleId appShuffleId, ShuffleWriteConfig appConfig, int fileStartIndex) {
+  public ExecutorShuffleStageState(AppShuffleId appShuffleId, ShuffleWriteConfig appConfig,
+                                   int fileStartIndex) {
     this.appShuffleId = appShuffleId;
     this.appConfig = appConfig;
     this.fileStartIndex = fileStartIndex;
@@ -121,8 +119,9 @@ public class ExecutorShuffleStageState {
     this.numPartitions = numPartitions;
   }
 
-  public synchronized void addFinalizedFiles(Collection<PartitionFilePathAndLength> finalizedFiles) {
-    for (PartitionFilePathAndLength entry: finalizedFiles) {
+  public synchronized void addFinalizedFiles(
+      Collection<PartitionFilePathAndLength> finalizedFiles) {
+    for (PartitionFilePathAndLength entry : finalizedFiles) {
       Map<String, Long> map = this.finalizedFiles.get(entry.getPartition());
       if (map == null) {
         map = new HashMap<>();
@@ -146,7 +145,8 @@ public class ExecutorShuffleStageState {
     return getTaskState(appTaskAttemptId.getTaskAttemptId()).isCommitted();
   }
 
-  public synchronized ShufflePartitionWriter getOrCreateWriter(int partition, String rootDir, ShuffleStorage storage) {
+  public synchronized ShufflePartitionWriter getOrCreateWriter(int partition, String rootDir,
+                                                               ShuffleStorage storage) {
     if (partition < 0) {
       throw new RssInvalidDataException("Invalid partition: " + partition);
     }
@@ -172,13 +172,14 @@ public class ExecutorShuffleStageState {
   }
 
   public synchronized void closeWriters() {
-    for (ShufflePartitionWriter writer: writers.values()) {
+    for (ShufflePartitionWriter writer : writers.values()) {
       writer.close();
     }
   }
 
   /**
    * Get persisted bytes for the given partition
+   *
    * @return list of files and their length
    */
   public synchronized List<FilePathAndLength> getPersistedBytesSnapshot(int partition) {
@@ -186,7 +187,7 @@ public class ExecutorShuffleStageState {
 
     Map<String, Long> map = finalizedFiles.get(partition);
     if (map != null) {
-      for (Map.Entry<String, Long> entry: map.entrySet()) {
+      for (Map.Entry<String, Long> entry : map.entrySet()) {
         result.add(new FilePathAndLength(entry.getKey(), entry.getValue()));
       }
     }
@@ -206,25 +207,28 @@ public class ExecutorShuffleStageState {
 
   /**
    * Get persisted bytes for all partitions
+   *
    * @return list of partition files and their length
    */
   public synchronized List<PartitionFilePathAndLength> getPersistedBytesSnapshots() {
     List<PartitionFilePathAndLength> result = new ArrayList<>();
 
-    for (Map.Entry<Integer, Map<String, Long>> finalizedFileEntry: finalizedFiles.entrySet()) {
+    for (Map.Entry<Integer, Map<String, Long>> finalizedFileEntry : finalizedFiles.entrySet()) {
       int partition = finalizedFileEntry.getKey();
       Map<String, Long> files = finalizedFileEntry.getValue();
-      for (Map.Entry<String, Long> fileEntry: files.entrySet()) {
-        result.add(new PartitionFilePathAndLength(partition, fileEntry.getKey(), fileEntry.getValue()));
+      for (Map.Entry<String, Long> fileEntry : files.entrySet()) {
+        result.add(
+            new PartitionFilePathAndLength(partition, fileEntry.getKey(), fileEntry.getValue()));
       }
     }
 
-    for (Map.Entry<Integer, ShufflePartitionWriter> entry: writers.entrySet()) {
+    for (Map.Entry<Integer, ShufflePartitionWriter> entry : writers.entrySet()) {
       Integer partition = entry.getKey();
       ShufflePartitionWriter writer = entry.getValue();
       List<FilePathAndLength> list = writer.getPersistedBytesSnapshot();
-      for (FilePathAndLength filePathAndLength: list) {
-        result.add(new PartitionFilePathAndLength(partition, filePathAndLength.getPath(), filePathAndLength.getLength()));
+      for (FilePathAndLength filePathAndLength : list) {
+        result.add(new PartitionFilePathAndLength(partition, filePathAndLength.getPath(),
+            filePathAndLength.getLength()));
       }
     }
 
@@ -240,7 +244,7 @@ public class ExecutorShuffleStageState {
    */
   public synchronized long getPersistedBytes() {
     long result = 0;
-    for (ShufflePartitionWriter writer: writers.values()) {
+    for (ShufflePartitionWriter writer : writers.values()) {
       result += writer.getPersistedBytes();
     }
     return result;
@@ -265,15 +269,8 @@ public class ExecutorShuffleStageState {
    */
   public synchronized ShuffleStageStatus getShuffleStageStatus() {
     List<Long> committedMapTaskIds = taskAttempts.getCommittedTaskIds();
-    // TODO this is for backward compatibility, remove this later
-    Map<Integer, Long> legacyMap = new HashMap<>();
-    for (long entry: committedMapTaskIds) {
-      if (entry > Integer.MAX_VALUE) {
-        throw new RssInvalidDataException("Does not support large task attempt id: " + entry);
-      }
-      legacyMap.put((int)entry, entry);
-    }
-    MapTaskCommitStatus mapTaskCommitStatus = new MapTaskCommitStatus(0, legacyMap);
+    MapTaskCommitStatus mapTaskCommitStatus =
+        new MapTaskCommitStatus(new HashSet<>(committedMapTaskIds));
     return new ShuffleStageStatus(fileStatus, mapTaskCommitStatus);
   }
 
@@ -304,7 +301,7 @@ public class ExecutorShuffleStageState {
 
     sb.append(System.lineSeparator());
     sb.append("Writers:");
-    for (Map.Entry<Integer, ShufflePartitionWriter> entry: writers.entrySet()) {
+    for (Map.Entry<Integer, ShufflePartitionWriter> entry : writers.entrySet()) {
       sb.append(System.lineSeparator());
       sb.append(entry.getKey());
       sb.append("->");
@@ -318,7 +315,7 @@ public class ExecutorShuffleStageState {
   }
 
   private void checkDuplicateFiles(List<FilePathAndLength> result, int partition) {
-    List<String> filePaths = result.stream().map(t->t.getPath()).collect(Collectors.toList());
+    List<String> filePaths = result.stream().map(t -> t.getPath()).collect(Collectors.toList());
     List<String> distinctFilePaths = filePaths.stream().distinct().collect(Collectors.toList());
     if (filePaths.size() != distinctFilePaths.size()) {
       throw new RssFileCorruptedException(String.format(
@@ -329,7 +326,7 @@ public class ExecutorShuffleStageState {
   }
 
   private void checkDuplicateFiles(List<PartitionFilePathAndLength> result) {
-    List<String> filePaths = result.stream().map(t->t.getPath()).collect(Collectors.toList());
+    List<String> filePaths = result.stream().map(t -> t.getPath()).collect(Collectors.toList());
     List<String> distinctFilePaths = filePaths.stream().distinct().collect(Collectors.toList());
     if (filePaths.size() != distinctFilePaths.size()) {
       throw new RssFileCorruptedException(String.format(

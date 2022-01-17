@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2020 Uber Technologies, Inc.
+ * This file is copied from Uber Remote Shuffle Service
+ * (https://github.com/uber/RemoteShuffleService) and modified.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,75 +29,83 @@ import java.util.Collection;
  * This client will check server id/version to make sure connecting to the correct server.
  */
 public class ServerIdAwareSocketReadClient implements SingleServerReadClient {
-    private static final Logger logger =
-            LoggerFactory.getLogger(ServerIdAwareSocketReadClient.class);
+  private static final Logger logger =
+      LoggerFactory.getLogger(ServerIdAwareSocketReadClient.class);
 
-    private final ServerDetail serverDetail;
-    private SingleServerReadClient readClient;
+  private final ServerDetail serverDetail;
+  private SingleServerReadClient readClient;
 
-    public ServerIdAwareSocketReadClient(ServerDetail serverDetail, int timeoutMillis, String user, AppShufflePartitionId appShufflePartitionId, Collection<Long> fetchTaskAttemptIds, long dataAvailablePollInterval, long dataAvailableWaitTime) {
-        this.serverDetail = serverDetail;
+  public ServerIdAwareSocketReadClient(ServerDetail serverDetail, int timeoutMillis, String user,
+                                       AppShufflePartitionId appShufflePartitionId,
+                                       Collection<Long> fetchTaskAttemptIds,
+                                       long dataAvailablePollInterval,
+                                       long dataAvailableWaitTime) {
+    this.serverDetail = serverDetail;
 
-        ServerHostAndPort hostAndPort = ServerHostAndPort.fromString(serverDetail.getConnectionString());
-        String host = hostAndPort.getHost();
-        int port = hostAndPort.getPort();
+    ServerHostAndPort hostAndPort =
+        ServerHostAndPort.fromString(serverDetail.getConnectionString());
+    String host = hostAndPort.getHost();
+    int port = hostAndPort.getPort();
 
-        SingleServerReadClient client;
-        client = new PlainShuffleDataSocketReadClient(host, port, timeoutMillis, user, appShufflePartitionId, fetchTaskAttemptIds, dataAvailablePollInterval, dataAvailableWaitTime);
-        this.readClient = client;
+    SingleServerReadClient client;
+    client = new PlainShuffleDataSocketReadClient(host, port, timeoutMillis, user,
+        appShufflePartitionId, fetchTaskAttemptIds, dataAvailablePollInterval,
+        dataAvailableWaitTime);
+    this.readClient = client;
+  }
+
+  @Override
+  public DownloadServerVerboseInfo connect() {
+    DownloadServerVerboseInfo serverVerboseInfo;
+
+    try {
+      serverVerboseInfo = readClient.connect();
+    } catch (Throwable ex) {
+      close();
+      throw ex;
     }
 
-    @Override
-    public DownloadServerVerboseInfo connect() {
-        DownloadServerVerboseInfo serverVerboseInfo;
-
-        try {
-            serverVerboseInfo = readClient.connect();
-        } catch (Throwable ex) {
-            close();
-            throw ex;
-        }
-
-        if (!serverVerboseInfo.getId().equals(serverDetail.getServerId())) {
-            close();
-            String msg = String.format("Server id (%s) is not expected (%s)", serverVerboseInfo.getId(), serverDetail);
-            throw new RssInvalidServerIdException(msg);
-        }
-
-        return serverVerboseInfo;
+    if (!serverVerboseInfo.getId().equals(serverDetail.getServerId())) {
+      close();
+      String msg = String
+          .format("Server id (%s) is not expected (%s)", serverVerboseInfo.getId(), serverDetail);
+      throw new RssInvalidServerIdException(msg);
     }
 
-    @Override
-    public void close() {
-        closeUnderlyingClient();
-    }
+    return serverVerboseInfo;
+  }
 
-    @Override
-    public TaskDataBlock readDataBlock() {
-        return readClient.readDataBlock();
-    }
+  @Override
+  public void close() {
+    closeUnderlyingClient();
+  }
 
-    @Override
-    public long getShuffleReadBytes() {
-        return readClient.getShuffleReadBytes();
-    }
+  @Override
+  public TaskDataBlock readDataBlock() {
+    return readClient.readDataBlock();
+  }
 
-    @Override
-    public String toString() {
-        return "ServerIdAwareSocketReadClient{" +
-            "serverDetail=" + serverDetail +
-            ", readClient=" + readClient +
-            '}';
-    }
+  @Override
+  public long getShuffleReadBytes() {
+    return readClient.getShuffleReadBytes();
+  }
 
-    private void closeUnderlyingClient() {
-        if (readClient != null) {
-            try {
-                readClient.close();
-            } catch (Throwable ex) {
-                logger.warn(String.format("Failed to close underlying client %s", readClient), ex);
-            }
-            readClient = null;
-        }
+  @Override
+  public String toString() {
+    return "ServerIdAwareSocketReadClient{" +
+        "serverDetail=" + serverDetail +
+        ", readClient=" + readClient +
+        '}';
+  }
+
+  private void closeUnderlyingClient() {
+    if (readClient != null) {
+      try {
+        readClient.close();
+      } catch (Throwable ex) {
+        logger.warn(String.format("Failed to close underlying client %s", readClient), ex);
+      }
+      readClient = null;
     }
+  }
 }

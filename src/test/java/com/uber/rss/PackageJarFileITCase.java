@@ -1,17 +1,3 @@
-/*
- * Copyright (c) 2020 Uber Technologies, Inc.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *     http://www.apache.org/licenses/LICENSE-2.0
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package com.uber.rss;
 
 import org.testng.Assert;
@@ -32,7 +18,7 @@ import java.util.zip.ZipFile;
 public class PackageJarFileITCase {
 
     @Test
-    // Client jar file should only contain RSS files and shaded files, and should not contain 
+    // Client jar file should only contain RSS files and shaded files, and should not contain
     // unshaded dependency files. This test will check the files inside the jar file.
     public void checkClientJarFile() throws IOException {
         String jarFilePath = getClientJarPath();
@@ -45,7 +31,7 @@ public class PackageJarFileITCase {
                 if (fileName.startsWith("rss_shaded/")) {
                     continue;
                 }
-                
+
                 if (fileName.equals("META-INF/")
                         || fileName.equals("META-INF/LICENSE.txt")) {
                     continue;
@@ -64,7 +50,7 @@ public class PackageJarFileITCase {
                         || fileName.equals("rss-build-info.properties")) {
                     continue;
                 }
-                
+
                 if (fileName.equals("com/")
                         || fileName.equals("com/uber/")
                         || fileName.startsWith("com/uber/rss/")) {
@@ -77,12 +63,12 @@ public class PackageJarFileITCase {
                         || fileName.startsWith("org/apache/spark/shuffle/")) {
                     continue;
                 }
-                
+
                 Assert.fail("Found unexpected file in jar file: " + fileName);
             }
         }
     }
-    
+
     private String getClientJarPath() throws IOException {
         // Find jar file with largest size under target directory, which should be the packaged client jar file
         String agentJar = Files.list(Paths.get("target"))
@@ -99,5 +85,6 @@ public class PackageJarFileITCase {
         System.out.println("client: " + agentJar);
         return agentJar;
     }
-    
+
 }
+

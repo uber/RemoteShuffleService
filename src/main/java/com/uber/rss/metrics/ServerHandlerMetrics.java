@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2020 Uber Technologies, Inc.
+ * This file is copied from Uber Remote Shuffle Service
+ * (https://github.com/uber/RemoteShuffleService) and modified.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,37 +24,37 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class ServerHandlerMetrics extends MetricGroup<NettyServerSideMetricsKey> {
-    private static final Logger logger = LoggerFactory.getLogger(ServerHandlerMetrics.class);
+  private static final Logger logger = LoggerFactory.getLogger(ServerHandlerMetrics.class);
 
-    private final Counter numIncomingBytes;
-    private final Counter numIncomingRequests;
-    private final Counter numIncomingBlocks;
-    
-    public ServerHandlerMetrics(NettyServerSideMetricsKey key) {
-        super(key);
+  private final Counter numIncomingBytes;
+  private final Counter numIncomingRequests;
+  private final Counter numIncomingBlocks;
 
-        this.numIncomingBytes = scope.counter("numIncomingBytes");
-        this.numIncomingRequests = scope.counter("numIncomingRequests");
-        this.numIncomingBlocks = scope.counter("numIncomingBlocks");
-    }
+  public ServerHandlerMetrics(NettyServerSideMetricsKey key) {
+    super(key);
 
-    public Counter getNumIncomingBytes() {
-        return numIncomingBytes;
-    }
+    this.numIncomingBytes = scope.counter("numIncomingBytes");
+    this.numIncomingRequests = scope.counter("numIncomingRequests");
+    this.numIncomingBlocks = scope.counter("numIncomingBlocks");
+  }
 
-    public Counter getNumIncomingRequests() {
-        return numIncomingRequests;
-    }
+  public Counter getNumIncomingBytes() {
+    return numIncomingBytes;
+  }
 
-    public Counter getNumIncomingBlocks() {
-        return numIncomingBlocks;
-    }
+  public Counter getNumIncomingRequests() {
+    return numIncomingRequests;
+  }
 
-    @Override
-    protected Scope createScope(NettyServerSideMetricsKey key) {
-        Map<String, String> tags = new HashMap<>();
-        tags.put(M3Stats.TAG_NAME_SOURCE, M3Stats.TAG_VALUE_SERVER_HANDLER);
-        tags.put(M3Stats.TAG_NAME_USER, key.getUser());
-        return M3Stats.createSubScope(tags);
-    }
+  public Counter getNumIncomingBlocks() {
+    return numIncomingBlocks;
+  }
+
+  @Override
+  protected Scope createScope(NettyServerSideMetricsKey key) {
+    Map<String, String> tags = new HashMap<>();
+    tags.put(M3Stats.TAG_NAME_SOURCE, this.getClass().getSimpleName());
+    tags.put(M3Stats.TAG_NAME_USER, key.getUser());
+    return M3Stats.createSubScope(tags);
+  }
 }

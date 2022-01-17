@@ -1,10 +1,13 @@
 /*
- * Copyright (c) 2020 Uber Technologies, Inc.
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -17,7 +20,6 @@ package com.uber.rss.clients;
 import com.uber.rss.exceptions.RssAggregateException;
 import com.uber.rss.testutil.TestConstants;
 import com.uber.rss.testutil.TestStreamServer;
-import org.spark_project.jetty.util.ConcurrentArrayQueue;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
@@ -27,7 +29,8 @@ public class PooledWriteClientFactoryRandomTest {
 
   @Test
   public void writeAndReadRecords() {
-    PooledWriteClientFactory writeClientFactory = new PooledWriteClientFactory(TestConstants.CONNECTION_IDLE_TIMEOUT_MILLIS);
+    PooledWriteClientFactory writeClientFactory =
+        new PooledWriteClientFactory(TestConstants.CONNECTION_IDLE_TIMEOUT_MILLIS);
 
     TestStreamServer testServer1 = TestStreamServer.createRunningServer();
     TestStreamServer testServer2 = TestStreamServer.createRunningServer();
@@ -44,9 +47,14 @@ public class PooledWriteClientFactoryRandomTest {
       for (int i = 0; i < numThreads; i++) {
         Thread thread = new Thread(() -> {
           int numIterationsInsideThread = 1000;
-          for (int iterationsInsideThread = 0; iterationsInsideThread < numIterationsInsideThread; iterationsInsideThread++) {
-            try (ShuffleDataSyncWriteClient writeClient = writeClientFactory.getOrCreateClient("localhost", testServer1.getShufflePort(), TestConstants.NETWORK_TIMEOUT, true, "user1", appId, appAttempt, TestConstants.SHUFFLE_WRITE_CONFIG)) {
-              PooledShuffleDataSyncWriteClient pooledRecordSyncWriteClient = (PooledShuffleDataSyncWriteClient) writeClient;
+          for (int iterationsInsideThread = 0; iterationsInsideThread < numIterationsInsideThread;
+               iterationsInsideThread++) {
+            try (ShuffleDataSyncWriteClient writeClient = writeClientFactory
+                .getOrCreateClient("localhost", testServer1.getShufflePort(),
+                    TestConstants.NETWORK_TIMEOUT, true, "user1", appId, appAttempt,
+                    TestConstants.SHUFFLE_WRITE_CONFIG)) {
+              PooledShuffleDataSyncWriteClient pooledRecordSyncWriteClient =
+                  (PooledShuffleDataSyncWriteClient) writeClient;
               Assert.assertTrue(pooledRecordSyncWriteClient.isReusable());
               writeClient.close();
               Assert.assertTrue(pooledRecordSyncWriteClient.isReusable());

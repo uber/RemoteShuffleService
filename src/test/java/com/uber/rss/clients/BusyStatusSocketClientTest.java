@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2020 Uber Technologies, Inc.
+ * This file is copied from Uber Remote Shuffle Service
+ * (https://github.com/uber/RemoteShuffleService) and modified.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +16,6 @@
 package com.uber.rss.clients;
 
 import com.uber.rss.messages.GetBusyStatusResponse;
-import com.uber.rss.messages.MessageConstants;
 import com.uber.rss.testutil.TestConstants;
 import com.uber.rss.testutil.TestStreamServer;
 import org.testng.Assert;
@@ -43,6 +43,7 @@ public class BusyStatusSocketClientTest {
         "localhost", testServer1.getShufflePort(), TestConstants.NETWORK_TIMEOUT, "user1")) {
       GetBusyStatusResponse response = client.getBusyStatus();
       Assert.assertNotNull(response);
+      Assert.assertEquals(response.getMetrics().size(), 1);
     }
 
     testServer1.shutdown();

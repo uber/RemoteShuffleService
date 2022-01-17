@@ -1,10 +1,13 @@
 /*
- * Copyright (c) 2020 Uber Technologies, Inc.
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -37,68 +40,85 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 public class StreamServerCleanupTest {
-    @Test
-    public void cleanupExpiredApplicationFiles() throws Exception {
-        long appRetentionMillis = 1000;
-        
-        StreamServerConfig config = new StreamServerConfig();
-        config.setShufflePort(0);
-        config.setHttpPort(0);
-        config.setAppMemoryRetentionMillis(appRetentionMillis);
-        config.setDataCenter(ServiceRegistry.DEFAULT_DATA_CENTER);
-        config.setCluster(ServiceRegistry.DEFAULT_TEST_CLUSTER);
+  @Test
+  public void cleanupExpiredApplicationFiles() throws Exception {
+    long appRetentionMillis = 1000;
 
-        ServiceRegistry serviceRegistry = new InMemoryServiceRegistry();
-        TestStreamServer testServer = TestStreamServer.createRunningServer(config, serviceRegistry);
+    StreamServerConfig config = new StreamServerConfig();
+    config.setShufflePort(0);
+    config.setHttpPort(0);
+    config.setAppMemoryRetentionMillis(appRetentionMillis);
+    config.setDataCenter(ServiceRegistry.DEFAULT_DATA_CENTER);
+    config.setCluster(ServiceRegistry.DEFAULT_TEST_CLUSTER);
 
-        String rootDir = testServer.getRootDir();
-        
-        AppTaskAttemptId appTaskAttemptId1 = new AppTaskAttemptId("app1", "exec1", 1, 2, 0L);
+    ServiceRegistry serviceRegistry = new InMemoryServiceRegistry();
+    TestStreamServer testServer = TestStreamServer.createRunningServer(config, serviceRegistry);
 
-        try (DataBlockSyncWriteClient writeClient = new DataBlockSyncWriteClient("localhost", testServer.getShufflePort(), TestConstants.NETWORK_TIMEOUT, "user1", appTaskAttemptId1.getAppId(), appTaskAttemptId1.getAppAttempt())) {
-            writeClient.connect();
-            ShuffleMapTaskAttemptId shuffleMapTaskAttemptId = new ShuffleMapTaskAttemptId(appTaskAttemptId1.getShuffleId(), appTaskAttemptId1.getMapId(), appTaskAttemptId1.getTaskAttemptId());
-            writeClient.startUpload(shuffleMapTaskAttemptId, 1, 20, TestConstants.SHUFFLE_WRITE_CONFIG);
+    String rootDir = testServer.getRootDir();
 
-            writeClient.writeData(1, appTaskAttemptId1.getTaskAttemptId(), Unpooled.wrappedBuffer(new byte[0]));
+    AppTaskAttemptId appTaskAttemptId1 = new AppTaskAttemptId("app1", "exec1", 1, 2, 0L);
 
-            writeClient.writeData(2, appTaskAttemptId1.getTaskAttemptId(), Unpooled.wrappedBuffer(new byte[0]));
+    try (DataBlockSyncWriteClient writeClient = new DataBlockSyncWriteClient("localhost",
+        testServer.getShufflePort(), TestConstants.NETWORK_TIMEOUT, "user1",
+        appTaskAttemptId1.getAppId(), appTaskAttemptId1.getAppAttempt())) {
+      writeClient.connect();
+      ShuffleMapTaskAttemptId shuffleMapTaskAttemptId =
+          new ShuffleMapTaskAttemptId(appTaskAttemptId1.getShuffleId(),
+              appTaskAttemptId1.getMapId(), appTaskAttemptId1.getTaskAttemptId());
+      writeClient.startUpload(shuffleMapTaskAttemptId, 1, 20, TestConstants.SHUFFLE_WRITE_CONFIG);
 
-            writeClient.writeData(3, appTaskAttemptId1.getTaskAttemptId(), Unpooled.wrappedBuffer("value1".getBytes(StandardCharsets.UTF_8)));
+      writeClient
+          .writeData(1, appTaskAttemptId1.getTaskAttemptId(), Unpooled.wrappedBuffer(new byte[0]));
 
-            writeClient.finishUpload(appTaskAttemptId1.getTaskAttemptId());
+      writeClient
+          .writeData(2, appTaskAttemptId1.getTaskAttemptId(), Unpooled.wrappedBuffer(new byte[0]));
 
-            StreamServerTestUtils.waitTillDataAvailable(testServer.getShufflePort(), appTaskAttemptId1.getAppShuffleId(), Arrays.asList(1, 2, 3), Arrays.asList(appTaskAttemptId1.getTaskAttemptId()));
-            
-            // The shuffle files should be still there. Those files will only be deleted when they expire and 
-            // there is new application shuffle upload.
-            ShuffleFileStorage shuffleFileStorage = new ShuffleFileStorage();
-            List<String> files = shuffleFileStorage.listAllFiles(rootDir).stream()
-                .filter(t -> !Paths.get(t).getFileName().toString().startsWith(LocalFileStateStore.STATE_FILE_PREFIX))
-                .collect(Collectors.toList());
-            Assert.assertEquals(files.size(), 3 * TestConstants.SHUFFLE_WRITE_CONFIG.getNumSplits());
-            Assert.assertTrue(shuffleFileStorage.exists(ShuffleFileUtils.getAppShuffleDir(rootDir, appTaskAttemptId1.getAppId())));
-            
-            // Start a new application shuffle upload to trigger deleting the old files
+      writeClient.writeData(3, appTaskAttemptId1.getTaskAttemptId(),
+          Unpooled.wrappedBuffer("value1".getBytes(StandardCharsets.UTF_8)));
 
-            Thread.sleep(appRetentionMillis);
+      writeClient.finishUpload(appTaskAttemptId1.getTaskAttemptId());
 
-            AppTaskAttemptId appTaskAttemptId2 = new AppTaskAttemptId("app2", "exec1", 1, 2, 0L);
+      StreamServerTestUtils
+          .waitTillDataAvailable(testServer.getShufflePort(), appTaskAttemptId1.getAppShuffleId(),
+              Arrays.asList(1, 2, 3), Arrays.asList(appTaskAttemptId1.getTaskAttemptId()));
 
-            try (DataBlockSyncWriteClient writeClient2 = new DataBlockSyncWriteClient("localhost", testServer.getShufflePort(), TestConstants.NETWORK_TIMEOUT, "user1", appTaskAttemptId2.getAppId(), appTaskAttemptId2.getAppAttempt())) {
-                writeClient2.connect();
-                ShuffleMapTaskAttemptId shuffleMapTaskAttemptId2 = new ShuffleMapTaskAttemptId(appTaskAttemptId2.getShuffleId(), appTaskAttemptId2.getMapId(), appTaskAttemptId2.getTaskAttemptId());
-                writeClient2.startUpload(shuffleMapTaskAttemptId2, 1, 20, TestConstants.SHUFFLE_WRITE_CONFIG);
-            }
-            // Check there should no files
-            boolean hasNoAppDir = RetryUtils.retryUntilTrue(
-                    100, 
-                    10000, 
-                    ()->shuffleFileStorage.exists(ShuffleFileUtils.getAppShuffleDir(rootDir, appTaskAttemptId1.getAppId())));
-            Assert.assertTrue(hasNoAppDir);
-        } finally {
-            testServer.shutdown();
-        }
+      // The shuffle files should be still there. Those files will only be deleted when they expire and
+      // there is new application shuffle upload.
+      ShuffleFileStorage shuffleFileStorage = new ShuffleFileStorage();
+      List<String> files = shuffleFileStorage.listAllFiles(rootDir).stream()
+          .filter(t -> !Paths.get(t).getFileName().toString()
+              .startsWith(LocalFileStateStore.STATE_FILE_PREFIX))
+          .collect(Collectors.toList());
+      Assert.assertEquals(files.size(), 3 * TestConstants.SHUFFLE_WRITE_CONFIG.getNumSplits());
+      Assert.assertTrue(shuffleFileStorage
+          .exists(ShuffleFileUtils.getAppShuffleDir(rootDir, appTaskAttemptId1.getAppId())));
+
+      // Start a new application shuffle upload to trigger deleting the old files
+
+      Thread.sleep(appRetentionMillis);
+
+      AppTaskAttemptId appTaskAttemptId2 = new AppTaskAttemptId("app2", "exec1", 1, 2, 0L);
+
+      try (DataBlockSyncWriteClient writeClient2 = new DataBlockSyncWriteClient("localhost",
+          testServer.getShufflePort(), TestConstants.NETWORK_TIMEOUT, "user1",
+          appTaskAttemptId2.getAppId(), appTaskAttemptId2.getAppAttempt())) {
+        writeClient2.connect();
+        ShuffleMapTaskAttemptId shuffleMapTaskAttemptId2 =
+            new ShuffleMapTaskAttemptId(appTaskAttemptId2.getShuffleId(),
+                appTaskAttemptId2.getMapId(), appTaskAttemptId2.getTaskAttemptId());
+        writeClient2
+            .startUpload(shuffleMapTaskAttemptId2, 1, 20, TestConstants.SHUFFLE_WRITE_CONFIG);
+      }
+      // Check there should no files
+      boolean hasNoAppDir = RetryUtils.retryUntilTrue(
+          100,
+          10000,
+          () -> shuffleFileStorage
+              .exists(ShuffleFileUtils.getAppShuffleDir(rootDir, appTaskAttemptId1.getAppId())));
+      Assert.assertTrue(hasNoAppDir);
+    } finally {
+      testServer.shutdown();
     }
-    
+  }
+
 }

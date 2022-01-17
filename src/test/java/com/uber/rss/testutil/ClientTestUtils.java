@@ -1,10 +1,13 @@
 /*
- * Copyright (c) 2020 Uber Technologies, Inc.
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -14,13 +17,10 @@
 
 package com.uber.rss.testutil;
 
-import com.uber.rss.clients.ShuffleDataSocketReadClient;
-import com.uber.rss.clients.TaskDataBlock;
-import com.uber.rss.clients.ShuffleWriteConfig;
-import com.uber.rss.clients.SingleServerWriteClient;
-import com.uber.rss.clients.PooledWriteClientFactory;
+import com.uber.rss.clients.*;
 import com.uber.rss.common.AppShufflePartitionId;
 import com.uber.rss.common.AppTaskAttemptId;
+import com.uber.rss.clients.*;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 
@@ -38,7 +38,7 @@ public class ClientTestUtils {
   static {
     int numRecords1 = 100000;
     for (int i = 0; i < numRecords1; i++) {
-      String str1 = "k" + i ;
+      String str1 = "k" + i;
       String str2 = "str2";
       writeRecords1.add(Pair.of(str1, str2));
     }
@@ -58,19 +58,24 @@ public class ClientTestUtils {
     }
   }
 
-  public static void connectAndWriteData(Map<Integer, List<Pair<String, String>>> mapTaskData, int numMaps, int numPartitions, AppTaskAttemptId appTaskAttemptId, SingleServerWriteClient writeClient) {
+  public static void connectAndWriteData(Map<Integer, List<Pair<String, String>>> mapTaskData,
+                                         int numMaps, int numPartitions,
+                                         AppTaskAttemptId appTaskAttemptId,
+                                         SingleServerWriteClient writeClient) {
     writeClient.connect();
     writeClient.startUpload(appTaskAttemptId, numMaps, numPartitions);
     for (Integer partition : mapTaskData.keySet()) {
       List<Pair<String, String>> records = mapTaskData.get(partition);
       for (Pair<String, String> record : records) {
-        writeClient.writeDataBlock(partition, ByteBuffer.wrap(record.getValue().getBytes(StandardCharsets.UTF_8)));
+        writeClient.writeDataBlock(partition,
+            ByteBuffer.wrap(record.getValue().getBytes(StandardCharsets.UTF_8)));
       }
     }
     writeClient.finishUpload();
   }
 
-  public static List<TaskDataBlock> readData(AppShufflePartitionId appShufflePartitionId, ShuffleDataSocketReadClient readClient) {
+  public static List<TaskDataBlock> readData(AppShufflePartitionId appShufflePartitionId,
+                                             ShuffleDataSocketReadClient readClient) {
     readClient.connect();
     List<TaskDataBlock> readRecords = new ArrayList<>();
     TaskDataBlock record = readClient.readDataBlock();
@@ -81,12 +86,17 @@ public class ClientTestUtils {
     return readRecords;
   }
 
-  public static SingleServerWriteClient getOrCreateWriteClient(int port, String appId, String appAttempt) {
+  public static SingleServerWriteClient getOrCreateWriteClient(int port, String appId,
+                                                               String appAttempt) {
     return getOrCreateWriteClient(port, appId, appAttempt, true);
   }
 
-  public static SingleServerWriteClient getOrCreateWriteClient(int port, String appId, String appAttempt, boolean finishUploadAck) {
-    ShuffleWriteConfig shuffleWriteConfig = new ShuffleWriteConfig((short)3);
-    return PooledWriteClientFactory.getInstance().getOrCreateClient("localhost", port, TestConstants.NETWORK_TIMEOUT, finishUploadAck, "user1", appId, appAttempt, shuffleWriteConfig);
+  public static SingleServerWriteClient getOrCreateWriteClient(int port, String appId,
+                                                               String appAttempt,
+                                                               boolean finishUploadAck) {
+    ShuffleWriteConfig shuffleWriteConfig = new ShuffleWriteConfig((short) 3);
+    return PooledWriteClientFactory.getInstance()
+        .getOrCreateClient("localhost", port, TestConstants.NETWORK_TIMEOUT, finishUploadAck,
+            "user1", appId, appAttempt, shuffleWriteConfig);
   }
 }

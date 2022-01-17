@@ -1,10 +1,13 @@
 /*
- * Copyright (c) 2020 Uber Technologies, Inc.
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -22,99 +25,84 @@ import io.netty.buffer.ByteBuf;
  * This is reponse for ConnectDownloadRequest.
  */
 public class ConnectDownloadResponse extends ServerResponseMessage {
-    private String serverId;
-    private String serverVersion;
-    private String runningVersion;
-    private String compressionCodec;
+  private String serverId;
+  private String compressionCodec;
 
-    // this could be null
-    private MapTaskCommitStatus mapTaskCommitStatus;
+  // this could be null
+  private MapTaskCommitStatus mapTaskCommitStatus;
 
-    // if dataAvailable is true, the server sends shuffle data immediately after this message
-    private boolean dataAvailable;
+  // if dataAvailable is true, the server sends shuffle data immediately after this message
+  private boolean dataAvailable;
 
-    public ConnectDownloadResponse(String serverId, String serverVersion, String runningVersion, String compressionCodec, MapTaskCommitStatus mapTaskCommitStatus, boolean dataAvailable) {
-        this.serverId = serverId;
-        this.serverVersion = serverVersion;
-        this.runningVersion = runningVersion;
-        this.compressionCodec = compressionCodec;
-        this.mapTaskCommitStatus = mapTaskCommitStatus;
-        this.dataAvailable = dataAvailable;
+  public ConnectDownloadResponse(String serverId, String compressionCodec,
+                                 MapTaskCommitStatus mapTaskCommitStatus, boolean dataAvailable) {
+    this.serverId = serverId;
+    this.compressionCodec = compressionCodec;
+    this.mapTaskCommitStatus = mapTaskCommitStatus;
+    this.dataAvailable = dataAvailable;
+  }
+
+  @Override
+  public int getMessageType() {
+    return MessageConstants.MESSAGE_ConnectDownloadResponse;
+  }
+
+  @Override
+  public void serialize(ByteBuf buf) {
+    ByteBufUtils.writeLengthAndString(buf, serverId);
+    ByteBufUtils.writeLengthAndString(buf, compressionCodec);
+
+    if (mapTaskCommitStatus == null) {
+      buf.writeBoolean(false);
+    } else {
+      buf.writeBoolean(true);
+      mapTaskCommitStatus.serialize(buf);
     }
 
-    @Override
-    public int getMessageType() {
-        return MessageConstants.MESSAGE_ConnectDownloadResponse;
+    buf.writeBoolean(dataAvailable);
+  }
+
+  public static ConnectDownloadResponse deserialize(ByteBuf buf) {
+    String serverId = ByteBufUtils.readLengthAndString(buf);
+    String compressionCodec = ByteBufUtils.readLengthAndString(buf);
+
+    MapTaskCommitStatus mapTaskCommitStatus = null;
+    boolean mapTaskCommitStatusExisting = buf.readBoolean();
+    if (mapTaskCommitStatusExisting) {
+      mapTaskCommitStatus = MapTaskCommitStatus.deserialize(buf);
     }
 
-    @Override
-    public void serialize(ByteBuf buf) {
-        ByteBufUtils.writeLengthAndString(buf, serverId);
-        ByteBufUtils.writeLengthAndString(buf, serverVersion);
-        ByteBufUtils.writeLengthAndString(buf, runningVersion);
-        ByteBufUtils.writeLengthAndString(buf, compressionCodec);
+    boolean dataAvailable = buf.readBoolean();
 
-        if (mapTaskCommitStatus == null) {
-            buf.writeBoolean(false);
-        } else {
-            buf.writeBoolean(true);
-            mapTaskCommitStatus.serialize(buf);
-        }
+    return new ConnectDownloadResponse(serverId, compressionCodec, mapTaskCommitStatus,
+        dataAvailable);
+  }
 
-        buf.writeBoolean(dataAvailable);
-    }
+  public String getServerId() {
+    return serverId;
+  }
 
-    public static ConnectDownloadResponse deserialize(ByteBuf buf) {
-        String serverId = ByteBufUtils.readLengthAndString(buf);
-        String serverVersion = ByteBufUtils.readLengthAndString(buf);
-        String runningVersion = ByteBufUtils.readLengthAndString(buf);
-        String compressionCodec = ByteBufUtils.readLengthAndString(buf);
+  public String getCompressionCodec() {
+    return compressionCodec;
+  }
 
-        MapTaskCommitStatus mapTaskCommitStatus = null;
-        boolean mapTaskCommitStatusExisting = buf.readBoolean();
-        if (mapTaskCommitStatusExisting) {
-            mapTaskCommitStatus = MapTaskCommitStatus.deserialize(buf);
-        }
+  public MapTaskCommitStatus getMapTaskCommitStatus() {
+    return mapTaskCommitStatus;
+  }
 
-        boolean dataAvailable = buf.readBoolean();
+  public boolean isDataAvailable() {
+    return dataAvailable;
+  }
 
-        return new ConnectDownloadResponse(serverId, serverVersion, runningVersion, compressionCodec, mapTaskCommitStatus, dataAvailable);
-    }
-
-    public String getServerId() {
-        return serverId;
-    }
-
-    public String getServerVersion() {
-        return serverVersion;
-    }
-
-    public String getRunningVersion() {
-        return runningVersion;
-    }
-
-    public String getCompressionCodec() {
-        return compressionCodec;
-    }
-
-    public MapTaskCommitStatus getMapTaskCommitStatus() {
-        return mapTaskCommitStatus;
-    }
-
-    public boolean isDataAvailable() {
-        return dataAvailable;
-    }
-
-    @Override
-    public String toString() {
-        String mapTaskCommitStatusStr = dataAvailable ? mapTaskCommitStatus.toShortString() : mapTaskCommitStatus.toString();
-        return "ConnectDownloadResponse{" +
-            "serverId='" + serverId + '\'' +
-            ", serverVersion='" + serverVersion + '\'' +
-            ", runningVersion='" + runningVersion + '\'' +
-            ", compressionCodec='" + compressionCodec + '\'' +
-            ", dataAvailable=" + dataAvailable +
-            ", mapTaskCommitStatus=" + mapTaskCommitStatusStr +
-            '}';
-    }
+  @Override
+  public String toString() {
+    String mapTaskCommitStatusStr =
+        dataAvailable ? mapTaskCommitStatus.toShortString() : mapTaskCommitStatus.toString();
+    return "ConnectDownloadResponse{" +
+        "serverId='" + serverId + '\'' +
+        ", compressionCodec='" + compressionCodec + '\'' +
+        ", dataAvailable=" + dataAvailable +
+        ", mapTaskCommitStatus=" + mapTaskCommitStatusStr +
+        '}';
+  }
 }

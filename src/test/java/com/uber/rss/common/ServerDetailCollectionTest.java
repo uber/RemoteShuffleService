@@ -1,10 +1,13 @@
 /*
- * Copyright (c) 2020 Uber Technologies, Inc.
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -22,23 +25,24 @@ import java.util.Comparator;
 import java.util.List;
 
 public class ServerDetailCollectionTest {
-    @Test
-    public void addServer() {
-        ServerDetailCollection serverDetailCollection = new ServerDetailCollection();
+  @Test
+  public void addServer() {
+    ServerDetailCollection serverDetailCollection = new ServerDetailCollection();
 
-        Assert.assertEquals(serverDetailCollection.getServers("dc1", "cluster1").size(), 0);
+    Assert.assertEquals(serverDetailCollection.getServers("dc1", "cluster1").size(), 0);
 
-        serverDetailCollection.addServer("dc1", "cluster1", new ServerDetail("server1", "v1", "node1:1"));
-        serverDetailCollection.addServer("dc1", "cluster1", new ServerDetail("server1", "v1", "node2:2"));
+    serverDetailCollection.addServer("dc1", "cluster1", new ServerDetail("server1", "node1:1"));
+    serverDetailCollection.addServer("dc1", "cluster1", new ServerDetail("server1", "node2:2"));
 
-        Assert.assertEquals(serverDetailCollection.getServers("dc1", "cluster1"),
-                Arrays.asList(new ServerDetail("server1", "v1", "node2:2")));
+    Assert.assertEquals(serverDetailCollection.getServers("dc1", "cluster1"),
+        Arrays.asList(new ServerDetail("server1", "node2:2")));
 
-        serverDetailCollection.addServer("dc1", "cluster1", new ServerDetail("server2", "v1", "node2:2"));
+    serverDetailCollection.addServer("dc1", "cluster1", new ServerDetail("server2", "node2:2"));
 
-        List<ServerDetail> servers = serverDetailCollection.getServers("dc1", "cluster1");
-        servers.sort(Comparator.comparing(ServerDetail::getServerId));
-        Assert.assertEquals(servers,
-                Arrays.asList(new ServerDetail("server1", "v1", "node2:2"), new ServerDetail("server2", "v1", "node2:2")));
-    }
+    List<ServerDetail> servers = serverDetailCollection.getServers("dc1", "cluster1");
+    servers.sort(Comparator.comparing(ServerDetail::getServerId));
+    Assert.assertEquals(servers,
+        Arrays.asList(new ServerDetail("server1", "node2:2"),
+            new ServerDetail("server2", "node2:2")));
+  }
 }

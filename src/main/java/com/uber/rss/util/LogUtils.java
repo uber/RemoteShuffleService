@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2020 Uber Technologies, Inc.
+ * This file is copied from Uber Remote Shuffle Service
+ * (https://github.com/uber/RemoteShuffleService) and modified.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +17,11 @@ package com.uber.rss.util;
 
 public class LogUtils {
 
-    public static double calculateMegaBytesPerSecond(long durationMillis, long bytes) {
-        if (durationMillis == 0) {
-            return 0;
-        }
-        return ((double)bytes)/(1024.0*1024.0)/(((double)durationMillis)/1000.0);
+  public static double calculateMegaBytesPerSecond(long durationMillis, long bytes) {
+    if (durationMillis == 0) {
+      return 0;
     }
+    return ((double) bytes) / (1024.0 * 1024.0) / (((double) durationMillis) / 1000.0);
+  }
 
 }

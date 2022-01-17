@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2020 Uber Technologies, Inc.
+ * This file is copied from Uber Remote Shuffle Service
+ * (https://github.com/uber/RemoteShuffleService) and modified.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,10 +16,10 @@
 package com.uber.rss.testutil;
 
 import com.uber.rss.clients.PlainShuffleDataSocketReadClient;
-import com.uber.rss.common.AppShuffleId;
-import com.uber.rss.common.AppShufflePartitionId;
 import com.uber.rss.clients.SingleServerReadClient;
 import com.uber.rss.clients.TaskDataBlock;
+import com.uber.rss.common.AppShuffleId;
+import com.uber.rss.common.AppShufflePartitionId;
 import com.uber.rss.exceptions.RssException;
 
 import java.io.IOException;
@@ -29,60 +30,77 @@ import java.util.List;
 
 public class StreamServerTestUtils {
 
-    public static List<String> createTempDirectories(int count) {
-        List<String> dirs = new ArrayList<>();
-        for (int i = 0; i < count; i++) {
-            try {
-                dirs.add(Files.createTempDirectory("RssShuffleManagerTest").toString());
-            } catch (IOException e) {
-                throw new RssException("Failed to create temp directory", e);
-            }
-        }
-        return dirs;
+  public static List<String> createTempDirectories(int count) {
+    List<String> dirs = new ArrayList<>();
+    for (int i = 0; i < count; i++) {
+      try {
+        dirs.add(Files.createTempDirectory("RssShuffleManagerTest").toString());
+      } catch (IOException e) {
+        throw new RssException("Failed to create temp directory", e);
+      }
     }
+    return dirs;
+  }
 
-    public static List<TaskDataBlock> readAllRecords2(int port, AppShuffleId appShuffleId, int partitionId, Collection<Long> fetchTaskAttemptIds) {
-        return readAllRecords2(port, appShuffleId, partitionId, fetchTaskAttemptIds, TestConstants.DATA_AVAILABLE_TIMEOUT);
+  public static List<TaskDataBlock> readAllRecords2(int port, AppShuffleId appShuffleId,
+                                                    int partitionId,
+                                                    Collection<Long> fetchTaskAttemptIds) {
+    return readAllRecords2(port, appShuffleId, partitionId, fetchTaskAttemptIds,
+        TestConstants.DATA_AVAILABLE_TIMEOUT);
+  }
+
+  public static List<TaskDataBlock> readAllRecords2(int port, AppShuffleId appShuffleId,
+                                                    int partitionId,
+                                                    Collection<Long> fetchTaskAttemptIds,
+                                                    int dataAvailableWaitTime) {
+    SingleServerReadClient readClient = null;
+    readClient =
+        new PlainShuffleDataSocketReadClient("localhost", port, TestConstants.NETWORK_TIMEOUT,
+            "user1", new AppShufflePartitionId(appShuffleId, partitionId), fetchTaskAttemptIds,
+            TestConstants.DATA_AVAILABLE_POLL_INTERVAL, dataAvailableWaitTime);
+
+    try {
+      AppShufflePartitionId appShufflePartitionId = new AppShufflePartitionId(
+          appShuffleId.getAppId(), appShuffleId.getAppAttempt(), appShuffleId.getShuffleId(),
+          partitionId);
+
+      readClient.connect();
+
+      List<TaskDataBlock> result = new ArrayList<>();
+
+      TaskDataBlock record = readClient.readDataBlock();
+      while (record != null) {
+        result.add(record);
+        record = readClient.readDataBlock();
+      }
+      return result;
+    } finally {
+      readClient.close();
     }
+  }
 
-    public static List<TaskDataBlock> readAllRecords2(int port, AppShuffleId appShuffleId, int partitionId, Collection<Long> fetchTaskAttemptIds, int dataAvailableWaitTime) {
-        SingleServerReadClient readClient = null;
-        readClient = new PlainShuffleDataSocketReadClient("localhost", port, TestConstants.NETWORK_TIMEOUT, "user1", new AppShufflePartitionId(appShuffleId, partitionId), fetchTaskAttemptIds, TestConstants.DATA_AVAILABLE_POLL_INTERVAL, dataAvailableWaitTime);
-
-        try {
-            AppShufflePartitionId appShufflePartitionId = new AppShufflePartitionId(
-                appShuffleId.getAppId(), appShuffleId.getAppAttempt(), appShuffleId.getShuffleId(), partitionId);
-
-            readClient.connect();
-
-            List<TaskDataBlock> result = new ArrayList<>();
-
-            TaskDataBlock record = readClient.readDataBlock();
-            while (record != null) {
-                result.add(record);
-                record = readClient.readDataBlock();
-            }
-            return result;
-        } finally {
-            readClient.close();
-        }
+  public static void waitTillDataAvailable(int port, AppShuffleId appShuffleId,
+                                           Collection<Integer> partitionIds,
+                                           Collection<Long> fetchTaskAttemptIds) {
+    for (Integer p : partitionIds) {
+      waitTillDataAvailable(port, appShuffleId, p, fetchTaskAttemptIds);
     }
+  }
 
-    public static void waitTillDataAvailable(int port, AppShuffleId appShuffleId, Collection<Integer> partitionIds, Collection<Long> fetchTaskAttemptIds) {
-        for (Integer p: partitionIds) {
-            waitTillDataAvailable(port, appShuffleId, p, fetchTaskAttemptIds);
-        }
+  public static void waitTillDataAvailable(int port, AppShuffleId appShuffleId, int partitionId,
+                                           Collection<Long> fetchTaskAttemptIds) {
+    AppShufflePartitionId appShufflePartitionId = new AppShufflePartitionId(
+        appShuffleId.getAppId(), appShuffleId.getAppAttempt(), appShuffleId.getShuffleId(),
+        partitionId);
+    SingleServerReadClient readClient = readClient =
+        new PlainShuffleDataSocketReadClient("localhost", port, TestConstants.NETWORK_TIMEOUT,
+            "user1", new AppShufflePartitionId(appShuffleId, partitionId), fetchTaskAttemptIds,
+            TestConstants.DATA_AVAILABLE_POLL_INTERVAL, TestConstants.DATA_AVAILABLE_TIMEOUT);
+    try {
+      readClient.connect();
+      readClient.readDataBlock();
+    } finally {
+      readClient.close();
     }
-
-    public static void waitTillDataAvailable(int port, AppShuffleId appShuffleId, int partitionId, Collection<Long> fetchTaskAttemptIds) {
-        AppShufflePartitionId appShufflePartitionId = new AppShufflePartitionId(
-            appShuffleId.getAppId(), appShuffleId.getAppAttempt(), appShuffleId.getShuffleId(), partitionId);
-        SingleServerReadClient readClient = readClient = new PlainShuffleDataSocketReadClient("localhost", port, TestConstants.NETWORK_TIMEOUT, "user1", new AppShufflePartitionId(appShuffleId, partitionId), fetchTaskAttemptIds, TestConstants.DATA_AVAILABLE_POLL_INTERVAL, TestConstants.DATA_AVAILABLE_TIMEOUT);
-        try {
-            readClient.connect();
-            readClient.readDataBlock();
-        } finally {
-            readClient.close();
-        }
-    }
+  }
 }

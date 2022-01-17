@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2020 Uber Technologies, Inc.
+ * This file is copied from Uber Remote Shuffle Service
+ * (https://github.com/uber/RemoteShuffleService) and modified.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,7 +29,10 @@ public class PlainShuffleDataSyncWriteClient extends ShuffleDataSyncWriteClientB
   private static final Logger logger =
       LoggerFactory.getLogger(PlainShuffleDataSyncWriteClient.class);
 
-  public PlainShuffleDataSyncWriteClient(String host, int port, int timeoutMillis, boolean finishUploadAck, String user, String appId, String appAttempt, ShuffleWriteConfig shuffleWriteConfig) {
+  public PlainShuffleDataSyncWriteClient(String host, int port, int timeoutMillis,
+                                         boolean finishUploadAck, String user, String appId,
+                                         String appAttempt,
+                                         ShuffleWriteConfig shuffleWriteConfig) {
     super(host, port, timeoutMillis, finishUploadAck, user, appId, appAttempt, shuffleWriteConfig);
   }
 
@@ -37,7 +41,8 @@ public class PlainShuffleDataSyncWriteClient extends ShuffleDataSyncWriteClientB
     int totalRecordBytes = getRecordSerializedSize(value);
     ByteBuf recordSerializedByteBuf = Unpooled.buffer(totalRecordBytes);
     writeRecordToBuffer(recordSerializedByteBuf, value);
-    dataBlockSyncWriteClient.writeData(partition, shuffleMapTaskAttemptId.getTaskAttemptId(), recordSerializedByteBuf);
+    dataBlockSyncWriteClient
+        .writeData(partition, shuffleMapTaskAttemptId.getTaskAttemptId(), recordSerializedByteBuf);
   }
 
   @Override

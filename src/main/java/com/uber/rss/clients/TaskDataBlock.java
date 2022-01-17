@@ -1,10 +1,13 @@
 /*
- * Copyright (c) 2020 Uber Technologies, Inc.
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -23,54 +26,54 @@ import java.util.Objects;
  * value could be null.
  */
 public class TaskDataBlock {
-    private final byte[] payload;
-    
-    private long taskAttemptId;
+  private final byte[] payload;
 
-    public TaskDataBlock(byte[] payload, long taskAttemptId) {
-        this.payload = payload;
-        this.taskAttemptId = taskAttemptId;
-    }
+  private long taskAttemptId;
 
-    @Nullable
-    public byte[] getPayload() {
-        return payload;
-    }
+  public TaskDataBlock(byte[] payload, long taskAttemptId) {
+    this.payload = payload;
+    this.taskAttemptId = taskAttemptId;
+  }
 
-    public long getTaskAttemptId() {
-        return taskAttemptId;
-    }
+  @Nullable
+  public byte[] getPayload() {
+    return payload;
+  }
 
-    public long totalBytes() {
-        long bytes = 0L;
-        if (payload != null) {
-            bytes += payload.length;
-        }
-        return bytes;
-    }
+  public long getTaskAttemptId() {
+    return taskAttemptId;
+  }
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        TaskDataBlock that = (TaskDataBlock) o;
-        return taskAttemptId == that.taskAttemptId &&
-            Arrays.equals(payload, that.payload);
+  public long totalBytes() {
+    long bytes = 0L;
+    if (payload != null) {
+      bytes += payload.length;
     }
+    return bytes;
+  }
 
-    @Override
-    public int hashCode() {
-        int result = Objects.hash(taskAttemptId);
-        result = 31 * result + Arrays.hashCode(payload);
-        return result;
-    }
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+    TaskDataBlock that = (TaskDataBlock) o;
+    return taskAttemptId == that.taskAttemptId &&
+        Arrays.equals(payload, that.payload);
+  }
 
-    @Override
-    public String toString() {
-        String payloadStr = payload == null ? "null" : payload.length + " bytes";
-        return "TaskDataBlock{" +
-                "taskAttemptId=" + taskAttemptId +
-                ", payload=" + payloadStr +
-                '}';
-    }
+  @Override
+  public int hashCode() {
+    int result = Objects.hash(taskAttemptId);
+    result = 31 * result + Arrays.hashCode(payload);
+    return result;
+  }
+
+  @Override
+  public String toString() {
+    String payloadStr = payload == null ? "null" : payload.length + " bytes";
+    return "TaskDataBlock{" +
+        "taskAttemptId=" + taskAttemptId +
+        ", payload=" + payloadStr +
+        '}';
+  }
 }

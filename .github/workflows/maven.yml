@@ -5,9 +5,9 @@ name: Java CI with Maven
 
 on:
   push:
-    branches: [ master, spark30, spark24 ]
+    branches: [ k8s-spark-3.2 ]
   pull_request:
-    branches: [ master, spark30, spark24 ]
+    branches: [ k8s-spark-3.2 ]
 
 jobs:
   build:
@@ -16,9 +16,9 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
-    - name: Set up JDK 1.8
+    - name: Set up JDK
       uses: actions/setup-java@v1
       with:
-        java-version: 1.8
+        java-version: 1.11
     - name: Build with Maven
       run: mvn -B package --file pom.xml

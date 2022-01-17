@@ -1,10 +1,13 @@
 /*
- * Copyright (c) 2020 Uber Technologies, Inc.
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -26,8 +29,10 @@ public class ServerIdleTimeoutTest {
   @Test
   public void writeAfterServerIdleTimeout() {
     long serverIdleTimeoutMillis = 10;
-    TestStreamServer testServer1 = TestStreamServer.createRunningServer(config -> config.setIdleTimeoutMillis(serverIdleTimeoutMillis));
-    PooledWriteClientFactory writeClientFactory = new PooledWriteClientFactory(TestConstants.CONNECTION_IDLE_TIMEOUT_MILLIS);
+    TestStreamServer testServer1 = TestStreamServer
+        .createRunningServer(config -> config.setIdleTimeoutMillis(serverIdleTimeoutMillis));
+    PooledWriteClientFactory writeClientFactory =
+        new PooledWriteClientFactory(TestConstants.CONNECTION_IDLE_TIMEOUT_MILLIS);
 
     try {
       String appId = "app01";
@@ -38,11 +43,15 @@ public class ServerIdleTimeoutTest {
       int numPartitions = 10;
       int mapId = 2;
       long taskAttemptId = 11;
-      AppTaskAttemptId appTaskAttemptId = new AppTaskAttemptId(appId, appAttempt, shuffleId, mapId, taskAttemptId);
+      AppTaskAttemptId appTaskAttemptId =
+          new AppTaskAttemptId(appId, appAttempt, shuffleId, mapId, taskAttemptId);
 
       boolean finishUploadAck = true;
 
-      try (ShuffleDataSyncWriteClient writeClient = writeClientFactory.getOrCreateClient("localhost", testServer1.getShufflePort(), TestConstants.NETWORK_TIMEOUT, finishUploadAck, "user1", appId, appAttempt, TestConstants.SHUFFLE_WRITE_CONFIG)) {
+      try (ShuffleDataSyncWriteClient writeClient = writeClientFactory
+          .getOrCreateClient("localhost", testServer1.getShufflePort(),
+              TestConstants.NETWORK_TIMEOUT, finishUploadAck, "user1", appId, appAttempt,
+              TestConstants.SHUFFLE_WRITE_CONFIG)) {
         // sleep sometime so the server thinks the connection is idle and timeout
         try {
           Thread.sleep(serverIdleTimeoutMillis * 2);
@@ -53,9 +62,11 @@ public class ServerIdleTimeoutTest {
         writeClient.startUpload(appTaskAttemptId, numMaps, numPartitions);
         writeClient.finishUpload();
 
-        Assert.fail("The previous code should throw exception because the server should close the connection because of idle timeout");
+        Assert.fail(
+            "The previous code should throw exception because the server should close the connection because of idle timeout");
       } catch (Throwable ex) {
-        if (!ex.getClass().equals(RssNetworkException.class) && !ex.getClass().equals(RssFinishUploadException.class)) {
+        if (!ex.getClass().equals(RssNetworkException.class) &&
+            !ex.getClass().equals(RssFinishUploadException.class)) {
           throw ex;
         }
       }

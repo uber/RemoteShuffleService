@@ -1,10 +1,13 @@
 /*
- * Copyright (c) 2020 Uber Technologies, Inc.
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -41,200 +44,205 @@ import java.util.concurrent.TimeUnit;
  * 2. Create a serialize stream and write each object into that stream
  */
 public class SerializerBenchmark {
-    private static final Logger logger = LoggerFactory.getLogger(SerializerBenchmark.class);
+  private static final Logger logger = LoggerFactory.getLogger(SerializerBenchmark.class);
 
-    private SerializerInstance serializer;
+  private SerializerInstance serializer;
 
-    // Total number of test objects to serialize
-    private int numTestObjects = 10000;
+  // Total number of test objects to serialize
+  private int numTestObjects = 10000;
 
-    // Max length for test string values to uses
-    private int maxStringValueLen = 10000;
+  // Max length for test string values to uses
+  private int maxStringValueLen = 10000;
 
-    private List<HashMap<String, String>> testObjects = new ArrayList<>();
+  private List<HashMap<String, String>> testObjects = new ArrayList<>();
 
-    private ByteArrayOutputStream byteArrayOutputStream;
-    private byte[] bytesBuffer;
+  private ByteArrayOutputStream byteArrayOutputStream;
+  private byte[] bytesBuffer;
 
-    private Random random = new Random();
+  private Random random = new Random();
 
-    public void setSerializer(SerializerInstance serializer) {
-        this.serializer = serializer;
+  public void setSerializer(SerializerInstance serializer) {
+    this.serializer = serializer;
+  }
+
+  public void prepare() {
+    for (int i = 0; i < numTestObjects; i++) {
+      char ch = (char) ('a' + random.nextInt(26));
+      int repeats = random.nextInt(maxStringValueLen);
+      String str1 = StringUtils.repeat(ch, repeats);
+      String str2 = StringUtils.repeat(ch, repeats);
+      HashMap<String, String> map = new HashMap<>();
+      map.put(str1, str2);
+      testObjects.add(map);
     }
 
-    public void prepare() {
-        for (int i = 0; i < numTestObjects; i++) {
-            char ch = (char) ('a' + random.nextInt(26));
-            int repeats = random.nextInt(maxStringValueLen);
-            String str1 = StringUtils.repeat(ch, repeats);
-            String str2 = StringUtils.repeat(ch, repeats);
-            HashMap<String, String> map = new HashMap<>();
-            map.put(str1, str2);
-            testObjects.add(map);
+    int objectSerializedSizeEstimate = maxStringValueLen * 4;
+    byteArrayOutputStream =
+        new ByteArrayOutputStream(testObjects.size() * objectSerializedSizeEstimate);
+    bytesBuffer = new byte[objectSerializedSizeEstimate];
+  }
+
+  public void run(int numIterations) {
+    ClassTag<HashMap<String, String>> classTag =
+        scala.reflect.ClassTag$.MODULE$.apply(HashMap.class);
+
+    long startTime = System.nanoTime();
+    long serializedTotalBytes = 0;
+
+    for (int i = 0; i < numIterations; i++) {
+      byteArrayOutputStream.reset();
+
+      // serialize objects and write to output stream
+
+      for (HashMap<String, String> v : testObjects) {
+        // serialize object
+        ByteBuffer byteBuffer = serializer.serialize(v, classTag);
+
+        // write object size to output stream
+        int objectSize = byteBuffer.remaining();
+        int byte1 = objectSize & 0xFF;
+        int byte2 = (objectSize >> 8) & 0xFF;
+        int byte3 = (objectSize >> 8 * 2) & 0xFF;
+        int byte4 = (objectSize >> 8 * 3) & 0xFF;
+        byteArrayOutputStream.write(byte1);
+        byteArrayOutputStream.write(byte2);
+        byteArrayOutputStream.write(byte3);
+        byteArrayOutputStream.write(byte4);
+
+        // write serialized bytes to output stream
+        while (byteBuffer.remaining() > 0) {
+          int num = Math.min(byteBuffer.remaining(), bytesBuffer.length);
+          byteBuffer.get(bytesBuffer, 0, num);
+          byteArrayOutputStream.write(bytesBuffer, 0, num);
+        }
+      }
+
+      try {
+        byteArrayOutputStream.flush();
+        byteArrayOutputStream.close();
+      } catch (IOException e) {
+        throw new RuntimeException(e);
+      }
+
+      // read objects and deserialize
+
+      byte[] streamBytes = byteArrayOutputStream.toByteArray();
+      serializedTotalBytes += streamBytes.length;
+
+      int numReadObjects = 0;
+      ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(streamBytes);
+      int byte1 = byteArrayInputStream.read();
+      while (byte1 != -1) {
+        int byte2 = byteArrayInputStream.read();
+        int byte3 = byteArrayInputStream.read();
+        int byte4 = byteArrayInputStream.read();
+
+        int objectSize = byte1 | byte2 << 8 | byte3 << 8 * 2 | byte4 << 8 * 3;
+
+        if (bytesBuffer.length < objectSize) {
+          throw new RuntimeException("Too small byte array size");
         }
 
-        int objectSerializedSizeEstimate = maxStringValueLen * 4;
-        byteArrayOutputStream = new ByteArrayOutputStream(testObjects.size() * objectSerializedSizeEstimate);
-        bytesBuffer = new byte[objectSerializedSizeEstimate];
-    }
+        byteArrayInputStream.read(bytesBuffer, 0, objectSize);
 
-    public void run(int numIterations) {
-        ClassTag<HashMap<String, String>> classTag = scala.reflect.ClassTag$.MODULE$.apply(HashMap.class);
-
-        long startTime = System.nanoTime();
-        long serializedTotalBytes = 0;
-
-        for (int i = 0; i < numIterations; i++) {
-            byteArrayOutputStream.reset();
-
-            // serialize objects and write to output stream
-
-            for (HashMap<String, String> v : testObjects) {
-                // serialize object
-                ByteBuffer byteBuffer = serializer.serialize(v, classTag);
-
-                // write object size to output stream
-                int objectSize = byteBuffer.remaining();
-                int byte1 = objectSize & 0xFF;
-                int byte2 = (objectSize >> 8) & 0xFF;
-                int byte3 = (objectSize >> 8*2) & 0xFF;
-                int byte4 = (objectSize >> 8*3) & 0xFF;
-                byteArrayOutputStream.write(byte1);
-                byteArrayOutputStream.write(byte2);
-                byteArrayOutputStream.write(byte3);
-                byteArrayOutputStream.write(byte4);
-
-                // write serialized bytes to output stream
-                while (byteBuffer.remaining() > 0) {
-                    int num = Math.min(byteBuffer.remaining(), bytesBuffer.length);
-                    byteBuffer.get(bytesBuffer, 0, num);
-                    byteArrayOutputStream.write(bytesBuffer, 0, num);
-                }
-            }
-
-            try {
-                byteArrayOutputStream.flush();
-                byteArrayOutputStream.close();
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-
-            // read objects and deserialize
-
-            byte[] streamBytes = byteArrayOutputStream.toByteArray();
-            serializedTotalBytes += streamBytes.length;
-
-            int numReadObjects = 0;
-            ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(streamBytes);
-            int byte1 = byteArrayInputStream.read();
-            while (byte1 != -1) {
-                int byte2 = byteArrayInputStream.read();
-                int byte3 = byteArrayInputStream.read();
-                int byte4 = byteArrayInputStream.read();
-
-                int objectSize = byte1 | byte2 << 8 | byte3 << 8*2 | byte4 << 8*3;
-
-                if (bytesBuffer.length < objectSize) {
-                    throw new RuntimeException("Too small byte array size");
-                }
-
-                byteArrayInputStream.read(bytesBuffer, 0, objectSize);
-
-                HashMap<String, String> object = serializer.deserialize(ByteBuffer.wrap(bytesBuffer), classTag);
-                if (object == null) {
-                    throw new RuntimeException("Got null after deserialize");
-                }
-
-                numReadObjects ++;
-
-                byte1 = byteArrayInputStream.read();
-            }
-
-            try {
-                byteArrayInputStream.close();
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-
-            if (numReadObjects != testObjects.size()) {
-                throw new RuntimeException("Invalid number of objects");
-            }
+        HashMap<String, String> object =
+            serializer.deserialize(ByteBuffer.wrap(bytesBuffer), classTag);
+        if (object == null) {
+          throw new RuntimeException("Got null after deserialize");
         }
 
-        long singleSerializeTotalTime = System.nanoTime() - startTime;
-        long singleSerializeTotalBytes = serializedTotalBytes;
+        numReadObjects++;
 
-        startTime = System.nanoTime();
-        serializedTotalBytes = 0;
+        byte1 = byteArrayInputStream.read();
+      }
 
-        for (int i = 0; i < numIterations; i++) {
-            byteArrayOutputStream.reset();
+      try {
+        byteArrayInputStream.close();
+      } catch (IOException e) {
+        throw new RuntimeException(e);
+      }
 
-            // create serialize stream and write objects into it
+      if (numReadObjects != testObjects.size()) {
+        throw new RuntimeException("Invalid number of objects");
+      }
+    }
 
-            SerializationStream serializationStream = serializer.serializeStream(byteArrayOutputStream);
-            for (HashMap<String, String> v : testObjects) {
-                serializationStream.writeObject(v, classTag);
-            }
-            serializationStream.flush();
-            serializationStream.close();
+    long singleSerializeTotalTime = System.nanoTime() - startTime;
+    long singleSerializeTotalBytes = serializedTotalBytes;
 
-            byte[] streamBytes = byteArrayOutputStream.toByteArray();
-            serializedTotalBytes += streamBytes.length;
+    startTime = System.nanoTime();
+    serializedTotalBytes = 0;
 
-            // create deserialize stream and read objects from it
+    for (int i = 0; i < numIterations; i++) {
+      byteArrayOutputStream.reset();
 
-            int numReadObjects = 0;
-            ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(streamBytes);
-            DeserializationStream deserializationStream = serializer.deserializeStream(byteArrayInputStream);
-            HashMap<String, String> object = deserializationStream.readObject(classTag);
-            while (object != null) {
-                numReadObjects++;
-                try {
-                    object = deserializationStream.readObject(classTag);
-                } catch (Throwable ex) {
-                    if (ex instanceof EOFException) {
-                        break;
-                    } else {
-                        throw ex;
-                    }
-                }
-            }
+      // create serialize stream and write objects into it
 
-            try {
-                byteArrayInputStream.close();
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
+      SerializationStream serializationStream = serializer.serializeStream(byteArrayOutputStream);
+      for (HashMap<String, String> v : testObjects) {
+        serializationStream.writeObject(v, classTag);
+      }
+      serializationStream.flush();
+      serializationStream.close();
 
-            if (numReadObjects != testObjects.size()) {
-                throw new RuntimeException("Invalid number of objects");
-            }
+      byte[] streamBytes = byteArrayOutputStream.toByteArray();
+      serializedTotalBytes += streamBytes.length;
+
+      // create deserialize stream and read objects from it
+
+      int numReadObjects = 0;
+      ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(streamBytes);
+      DeserializationStream deserializationStream =
+          serializer.deserializeStream(byteArrayInputStream);
+      HashMap<String, String> object = deserializationStream.readObject(classTag);
+      while (object != null) {
+        numReadObjects++;
+        try {
+          object = deserializationStream.readObject(classTag);
+        } catch (Throwable ex) {
+          if (ex instanceof EOFException) {
+            break;
+          } else {
+            throw ex;
+          }
         }
+      }
 
-        long streamSerializeTotalTime = System.nanoTime() - startTime;
-        long streamSerializeTotalBytes = serializedTotalBytes;
+      try {
+        byteArrayInputStream.close();
+      } catch (IOException e) {
+        throw new RuntimeException(e);
+      }
 
-        logger.info(String.format("Number of objects: %s, single serialize total seconds: %s (%s bytes), stream serialize total seconds: %s (%s bytes)",
-                testObjects.size(),
-                TimeUnit.NANOSECONDS.toSeconds(singleSerializeTotalTime),
-                singleSerializeTotalBytes,
-                TimeUnit.NANOSECONDS.toSeconds(streamSerializeTotalTime),
-                streamSerializeTotalBytes));
+      if (numReadObjects != testObjects.size()) {
+        throw new RuntimeException("Invalid number of objects");
+      }
     }
 
-    public static void main(String[] args) {
-        SparkConf conf = new SparkConf();
-        KryoSerializer serializer = new KryoSerializer(conf);
-        SerializerInstance serializerInstance = serializer.newInstance();
+    long streamSerializeTotalTime = System.nanoTime() - startTime;
+    long streamSerializeTotalBytes = serializedTotalBytes;
 
-        SerializerBenchmark benchmark = new SerializerBenchmark();
+    logger.info(String.format(
+        "Number of objects: %s, single serialize total seconds: %s (%s bytes), stream serialize total seconds: %s (%s bytes)",
+        testObjects.size(),
+        TimeUnit.NANOSECONDS.toSeconds(singleSerializeTotalTime),
+        singleSerializeTotalBytes,
+        TimeUnit.NANOSECONDS.toSeconds(streamSerializeTotalTime),
+        streamSerializeTotalBytes));
+  }
 
-        benchmark.setSerializer(serializerInstance);
+  public static void main(String[] args) {
+    SparkConf conf = new SparkConf();
+    KryoSerializer serializer = new KryoSerializer(conf);
+    SerializerInstance serializerInstance = serializer.newInstance();
 
-        benchmark.prepare();
+    SerializerBenchmark benchmark = new SerializerBenchmark();
 
-        benchmark.run(100);
-        benchmark.run(100);
-    }
+    benchmark.setSerializer(serializerInstance);
+
+    benchmark.prepare();
+
+    benchmark.run(100);
+    benchmark.run(100);
+  }
 }

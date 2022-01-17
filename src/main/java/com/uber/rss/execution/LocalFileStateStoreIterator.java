@@ -1,10 +1,13 @@
 /*
- * Copyright (c) 2020 Uber Technologies, Inc.
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -14,14 +17,10 @@
 
 package com.uber.rss.execution;
 
-import com.uber.rss.messages.AppDeletionStateItem;
-import com.uber.rss.messages.BaseMessage;
-import com.uber.rss.messages.MessageConstants;
-import com.uber.rss.messages.StageCorruptionStateItem;
-import com.uber.rss.messages.StageInfoStateItem;
-import com.uber.rss.messages.TaskAttemptCommitStateItem;
+import com.uber.rss.messages.*;
 import com.uber.rss.util.ByteBufUtils;
 import com.uber.rss.util.StreamUtils;
+import com.uber.rss.messages.*;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import org.slf4j.Logger;
@@ -138,7 +137,8 @@ public class LocalFileStateStoreIterator implements Iterator<BaseMessage>, AutoC
     }
     int length = ByteBufUtils.readInt(bytes, 0);
     if (length < 0) {
-      logger.warn(String.format("Hit invalid length field %s in state file %s", length, currentFile));
+      logger.warn(
+          String.format("Hit invalid length field %s in state file %s", length, currentFile));
       closeCurrentFileStream();
       return null;
     }
@@ -162,12 +162,16 @@ public class LocalFileStateStoreIterator implements Iterator<BaseMessage>, AutoC
         case MessageConstants.MESSAGE_StageCorruptionStateItem:
           return StageCorruptionStateItem.deserialize(buf);
         default:
-          logger.warn(String.format("Hit unsupported message type %s in state file %s", messageType, currentFile));
+          logger.warn(String
+              .format("Hit unsupported message type %s in state file %s", messageType,
+                  currentFile));
           closeCurrentFileStream();
           return null;
       }
     } catch (Throwable ex) {
-      logger.warn(String.format("Failed to deserialize message type %s from state file: %s", messageType, currentFile), ex);
+      logger.warn(String
+          .format("Failed to deserialize message type %s from state file: %s", messageType,
+              currentFile), ex);
       closeCurrentFileStream();
       return null;
     }
@@ -181,10 +185,13 @@ public class LocalFileStateStoreIterator implements Iterator<BaseMessage>, AutoC
       }
       byte[] bytes = StreamUtils.readBytes(fileStream, numBytes);
       if (bytes == null) {
-        logger.info(String.format("Finished reading state file %s after reading %s bytes", currentFile, position));
+        logger.info(String
+            .format("Finished reading state file %s after reading %s bytes", currentFile,
+                position));
         return null;
       } else if (bytes.length < numBytes) {
-        logger.warn(String.format("Hit corrupted state file %s after reading %s bytes", currentFile, position));
+        logger.warn(String
+            .format("Hit corrupted state file %s after reading %s bytes", currentFile, position));
         return null;
       } else {
         return bytes;

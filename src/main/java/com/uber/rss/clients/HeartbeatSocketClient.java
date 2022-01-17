@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2020 Uber Technologies, Inc.
+ * This file is copied from Uber Remote Shuffle Service
+ * (https://github.com/uber/RemoteShuffleService) and modified.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,7 +32,8 @@ public class HeartbeatSocketClient extends ClientBase {
   private final String appAttempt;
   private final boolean keepLive;
 
-  public HeartbeatSocketClient(String host, int port, int timeoutMillis, String user, String appId, String appAttempt, boolean keepLive) {
+  public HeartbeatSocketClient(String host, int port, int timeoutMillis, String user, String appId,
+                               String appAttempt, boolean keepLive) {
     super(host, port, timeoutMillis);
     this.user = user;
     this.appId = appId;

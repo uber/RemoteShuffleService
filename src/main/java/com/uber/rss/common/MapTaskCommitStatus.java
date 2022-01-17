@@ -1,10 +1,13 @@
 /*
- * Copyright (c) 2020 Uber Technologies, Inc.
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -15,85 +18,66 @@
 package com.uber.rss.common;
 
 import com.uber.rss.exceptions.RssInvalidDataException;
+import com.uber.rss.util.StringUtils;
 import io.netty.buffer.ByteBuf;
-import org.apache.commons.lang3.StringUtils;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
-// TODO remove mapper count
 public class MapTaskCommitStatus {
-    public void serialize(ByteBuf buf) {
-        buf.writeInt(getMapperCount());
-        buf.writeInt(getTaskAttemptIds().size());
-        getTaskAttemptIds().forEach((mapId, taskId) -> {
-            buf.writeInt(mapId);
-            buf.writeLong(taskId);
-        });
+  public void serialize(ByteBuf buf) {
+    buf.writeInt(getTaskAttemptIds().size());
+    taskAttemptIds.forEach(taskId -> {
+      buf.writeLong(taskId);
+    });
+  }
+
+  public static MapTaskCommitStatus deserialize(ByteBuf buf) {
+    int size = buf.readInt();
+
+    Set<Long> ids = new HashSet<>();
+    Map<Integer, Long> hashMap = new HashMap<>();
+    for (int i = 0; i < size; i++) {
+      long taskId = buf.readLong();
+      ids.add(taskId);
     }
 
-    public static MapTaskCommitStatus deserialize(ByteBuf buf) {
-        int mapperCount = buf.readInt();
-        int size = buf.readInt();
+    return new MapTaskCommitStatus(ids);
+  }
 
-        Map<Integer, Long> hashMap = new HashMap<>();
-        for (int i = 0; i < size; i++) {
-            int mapId = buf.readInt();
-            long taskId = buf.readLong();
-            hashMap.put(mapId, taskId);
-        }
+  // Last successful attempt ids
+  private final Set<Long> taskAttemptIds;
 
-        return new MapTaskCommitStatus(mapperCount, hashMap);
+  public MapTaskCommitStatus(Set<Long> taskAttemptIds) {
+    this.taskAttemptIds = new HashSet<>(taskAttemptIds);
+  }
+
+  public Set<Long> getTaskAttemptIds() {
+    return taskAttemptIds;
+  }
+
+  public boolean isPartitionDataAvailable(Collection<Long> fetchTaskAttemptIds) {
+    // TODO need to verify fetchTaskAttemptIds non empty to make code safer
+    if (fetchTaskAttemptIds.isEmpty()) {
+      throw new RssInvalidDataException("fetchTaskAttemptIds cannot be empty");
     }
 
-    // How many mappers in the shuffle stage
-    private final int mapperCount;
-    
-    // Last successful attempt ids for each mapper id
-    private final Map<Integer, Long> taskAttemptIds;
+    return taskAttemptIds.containsAll(fetchTaskAttemptIds);
+  }
 
-    public MapTaskCommitStatus(int mapperCount, Map<Integer, Long> taskAttemptIds) {
-        this.mapperCount = mapperCount;
-        this.taskAttemptIds = taskAttemptIds;
-    }
+  public String toShortString() {
+    String str = String.format("(%s items)", taskAttemptIds.size());
+    return "MapTaskCommitStatus{" +
+        ", taskAttemptIds=" + str +
+        '}';
+  }
 
-    // TODO remove mapper count
-    public int getMapperCount() {
-        return mapperCount;
-    }
-
-    public Map<Integer, Long> getTaskAttemptIds() {
-        return taskAttemptIds;
-    }
-
-    public boolean isPartitionDataAvailable(Collection<Long> fetchTaskAttemptIds) {
-        // TODO need to verify fetchTaskAttemptIds non empty to make code safer
-        if (fetchTaskAttemptIds.isEmpty()) {
-            throw new RssInvalidDataException("fetchTaskAttemptIds cannot be empty");
-        }
-
-        // TODO improve performance in following
-        return new HashSet<>(taskAttemptIds.values())
-            .containsAll(fetchTaskAttemptIds);
-    }
-
-    public String toShortString() {
-        String str = String.format("(%s items)", taskAttemptIds.size());
-        return "MapTaskCommitStatus{" +
-            "mapperCount=" + mapperCount +
-            ", taskAttemptIds=" + str +
-            '}';
-    }
-
-    @Override
-    public String toString() {
-        String str = StringUtils.join(taskAttemptIds.values(), ',');
-        return "MapTaskCommitStatus{" +
-                "mapperCount=" + mapperCount +
-                ", taskAttemptIds=" + str +
-                '}';
-    }
+  @Override
+  public String toString() {
+    List<Long> sorted = taskAttemptIds.stream().sorted().collect(Collectors.toList());
+    String str = StringUtils.toString4SortedNumberList(sorted);
+    return "MapTaskCommitStatus{" +
+        ", taskAttemptIds=" + str +
+        '}';
+  }
 }

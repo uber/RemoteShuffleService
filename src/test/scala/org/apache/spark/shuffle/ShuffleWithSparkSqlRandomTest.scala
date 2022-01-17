@@ -1,10 +1,13 @@
 /*
- * Copyright (c) 2020 Uber Technologies, Inc.
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -18,6 +21,7 @@ import java.util.{Random, UUID}
 
 import com.uber.rss.testutil.{RssMiniCluster, StreamServerTestUtils}
 import org.apache.spark.internal.Logging
+import com.uber.rss.testutil.StreamServerTestUtils
 import org.apache.spark.sql.SparkSession
 import org.testng.Assert
 import org.testng.annotations._
@@ -37,8 +41,8 @@ class ShuffleWithSparkSqlRandomTest extends Logging {
     val numRowGroups = 1 + random.nextInt(numIdTableRows)
 
     val numExecutorCores = 1 + random.nextInt(4)
-    val bufferSize = 1 + random.nextInt(64*1024)
-    val bufferSpill = 1 + random.nextInt(128*1024)
+    val bufferSize = 1 + random.nextInt(64 * 1024)
+    val bufferSpill = 1 + random.nextInt(128 * 1024)
 
     val numMaps = 1 + random.nextInt(10)
     val numPartitions = 1 + random.nextInt(10)
@@ -53,7 +57,8 @@ class ShuffleWithSparkSqlRandomTest extends Logging {
     val rootDirs = StreamServerTestUtils.createTempDirectories(numRssServers)
     val rssTestCluster = new RssMiniCluster(rootDirs, appId)
 
-    val conf = TestUtil.newSparkConfWithStandAloneRegistryServer(appId, rssTestCluster.getRegistryServerConnection)
+    val conf = TestUtil
+      .newSparkConfWithStandAloneRegistryServer(appId, rssTestCluster.getRegistryServerConnection)
     conf.set("spark.executor.cores", numExecutorCores.toString)
     conf.set("spark.sql.shuffle.partitions", numPartitions.toString)
     conf.set("spark.shuffle.rss.writer.bufferSize", bufferSize.toString)
@@ -71,15 +76,15 @@ class ShuffleWithSparkSqlRandomTest extends Logging {
 
     val df = spark.sql(
       s"""
-        | select groupKey, count(distinct str) count, max(str) max, min(str) min
-        | from (
-        | select id % $numRowGroups groupKey, randomString() str from idTable
-        | union all
-        | select 0, ''
-        | )
-        | group by 1
-        | order by 1
-        |""".stripMargin)
+         | select groupKey, count(distinct str) count, max(str) max, min(str) min
+         | from (
+         | select id % $numRowGroups groupKey, randomString() str from idTable
+         | union all
+         | select 0, ''
+         | )
+         | group by 1
+         | order by 1
+         |""".stripMargin)
     df.explain()
 
     val result = df.collect()

@@ -1,10 +1,13 @@
 /*
- * Copyright (c) 2020 Uber Technologies, Inc.
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -18,39 +21,39 @@ import org.testng.Assert;
 import org.testng.annotations.Test;
 
 public class RateCounterTest {
-    
-    @Test
-    public void addValueAndGetRate() throws InterruptedException {
-        long checkpointMillis = 10;
-        long startTime = System.currentTimeMillis();
-        
-        RateCounter rateCounter = new RateCounter(checkpointMillis);
-        
-        Double rate = rateCounter.addValueAndGetRate(20);
-        if (System.currentTimeMillis() - startTime < checkpointMillis) {
-            Assert.assertNull(rate);
-        }
-        
-        Thread.sleep(checkpointMillis);
-        rate = rateCounter.addValueAndGetRate(20);
-        Assert.assertNotNull(rate);
-        Assert.assertTrue(rate > 0);
 
-        Assert.assertTrue(rateCounter.getOverallRate() > 0);
+  @Test
+  public void addValueAndGetRate() throws InterruptedException {
+    long checkpointMillis = 10;
+    long startTime = System.currentTimeMillis();
+
+    RateCounter rateCounter = new RateCounter(checkpointMillis);
+
+    Double rate = rateCounter.addValueAndGetRate(20);
+    if (System.currentTimeMillis() - startTime < checkpointMillis) {
+      Assert.assertNull(rate);
     }
 
-    @Test
-    public void checkRateAccuracy() throws InterruptedException {
-        long checkpointMillis = 10;
+    Thread.sleep(checkpointMillis);
+    rate = rateCounter.addValueAndGetRate(20);
+    Assert.assertNotNull(rate);
+    Assert.assertTrue(rate > 0);
 
-        RateCounter rateCounter = new RateCounter(checkpointMillis);
+    Assert.assertTrue(rateCounter.getOverallRate() > 0);
+  }
 
-        Thread.sleep(checkpointMillis);
+  @Test
+  public void checkRateAccuracy() throws InterruptedException {
+    long checkpointMillis = 10;
 
-        Double rate = rateCounter.addValueAndGetRate(100 * checkpointMillis);
+    RateCounter rateCounter = new RateCounter(checkpointMillis);
 
-        // rate should be roughly between 10 and 1000
-        Assert.assertTrue(rate > 10);
-        Assert.assertTrue(rate < 1000);
-    }
+    Thread.sleep(checkpointMillis);
+
+    Double rate = rateCounter.addValueAndGetRate(100 * checkpointMillis);
+
+    // rate should be roughly between 10 and 1000
+    Assert.assertTrue(rate > 10);
+    Assert.assertTrue(rate < 1000);
+  }
 }
