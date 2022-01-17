@@ -8,7 +8,17 @@ on:
     branches: [ k8s-spark-3.2 ]
   pull_request:
     branches: [ k8s-spark-3.2 ]
-
+  workflow_dispatch:
+    inputs:
+      name:
+        description: 'Person to greet'
+        required: true
+        default: 'Mona the Octocat'
+      home:
+        description: 'location'
+        required: false
+        default: 'The Octoverse'
+        
 jobs:
   build:
 
