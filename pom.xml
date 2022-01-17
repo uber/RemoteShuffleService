@@ -44,6 +44,14 @@
             <url>https://repository.apache.org/content/groups/public</url>
         </repository>
     </repositories>
+         
+    <distributionManagement>
+      <repository>
+        <id>github</id>
+        <name>GitHub Packages</name>
+        <url>https://maven.pkg.github.com/datapunchorg/RemoteShuffleService</url>
+      </repository>
+    </distributionManagement>
 
     <dependencies>
         <dependency>
