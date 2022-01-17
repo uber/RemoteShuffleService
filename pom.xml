@@ -43,6 +43,17 @@
             <id>apache-releases</id>
             <url>https://repository.apache.org/content/groups/public</url>
         </repository>
+        <repository>
+            <id>central</id>
+            <url>https://repo1.maven.org/maven2</url>
+        </repository>
+        <repository>
+            <id>github</id>
+            <url>https://maven.pkg.github.com/datapunchorg/RemoteShuffleService</url>
+            <snapshots>
+              <enabled>true</enabled>
+            </snapshots>
+        </repository>
     </repositories>
          
     <distributionManagement>
