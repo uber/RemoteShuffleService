@@ -1,4 +1,4 @@
-# Uber Remote Shuffle Service (RSS)
+# Uber Remote Shuffle Service (RSS) - Kuberentes Version
 
 Uber Remote Shuffle Service provides the capability for Apache Spark applications to store shuffle data 
 on remote servers. See more details on Spark community document: 
@@ -8,11 +8,11 @@ Please contact us (**remoteshuffleservice@googlegroups.com**) for any question o
 
 ## Supported Spark Version
 
-- The **master** branch supports **Spark 2.4.x**. The **spark30** branch supports **Spark 3.0.x**.
+- The **k8s-spark-3.2** branch supports **Spark 3.2**.
 
 ## How to Build
 
-Make sure JDK 8+ and maven is installed on your machine.
+Make sure JDK 11+ and maven is installed on your machine.
 
 #### Build RSS Server
 
