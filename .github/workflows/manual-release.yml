@@ -33,6 +33,6 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     - name: Publish server jar files to Maven repository
-      run: mvn --batch-mode deploy -Pserver -DskipTests --file pom.xml
+      run: mvn --batch-mode deploy -Pserver -DskipTests --file pom.xml && cp `ls target/*.jar | grep -v sources.jar | grep -v original` target/remote-shuffle-service-server.jar
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
