@@ -38,4 +38,4 @@ EXPOSE 8080 8080
 # Specify the User that the actual main process will run as
 USER ${spark_uid}
 
-ENTRYPOINT ["java", "-Xmx8G", "-Dlog4j.configuration=log4j-remote-shuffle-service.properties", "-cp", "remote-shuffle-service-server.jar", "org.apache.spark.remoteshuffle.StreamServer", "-port", "9338", "-httpPort", "8080"]
+ENTRYPOINT ["java", "-Xmx8G", "-Dlog4j.configuration=log4j-remote-shuffle-service.properties", "-cp", "remote-shuffle-service-server.jar", "com.uber.rss.StreamServer", "-port", "9338", "-httpPort", "8080"]
