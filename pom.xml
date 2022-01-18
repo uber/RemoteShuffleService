@@ -6,8 +6,8 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>com.uber</groupId>
-    <artifactId>remote-shuffle-service</artifactId>
-    <version>0.0.9</version>
+    <artifactId>${projectArtifactId}</artifactId>
+    <version>0.0.10-SNAPSHOT</version>
     <name>remote-shuffle-service</name>
     <description>Remote shuffle service and client.</description>
     <url></url>
@@ -20,6 +20,7 @@
     </licenses>
 
     <properties>
+        <projectArtifactId>remote-shuffle-service</projectArtifactId>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <java.version>1.8</java.version>
         <maven.compiler.source>${java.version}</maven.compiler.source>
@@ -435,6 +436,7 @@
             <!-- Not strictly needed, but useful to confirm the manually specified shaded client dependencies -->
             <id>client</id>
             <properties>
+                <projectArtifactId>remote-shuffle-service-client</projectArtifactId>
                 <dependency.scope>provided</dependency.scope>
             </properties>
             <build>
