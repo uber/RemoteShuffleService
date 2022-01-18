@@ -37,8 +37,10 @@ jobs:
         mvn --batch-mode deploy -Pserver -DskipTests --file pom.xml
         mkdir -p target/server-jar-file
         cp `ls target/*.jar | grep -v sources.jar | grep -v original` target/server-jar-file/
-        ls -lt target
+        ls -l target/server-jar-file/
         mv target/server-jar-file/remote-shuffle-service-server-*.jar target/server-jar-file/remote-shuffle-service-server.jar
-        ls -lt target
+        ls -l target/server-jar-file/
+        mv target/server-jar-file/remote-shuffle-service-server.jar target/
+        ls -l target/
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
