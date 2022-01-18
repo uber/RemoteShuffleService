@@ -28,13 +28,17 @@ jobs:
       with:
         java-version: '11'
         distribution: 'adopt'
-    - name: Publish client jar files to Maven repository
+    - name: Build and publish client jar files to Maven repository
       run: mvn --batch-mode deploy -Pclient -DskipTests --file pom.xml
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-    - name: Publish server jar files to Maven repository
+    - name: Build and publish server jar files to Maven repository
       run: |
         mvn --batch-mode deploy -Pserver -DskipTests --file pom.xml
-        cp `ls target/*.jar | grep -v sources.jar | grep -v original` target/remote-shuffle-service-server.jar
+        mkdir -p target/server-jar-file
+        cp `ls target/*.jar | grep -v sources.jar | grep -v original` target/server-jar-file/
+        ls -lt target
+        mv target/server-jar-file/remote-shuffle-service-server-*.jar target/server-jar-file/remote-shuffle-service-server.jar
+        ls -lt target
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
