@@ -43,6 +43,7 @@ jenkins.xml
 .cache
 .vscode/
 target/
+dependency-reduced-pom.xml
 
 # Ignore any mocks sub-directory.
 mocks/

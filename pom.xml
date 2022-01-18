@@ -32,7 +32,7 @@
         <jacoco.version>0.8.2</jacoco.version>
         <guava.version>15.0</guava.version>
         <test.runner.version>2.22.1</test.runner.version>
-        <shade.version>3.1.1</shade.version>
+        <shade.version>3.2.4</shade.version>
         <skipIT>true</skipIT>
         <dependency.scope>compile</dependency.scope>
         <useProjectArtifact>false</useProjectArtifact>
@@ -247,8 +247,6 @@
                             <goal>shade</goal>
                         </goals>
                         <configuration>
-                            <shadedArtifactAttached>true</shadedArtifactAttached>
-                            <shadedClassifierName>client</shadedClassifierName>
                             <filters>
                                 <filter>
                                     <artifact>*:*</artifact>
@@ -446,8 +444,6 @@
                         <artifactId>maven-shade-plugin</artifactId>
                         <version>${shade.version}</version>
                         <configuration>
-                            <shadedArtifactAttached>true</shadedArtifactAttached>
-                            <shadedClassifierName>client</shadedClassifierName>
                             <filters>
                                 <filter>
                                     <artifact>*:*</artifact>
@@ -497,8 +493,6 @@
                         <artifactId>maven-shade-plugin</artifactId>
                         <version>${shade.version}</version>
                         <configuration>
-                            <shadedArtifactAttached>true</shadedArtifactAttached>
-                            <shadedClassifierName>server</shadedClassifierName>
                             <filters>
                                 <filter>
                                     <artifact>*:*</artifact>
@@ -507,6 +501,7 @@
                                         <exclude>META-INF/*.DSA</exclude>
                                         <exclude>META-INF/*.RSA</exclude>
                                         <exclude>META-INF/versions/11/org/roaringbitmap/*</exclude>
+                                        <exclude>META-INF/versions/11/org/glassfish/*</exclude>
                                     </excludes>
                                 </filter>
                             </filters>
