@@ -50,7 +50,7 @@ jobs:
         java-version: '11'
         distribution: 'adopt'
 
-    - name: Publish to GitHub Packages
+    - name: Publish client jar to GitHub Packages
       run: mvn --batch-mode deploy -Pclient -DskipTests --file pom.xml
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
