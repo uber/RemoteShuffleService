@@ -28,7 +28,7 @@ jobs:
     steps:
     - uses: actions/checkout@v2
 
-      # https://docs.github.com/en/actions/publishing-packages/publishing-java-packages-with-maven
+# https://docs.github.com/en/actions/publishing-packages/publishing-java-packages-with-maven
     - name: Set up JDK and Maven Central Repository
       uses: actions/setup-java@v2
       with:
@@ -44,16 +44,16 @@ jobs:
         MAVEN_USERNAME: ${{ secrets.OSSRH_USERNAME }}
         MAVEN_PASSWORD: ${{ secrets.OSSRH_TOKEN }}
 
-    - name: Set up Java for publishing to GitHub Packages
-      uses: actions/setup-java@v2
-      with:
-        java-version: '11'
-        distribution: 'adopt'
+#    - name: Set up Java for publishing to GitHub Packages
+#      uses: actions/setup-java@v2
+#      with:
+#        java-version: '11'
+#        distribution: 'adopt'
 
-    - name: Publish client jar to GitHub Packages
-      run: mvn --batch-mode deploy -Pclient -DskipTests --file pom.xml
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#    - name: Publish client jar to GitHub Packages
+#      run: mvn --batch-mode deploy -Pclient -DskipTests --file pom.xml
+#      env:
+#        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Build and publish server jar files to Maven repository
       run: |
@@ -64,7 +64,8 @@ jobs:
         echo Files inside target/
         ls -l target/
       env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        MAVEN_USERNAME: ${{ secrets.OSSRH_USERNAME }}
+        MAVEN_PASSWORD: ${{ secrets.OSSRH_TOKEN }}
 
     - name: Log in to the Container registry
       uses: docker/login-action@f054a8b539a109f9f41c372932f1ae047eff08c9

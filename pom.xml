@@ -58,11 +58,11 @@
     </repositories>
          
     <distributionManagement>
-        <repository>
+        <!-- <repository>
             <id>github</id>
             <name>GitHub Packages</name>
             <url>https://maven.pkg.github.com/datapunchorg/RemoteShuffleService</url>
-        </repository>
+        </repository> -->
         <!-- https://central.sonatype.org/publish/publish-maven/ -->
         <snapshotRepository>
             <id>ossrh</id>
