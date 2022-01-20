@@ -464,6 +464,9 @@
                         </goals>
                     </execution>
                 </executions>
+                <configuration>
+                    <doclint>none</doclint>
+                </configuration>
             </plugin>
             <plugin>
                 <!-- mvn clean deploy -Dgpg.passphrase=yourpassphrase -->
