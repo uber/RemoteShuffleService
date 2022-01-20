@@ -56,6 +56,9 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
 
+/***
+ * Entry class to run shuffle server.
+ */
 public class StreamServer {
   private static final Logger logger = LoggerFactory.getLogger(StreamServer.class);
 
