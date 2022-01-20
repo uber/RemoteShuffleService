@@ -28,10 +28,10 @@ jobs:
     steps:
     - uses: actions/checkout@v2
 
-  - name: Install gpg secret key
-    run: |
-      cat <(echo -e "${{ secrets.OSSRH_GPG_SECRET_KEY }}") | gpg --batch --import
-      gpg --list-secret-keys --keyid-format LONG
+    - name: Install gpg secret key
+      run: |
+        cat <(echo -e "${{ secrets.OSSRH_GPG_SECRET_KEY }}") | gpg --batch --import
+        gpg --list-secret-keys --keyid-format LONG
 
 # https://central.sonatype.org/publish/publish-maven/
 # https://docs.github.com/en/actions/publishing-packages/publishing-java-packages-with-maven
