@@ -28,6 +28,11 @@ jobs:
     steps:
     - uses: actions/checkout@v2
 
+  - name: Install gpg secret key
+    run: |
+      cat <(echo -e "${{ secrets.OSSRH_GPG_SECRET_KEY }}") | gpg --batch --import
+      gpg --list-secret-keys --keyid-format LONG
+
 # https://central.sonatype.org/publish/publish-maven/
 # https://docs.github.com/en/actions/publishing-packages/publishing-java-packages-with-maven
     - name: Set up JDK and Maven Central Repository
@@ -40,7 +45,7 @@ jobs:
         server-password: MAVEN_PASSWORD
 
     - name: Build and publish client jar files to Maven repository
-      run: mvn --batch-mode clean deploy -Pclient -DskipTests --file pom.xml
+      run: mvn --batch-mode clean deploy -Pclient -DskipTests --file pom.xml -Dgpg.passphrase=${{ secrets.OSSRH_GPG_SECRET_KEY_PASSWORD }}
       env:
         MAVEN_USERNAME: ${{ secrets.OSSRH_USERNAME }}
         MAVEN_PASSWORD: ${{ secrets.OSSRH_TOKEN }}
