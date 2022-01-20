@@ -456,44 +456,14 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-javadoc-plugin</artifactId>
                 <version>3.1.1</version>
-                <configuration>
-                    <additionalJOptions>
-                        <additionalJOption>-Xdoclint:all</additionalJOption>
-                        <additionalJOption>-Xdoclint:-missing</additionalJOption>
-                    </additionalJOptions>
-                    <tags>
-                        <tag>
-                            <name>example</name>
-                            <placement>a</placement>
-                            <head>Example:</head>
-                        </tag>
-                        <tag>
-                            <name>note</name>
-                            <placement>a</placement>
-                            <head>Note:</head>
-                        </tag>
-                        <tag>
-                            <name>group</name>
-                            <placement>X</placement>
-                        </tag>
-                        <tag>
-                            <name>tparam</name>
-                            <placement>X</placement>
-                        </tag>
-                        <tag>
-                            <name>constructor</name>
-                            <placement>X</placement>
-                        </tag>
-                        <tag>
-                            <name>todo</name>
-                            <placement>X</placement>
-                        </tag>
-                        <tag>
-                            <name>groupname</name>
-                            <placement>X</placement>
-                        </tag>
-                    </tags>
-                </configuration>
+                <executions>
+                    <execution>
+                        <id>attach-javadocs</id>
+                        <goals>
+                            <goal>jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
             <plugin>
                 <!-- mvn clean deploy -Dgpg.passphrase=yourpassphrase -->
