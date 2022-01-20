@@ -18,6 +18,21 @@
             <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
         </license>
     </licenses>
+    <scm>
+        <connection>scm:git:git@github.com:datapunchorg/RemoteShuffleService.git</connection>
+        <url>scm:git:git@github.com:datapunchorg/RemoteShuffleService.git</url>
+        <tag>HEAD</tag>
+    </scm>
+    <developers>
+        <developer>
+            <id>datapunchorg</id>
+            <name>DataPunch Organization</name>
+            <email>datapunch2021@gmail.com</email>
+            <url>https://www.github.com/datapunchorg</url>
+            <organization>DataPunch Organization</organization>
+            <organizationUrl>http://www.datapunch.org</organizationUrl>
+        </developer>
+    </developers>
 
     <properties>
         <projectArtifactId>remote-shuffle-service</projectArtifactId>
