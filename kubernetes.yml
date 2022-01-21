@@ -40,7 +40,7 @@ spec:
     spec:
       containers:
         - name: rss
-          image: [remote-shuffle-service-server-image]
+          image: ghcr.io/datapunchorg/remoteshuffleservice:k8s-spark-3.2
           resources:
             requests:
               memory: "1G"
