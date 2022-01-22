@@ -4,92 +4,102 @@ Uber Remote Shuffle Service provides the capability for Apache Spark application
 on remote servers. See more details on Spark community document: 
 [[SPARK-25299][DISCUSSION] Improving Spark Shuffle Reliability](https://docs.google.com/document/d/1uCkzGGVG17oGC6BJ75TpzLAZNorvrAU3FRd2X-rVHSM/edit?ts=5e3c57b8).
 
+The high level design for Remote Shuffle Service could be found [here](https://github.com/uber/RemoteShuffleService/blob/master/docs/server-high-level-design.md).
+
 Please contact us (**remoteshuffleservice@googlegroups.com**) for any question or feedback.
 
-## Supported Spark Version
+## Quick Start: Run Spark Application With Remote Shuffle Service in Kubernetes
 
-- The **k8s-spark-3.2** branch supports **Spark 3.2**.
+### Deploy Remote Shuffle Service using Helm
 
-## How to Build
-
-Make sure JDK 11+ and maven is installed on your machine.
-
-#### Build RSS Server
-
-- Run: 
+Run following command under root directory of this project:
 
 ```
-mvn clean package -Pserver -DskipTests
+helm install remote-shuffle-service charts/remote-shuffle-service --namespace remote-shuffle-service --create-namespace
 ```
 
-This command creates **remote-shuffle-service-xxx-server.jar** file for RSS server, e.g. target/remote-shuffle-service-0.0.9-server.jar.
+### Run Spark Application With Remote Shuffle Service and Dynamic Allocation
 
-### Build RSS Client
-
-- Run: 
+Use following pre-built Spark images with embedded Remote Shuffle Service client jar file:
 
 ```
-mvn clean package -Pclient -DskipTests
+ghcr.io/datapunchorg/spark:spark-3.2-1642867779
+ghcr.io/datapunchorg/spark:pyspark-3.2-1642867779
 ```
 
-This command creates **remote-shuffle-service-xxx-client.jar** file for RSS client, e.g. target/remote-shuffle-service-0.0.9-client.jar.
-
-## How to Run
-
-### Step 1: Run RSS Server
-
-- Pick up a server in your environment, e.g. `server1`. Run RSS server jar file (**remote-shuffle-service-xxx-server.jar**) as a Java application, for example,
+Add configure to your Spark application like following:
 
 ```
-java -Dlog4j.configuration=log4j-rss-prod.properties -cp target/remote-shuffle-service-0.0.9-server.jar com.uber.rss.StreamServer -port 12222 -serviceRegistry standalone -dataCenter dc1
-```
-
-### Step 2: Run Spark application with RSS Client
-
-- Upload client jar file (**remote-shuffle-service-xxx-client.jar**) to your HDFS, e.g. `hdfs:///file/path/remote-shuffle-service-0.0.9-client.jar`
-
-- Add configure to your Spark application like following (you need to adjust the values based on your environment):
-
-```
-spark.jars=hdfs:///file/path/remote-shuffle-service-0.0.9-client.jar
-spark.executor.extraClassPath=remote-shuffle-service-0.0.9-client.jar
 spark.shuffle.manager=org.apache.spark.shuffle.RssShuffleManager
-spark.shuffle.rss.serviceRegistry.type=standalone
-spark.shuffle.rss.serviceRegistry.server=server1:12222
-spark.shuffle.rss.dataCenter=dc1
+spark.shuffle.rss.serviceRegistry.type=serverSequence
+spark.shuffle.rss.serverSequence.connectionString=rss-%s.rss.remote-shuffle-service.svc.cluster.local:9338
+spark.shuffle.rss.serverSequence.startIndex=0
+spark.shuffle.rss.serverSequence.endIndex=1
+spark.serializer=org.apache.spark.serializer.KryoSerializer
+spark.dynamicAllocation.enabled=true
+spark.dynamicAllocation.shuffleTracking.enabled=true
+spark.dynamicAllocation.shuffleTracking.timeout=1
 ```
 
-- Run your Spark application
+Now you can run your application in your own Spark Kubernetes environment.
 
-## Run with High Availability
+If you do not have your own environment to run Spark, please see [Punch Project](https://github.com/datapunchorg/punch),
+which provides a one-click tool to create a Spark environment on AWS.
 
-Remote Shuffle Service could use a [Apache ZooKeeper](https://zookeeper.apache.org/) cluster and register live service 
-instances in ZooKeeper. Spark applications will look up ZooKeeper to find and use active Remote Shuffle Service instances. 
+## How to Build Server/Client
 
-In this configuration, ZooKeeper serves as a **Service Registry** for Remote Shuffle Service, and we need to add those 
-parameters when starting RSS server and Spark application.
+Make sure JDK and maven are installed on your machine.
 
-### Step 1: Run RSS Server with ZooKeeper as service registry
+### Build Server Side Jar File
 
-- Assume there is a ZooKeeper server `zkServer1`. Pick up a server in your environment, e.g. `server1`. Run RSS server jar file (**remote-shuffle-service-xxx-server.jar**) as a Java application on `server1`, for example,
-
-```
-java -Dlog4j.configuration=log4j-rss-prod.properties -cp target/remote-shuffle-service-0.0.9-server.jar com.uber.rss.StreamServer -port 12222 -serviceRegistry zookeeper -zooKeeperServers zkServer1:2181 -dataCenter dc1
-```
-
-### Step 2: Run Spark application with RSS Client and ZooKeeper service registry
-
-- Upload client jar file (**remote-shuffle-service-xxx-client.jar**) to your HDFS, e.g. `hdfs:///file/path/remote-shuffle-service-0.0.9-client.jar`
-
-- Add configure to your Spark application like following (you need to adjust the values based on your environment):
+- Run following command inside this project directory: 
 
 ```
-spark.jars=hdfs:///file/path/remote-shuffle-service-0.0.9-client.jar
-spark.executor.extraClassPath=remote-shuffle-service-0.0.9-client.jar
-spark.shuffle.manager=org.apache.spark.shuffle.RssShuffleManager
-spark.shuffle.rss.serviceRegistry.type=zookeeper
-spark.shuffle.rss.serviceRegistry.zookeeper.servers=zkServer1:2181
-spark.shuffle.rss.dataCenter=dc1
+mvn clean package -Pserver -DskipTests -Dmaven.javadoc.skip=true
 ```
 
-- Run your Spark application
+This command creates `remote-shuffle-service-server-xxx.jar` file under `target` directory.
+
+### Build Server Side Docker Image
+
+```
+rm target/original-remote-shuffle-service-*.jar
+rm target/remote-shuffle-service-*-sources.jar
+mv target/remote-shuffle-service-server-*.jar target/remote-shuffle-service-server.jar
+docker build -t remote-shuffle-service-server:0.0.10 .
+docker images
+```
+
+The upper commands will create and list docker image for Remote Shuffle Service.
+
+### Build Spark Distribution/Image with Client Side Jar File
+
+To run Spark with Remote Shuffle Service on Kubernetes. Spark image must have the Remote Shuffle Service client jar file inside SPARK_HOME/jars folder.
+
+You could add following dependency in Spark pom.xml file and build Spark distribution and image.
+
+```
+    <dependency>
+      <groupId>org.datapunch</groupId>
+      <artifactId>remote-shuffle-service-client</artifactId>
+      <version>0.0.10</version>
+      <scope>compile</scope>
+    </dependency>
+```
+
+Instructions to build Spark: [Building Spark](https://spark.apache.org/docs/latest/building-spark.html), e.g.
+
+```
+./dev/make-distribution.sh --name spark-with-remote-shuffle-service-client --pip --tgz -Phive -Phive-thriftserver -Pkubernetes -Phadoop-3.2 -Phadoop-cloud
+```
+
+To build a Spark docker image, unzip the Spark distribution tgz file, and run commands like 
+following:
+
+```
+./bin/docker-image-tool.sh -t spark-with-remote-shuffle-service build
+./bin/docker-image-tool.sh -t spark-with-remote-shuffle-service -p kubernetes/dockerfiles/spark/bindings/python/Dockerfile build
+```
+
+The first command creates Java Spark image, the second command creates Python Spark image.
+
