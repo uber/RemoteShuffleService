@@ -1,0 +1,5 @@
+replicas: 2
+
+image:
+  repository: ghcr.io/datapunchorg/remoteshuffleservice
+  tag: k8s-spark-3.2

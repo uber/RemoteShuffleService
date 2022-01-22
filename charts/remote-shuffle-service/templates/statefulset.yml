@@ -1,0 +1,60 @@
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements. See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License. You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: rss
+  labels:
+    app: rss
+spec:
+  replicas: {{ .Values.replicas }}
+  selector:
+    matchLabels:
+      app: rss
+  serviceName: rss
+  template:
+    metadata:
+      labels:
+        app: rss
+    spec:
+      containers:
+        - name: rss
+          image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
+          resources:
+            requests:
+              memory: "1G"
+              cpu: "1000m"
+            limits:
+              memory: "1G"
+              cpu: "1000m"
+          env:
+            - name: RSS_SERVER_ID
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+          command: ["java", "-Xmx1G", "-Dlog4j.configuration=log4j-remote-shuffle-service.properties", "-cp", "remote-shuffle-service-server.jar", "com.uber.rss.StreamServer", "-port", "9338", "-httpPort", "8080"]
+          args: []
+          ports:
+            - containerPort: 9338
+            - containerPort: 8080
+              name: healthcheck
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: healthcheck
+            failureThreshold: 3
+            periodSeconds: 15
