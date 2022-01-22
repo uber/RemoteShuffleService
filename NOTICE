@@ -1,6 +1,10 @@
 Remote Shuffle Service
 Copyright (c) 2020 Uber Technologies, Inc.
 
+This project is forked from Uber Remote Shuffle Service
+(https://github.com/uber/RemoteShuffleService). It contains
+and also modifies files copied from Uber Remote Shuffle Service.
+
 I. Included Software
 
 This product may include or depend software developed at
