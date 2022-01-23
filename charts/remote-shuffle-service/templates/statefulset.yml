@@ -35,21 +35,21 @@ spec:
           image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
           resources:
             requests:
-              memory: "1G"
-              cpu: "1000m"
+              memory: {{ .Values.resources.requests.memory }}
+              cpu:  {{ .Values.resources.requests.cpu }}
             limits:
-              memory: "1G"
-              cpu: "1000m"
+              memory: {{ .Values.resources.limits.memory }}
+              cpu: {{ .Values.resources.limits.cpu }}
           env:
             - name: RSS_SERVER_ID
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.name
-          command: ["java", "-Xmx1G", "-Dlog4j.configuration=log4j-remote-shuffle-service.properties", "-cp", "remote-shuffle-service-server.jar", "com.uber.rss.StreamServer", "-port", "9338", "-httpPort", "8080"]
+          command: ["java", {{ .Values.command.jvmHeapSizeOption }}, "-Dlog4j.configuration=log4j-remote-shuffle-service.properties", "-cp", "remote-shuffle-service-server.jar", "com.uber.rss.StreamServer", "-port", "9338", "-httpPort", "8080"]
           args: []
           ports:
-            - containerPort: 9338
-            - containerPort: 8080
+            - containerPort: {{ .Values.ports.shuffleServer }}
+            - containerPort: {{ .Values.ports.healthcheck }}
               name: healthcheck
               protocol: TCP
           livenessProbe:
