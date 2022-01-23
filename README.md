@@ -1,4 +1,4 @@
-# Uber Remote Shuffle Service (RSS) - Kuberentes Version
+# Uber Remote Shuffle Service (RSS) - Kubernetes Version
 
 Uber Remote Shuffle Service provides the capability for Apache Spark applications to store shuffle data 
 on remote servers. See more details on Spark community document: 
@@ -8,7 +8,7 @@ The high level design for Remote Shuffle Service could be found [here](https://g
 
 Please contact us (**remoteshuffleservice@googlegroups.com**) for any question or feedback.
 
-## Quick Start: Run Spark Application With Remote Shuffle Service in Kubernetes
+## Quick Start: Run Spark Application With Pre-Built Images
 
 ### Deploy Remote Shuffle Service using Helm
 
@@ -46,11 +46,11 @@ Now you can run your application in your own Spark Kubernetes environment.
 If you do not have your own environment to run Spark, please see [Punch Project](https://github.com/datapunchorg/punch),
 which provides a one-click tool to create a Spark environment on AWS.
 
-## How to Build Server/Client
+## Build Remote Shuffle Service By Yourself
 
 Make sure JDK and maven are installed on your machine.
 
-### Build Server Side Jar File
+### Build Server Jar File
 
 - Run following command inside this project directory: 
 
@@ -60,7 +60,7 @@ mvn clean package -Pserver -DskipTests -Dmaven.javadoc.skip=true
 
 This command creates `remote-shuffle-service-server-xxx.jar` file under `target` directory.
 
-### Build Server Side Docker Image
+### Build Server Docker Image
 
 ```
 rm target/original-remote-shuffle-service-*.jar
@@ -72,7 +72,7 @@ docker images
 
 The upper commands will create and list docker image for Remote Shuffle Service.
 
-### Build Spark Distribution/Image with Client Side Jar File
+### Build Spark Image with Client Jar File
 
 To run Spark with Remote Shuffle Service on Kubernetes. Spark image must have the Remote Shuffle Service client jar file inside SPARK_HOME/jars folder.
 
@@ -102,4 +102,3 @@ following:
 ```
 
 The first command creates Java Spark image, the second command creates Python Spark image.
-
