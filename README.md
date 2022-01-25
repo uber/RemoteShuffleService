@@ -87,14 +87,21 @@ You could add following dependency in Spark pom.xml file and build Spark distrib
     </dependency>
 ```
 
-Instructions to build Spark: [Building Spark](https://spark.apache.org/docs/latest/building-spark.html), e.g.
+You could also build the Remote Shuffle Service client jar file by yourself, using command like following:
+
+```
+mvn clean package -Pclient -DskipTests -Dmaven.javadoc.skip=true
+```
+
+With Remote Shuffle Service client jar, there are two steps to build Spark image:
+
+1. Build Spark distribution, see: [Building Spark](https://spark.apache.org/docs/latest/building-spark.html), e.g.
 
 ```
 ./dev/make-distribution.sh --name spark-with-remote-shuffle-service-client --pip --tgz -Phive -Phive-thriftserver -Pkubernetes -Phadoop-3.2 -Phadoop-cloud
 ```
 
-To build a Spark docker image, unzip the Spark distribution tgz file, and run commands like 
-following:
+2. Build Spark docker image: unzip the Spark distribution tgz file, run commands like:
 
 ```
 ./bin/docker-image-tool.sh -t spark-with-remote-shuffle-service build
