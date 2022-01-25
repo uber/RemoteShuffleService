@@ -35,6 +35,7 @@ jobs:
 
 # https://central.sonatype.org/publish/publish-maven/
 # https://docs.github.com/en/actions/publishing-packages/publishing-java-packages-with-maven
+# https://s01.oss.sonatype.org
     - name: Set up JDK and Maven Central Repository
       uses: actions/setup-java@v2
       with:
