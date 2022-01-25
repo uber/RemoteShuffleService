@@ -36,6 +36,7 @@
 
     <properties>
         <projectArtifactId>remote-shuffle-service</projectArtifactId>
+        <clientJarSuffix>spark32</clientJarSuffix>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <java.version>1.8</java.version>
         <maven.compiler.source>${java.version}</maven.compiler.source>
@@ -497,7 +498,7 @@
             <!-- Not strictly needed, but useful to confirm the manually specified shaded client dependencies -->
             <id>client</id>
             <properties>
-                <projectArtifactId>remote-shuffle-service-client</projectArtifactId>
+                <projectArtifactId>remote-shuffle-service-client-${clientJarSuffix}</projectArtifactId>
                 <dependency.scope>provided</dependency.scope>
             </properties>
             <build>
