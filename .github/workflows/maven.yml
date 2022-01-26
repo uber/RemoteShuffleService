@@ -5,9 +5,9 @@ name: Java CI with Maven
 
 on:
   push:
-    branches: [ k8s-spark-3.2 ]
+    branches: [ k8s-spark-3.2, k8s-spark-3.1 ]
   pull_request:
-    branches: [ k8s-spark-3.2 ]
+    branches: [ k8s-spark-3.2, k8s-spark-3.1 ]
         
 jobs:
   build:
