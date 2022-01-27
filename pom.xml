@@ -7,7 +7,7 @@
 
     <groupId>org.datapunch</groupId>
     <artifactId>${projectArtifactId}</artifactId>
-    <version>0.0.13</version>
+    <version>0.0.14-SNAPSHOT</version>
     <name>remote-shuffle-service</name>
     <description>Remote shuffle service and client.</description>
     <url>https://www.github.com/datapunchorg/RemoteShuffleService</url>
