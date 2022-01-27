@@ -551,7 +551,7 @@
         <profile>
             <id>server</id>
             <properties>
-                <projectArtifactId>remote-shuffle-service-server-${artifactIdSuffix}</projectArtifactId>
+                <projectArtifactId>remote-shuffle-service-server</projectArtifactId>
                 <dependency.scope>compile</dependency.scope>
             </properties>
             <build>
