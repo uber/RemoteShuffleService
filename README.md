@@ -23,8 +23,8 @@ helm install remote-shuffle-service charts/remote-shuffle-service --namespace re
 Use following pre-built Spark images with embedded Remote Shuffle Service client jar file:
 
 ```
-ghcr.io/datapunchorg/spark:spark-3.2-1642867779
-ghcr.io/datapunchorg/spark:pyspark-3.2-1642867779
+ghcr.io/datapunchorg/spark:spark-3.2.1-1643336295
+ghcr.io/datapunchorg/spark:pyspark-3.2.1-1643336295
 ```
 
 Add configure to your Spark application like following:
@@ -41,7 +41,9 @@ spark.dynamicAllocation.shuffleTracking.enabled=true
 spark.dynamicAllocation.shuffleTracking.timeout=1
 ```
 
-Now you can run your application in your own Spark Kubernetes environment.
+Now you can run your application in your own Spark Kubernetes environment. Please note the value for 
+"spark.shuffle.rss.serverSequence.connectionString" contains string like "rss-%s". This is intended because 
+RssShuffleManager will use it to generate actual connection string like rss-0.xxx and rss-1.xxx.
 
 If you do not have your own environment to run Spark, please see [Punch Project](https://github.com/datapunchorg/punch),
 which provides a one-click tool to create a Spark environment on AWS.
