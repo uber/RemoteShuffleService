@@ -84,10 +84,9 @@ You could add following dependency in Spark pom.xml file and build Spark distrib
 
 ```
     <dependency>
-      <groupId>org.datapunch</groupId>
-      <artifactId>remote-shuffle-service-client</artifactId>
-      <version>0.0.10</version>
-      <scope>compile</scope>
+        <groupId>org.datapunch</groupId>
+        <artifactId>remote-shuffle-service-client-spark32</artifactId>
+        <version>0.0.12</version>
     </dependency>
 ```
 
