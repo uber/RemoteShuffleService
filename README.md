@@ -27,7 +27,9 @@ ghcr.io/datapunchorg/spark:spark-3.2.1-1643336295
 ghcr.io/datapunchorg/spark:pyspark-3.2.1-1643336295
 ```
 
-Add configure to your Spark application like following:
+Add configure to your Spark application like following, keep string like `rss-%s` 
+inside value for `spark.shuffle.rss.serverSequence.connectionString`, since `RssShuffleManager`
+will use that to format connection string for different RSS server instances:
 
 ```
 spark.shuffle.manager=org.apache.spark.shuffle.RssShuffleManager
