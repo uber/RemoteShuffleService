@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2020 Uber Technologies, Inc.
+ * This file is copied from Uber Remote Shuffle Service
+ * (https://github.com/uber/RemoteShuffleService) and modified.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,11 +20,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.apache.commons.lang3.StringUtils;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 
 public class ServerList {
   final private List<ServerDetail> serverList;
@@ -50,7 +47,7 @@ public class ServerList {
 
   @JsonIgnore
   public ServerDetail getSeverDetail(String serverId) {
-    for (ServerDetail entry: serverList) {
+    for (ServerDetail entry : serverList) {
       if (entry.getServerId().equals(serverId)) {
         return entry;
       }

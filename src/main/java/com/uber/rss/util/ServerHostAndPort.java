@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2020 Uber Technologies, Inc.
+ * This file is copied from Uber Remote Shuffle Service
+ * (https://github.com/uber/RemoteShuffleService) and modified.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,7 +46,8 @@ public class ServerHostAndPort {
         try {
           this.port = Integer.parseInt(strArray[1].trim());
         } catch (Throwable ex) {
-          throw new RssInvalidDataException(String.format("Invalid host and port string: %s", str));
+          throw new RssInvalidDataException(
+              String.format("Invalid host and port string: %s", str));
         }
       } else {
         throw new RssInvalidDataException(String.format("Invalid host and port string: %s", str));

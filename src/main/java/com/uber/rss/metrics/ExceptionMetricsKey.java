@@ -1,10 +1,13 @@
 /*
- * Copyright (c) 2020 Uber Technologies, Inc.
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -17,41 +20,41 @@ package com.uber.rss.metrics;
 import java.util.Objects;
 
 public class ExceptionMetricsKey {
-    private final String exceptionName;
-    private final String exceptionSource;
+  private final String exceptionName;
+  private final String exceptionSource;
 
-    public ExceptionMetricsKey(String exceptionName, String exceptionSource) {
-        this.exceptionName = exceptionName;
-        this.exceptionSource = exceptionSource;
-    }
+  public ExceptionMetricsKey(String exceptionName, String exceptionSource) {
+    this.exceptionName = exceptionName;
+    this.exceptionSource = exceptionSource;
+  }
 
-    public String getExceptionName() {
-        return exceptionName;
-    }
+  public String getExceptionName() {
+    return exceptionName;
+  }
 
-    public String getExceptionSource() {
-        return exceptionSource;
-    }
+  public String getExceptionSource() {
+    return exceptionSource;
+  }
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        ExceptionMetricsKey that = (ExceptionMetricsKey) o;
-        return Objects.equals(exceptionName, that.exceptionName) &&
-                Objects.equals(exceptionSource, that.exceptionSource);
-    }
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+    ExceptionMetricsKey that = (ExceptionMetricsKey) o;
+    return Objects.equals(exceptionName, that.exceptionName) &&
+        Objects.equals(exceptionSource, that.exceptionSource);
+  }
 
-    @Override
-    public int hashCode() {
-        return Objects.hash(exceptionName, exceptionSource);
-    }
+  @Override
+  public int hashCode() {
+    return Objects.hash(exceptionName, exceptionSource);
+  }
 
-    @Override
-    public String toString() {
-        return "ExceptionMetricsKey{" +
-                "exceptionName='" + exceptionName + '\'' +
-                ", exceptionSource='" + exceptionSource + '\'' +
-                '}';
-    }
+  @Override
+  public String toString() {
+    return "ExceptionMetricsKey{" +
+        "exceptionName='" + exceptionName + '\'' +
+        ", exceptionSource='" + exceptionSource + '\'' +
+        '}';
+  }
 }

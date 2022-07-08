@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2020 Uber Technologies, Inc.
+ * This file is copied from Uber Remote Shuffle Service
+ * (https://github.com/uber/RemoteShuffleService) and modified.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +16,6 @@
 package com.uber.rss.clients;
 
 import com.uber.rss.common.ServerDetail;
-import com.uber.rss.util.NetworkUtils;
 import com.uber.rss.util.ServerHostAndPort;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,7 +32,9 @@ public class MultiServerHeartbeatClient implements AutoCloseable {
   private static final long DEFAULT_HEARTBEAT_INTERVAL_MILLIS = TimeUnit.MINUTES.toMillis(30);
   private static final long DEFAULT_NETWORK_TIMEOUT_MILLIS = TimeUnit.MINUTES.toMillis(1);
 
-  private static final MultiServerHeartbeatClient instance = new MultiServerHeartbeatClient(DEFAULT_HEARTBEAT_INTERVAL_MILLIS, DEFAULT_NETWORK_TIMEOUT_MILLIS);
+  private static final MultiServerHeartbeatClient instance =
+      new MultiServerHeartbeatClient(DEFAULT_HEARTBEAT_INTERVAL_MILLIS,
+          DEFAULT_NETWORK_TIMEOUT_MILLIS);
 
   private static final ServerConnectionStringCache serverCache = new ServerConnectionStringCache();
 
@@ -52,8 +54,6 @@ public class MultiServerHeartbeatClient implements AutoCloseable {
   private volatile String user;
   private volatile String appId;
   private volatile String appAttempt;
-
-  private volatile ServerConnectionRefresher serverConnectionRefresher;
 
   public MultiServerHeartbeatClient(long heartbeatIntervalMillis, long networkTimeoutMillis) {
     this.networkTimeoutMillis = networkTimeoutMillis;
@@ -77,7 +77,8 @@ public class MultiServerHeartbeatClient implements AutoCloseable {
     thread.setName("RSS_Heartbeat_" + thread.hashCode());
     thread.setDaemon(true);
     thread.start();
-    logger.info("Started RSS heartbeat thread {} with interval {} millis", thread, heartbeatIntervalMillis);
+    logger.info("Started RSS heartbeat thread {} with interval {} millis", thread,
+        heartbeatIntervalMillis);
   }
 
   public void setAppContext(String user, String appId, String appAttempt) {
@@ -86,16 +87,8 @@ public class MultiServerHeartbeatClient implements AutoCloseable {
     this.appAttempt = appAttempt;
   }
 
-  public boolean hasServerConnectionRefresher() {
-    return this.serverConnectionRefresher != null;
-  }
-
-  public void setServerConnectionRefresher(ServerConnectionRefresher serverConnectionRefresher) {
-    this.serverConnectionRefresher = serverConnectionRefresher;
-  }
-
   public void addServers(Collection<ServerDetail> serverDetails) {
-    for (ServerDetail s: serverDetails) {
+    for (ServerDetail s : serverDetails) {
       addServer(s);
     }
   }
@@ -105,10 +98,7 @@ public class MultiServerHeartbeatClient implements AutoCloseable {
   }
 
   public void addServer(ServerDetail serverDetail) {
-    ServerDetail oldServerDetail = servers.get(serverDetail.getServerId());
-    if (oldServerDetail == null || oldServerDetail.getRunningVersionAsNumber() < serverDetail.getRunningVersionAsNumber()) {
-      servers.put(serverDetail.getServerId(), serverDetail);
-    }
+    servers.put(serverDetail.getServerId(), serverDetail);
   }
 
   public void sendHeartbeats() {
@@ -121,7 +111,7 @@ public class MultiServerHeartbeatClient implements AutoCloseable {
       return;
     }
 
-    for (ServerDetail serverDetail: serverDetails) {
+    for (ServerDetail serverDetail : serverDetails) {
       try {
         sendHeartbeat(serverDetail);
       } catch (Throwable ex) {
@@ -131,20 +121,17 @@ public class MultiServerHeartbeatClient implements AutoCloseable {
   }
 
   private void sendHeartbeat(ServerDetail serverDetail) {
-    ServerHostAndPort hostAndPort = ServerHostAndPort.fromString(serverDetail.getConnectionString());
+    ServerHostAndPort hostAndPort =
+        ServerHostAndPort.fromString(serverDetail.getConnectionString());
     long startTime = System.currentTimeMillis();
     boolean keepLive = false;
-    try (HeartbeatSocketClient client = new HeartbeatSocketClient(hostAndPort.getHost(), hostAndPort.getPort(), (int)networkTimeoutMillis, user, appId, appAttempt, keepLive)) {
+    try (HeartbeatSocketClient client = new HeartbeatSocketClient(hostAndPort.getHost(),
+        hostAndPort.getPort(), (int) networkTimeoutMillis, user, appId, appAttempt, keepLive)) {
       client.sendHeartbeat();
-      logger.info("Sent RSS heartbeat to {}, duration millis: {}", serverDetail, System.currentTimeMillis() - startTime);
+      logger.info("Sent RSS heartbeat to {}, duration millis: {}", serverDetail,
+          System.currentTimeMillis() - startTime);
     } catch (Throwable ex) {
       logger.warn(String.format("Failed to send RSS heartbeat to %s", serverDetail), ex);
-      if (serverConnectionRefresher != null) {
-        ServerDetail refreshedServerDetail = serverConnectionRefresher.refreshConnection(serverDetail);
-        if (refreshedServerDetail != null) {
-          addServer(refreshedServerDetail);
-        }
-      }
     }
   }
 

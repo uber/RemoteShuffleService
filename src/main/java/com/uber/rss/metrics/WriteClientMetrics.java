@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2020 Uber Technologies, Inc.
+ * This file is copied from Uber Remote Shuffle Service
+ * (https://github.com/uber/RemoteShuffleService) and modified.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,56 +25,56 @@ import java.util.Map;
 
 public class WriteClientMetrics extends MetricGroup<WriteClientMetricsKey> {
 
-    private final Counter numClients;
-    private final Counter numWriteBytes;
-    private final Counter numRetries;
-    private final Timer writeConnectLatency;
-    private final Timer finishUploadLatency;
+  private final Counter numClients;
+  private final Counter numWriteBytes;
+  private final Counter numRetries;
+  private final Timer writeConnectLatency;
+  private final Timer finishUploadLatency;
 
-    private final Gauge bufferSize;
-    
-    public WriteClientMetrics(WriteClientMetricsKey key) {
-        super(key);
+  private final Gauge bufferSize;
 
-        // The name like "numClients" was used when there were a lot of metric series which caused M3 issue, e.g.
-        // not able to load the values in dashboard. Use new names ending with 3 here.
-        this.numClients = scope.counter("numClients4");
-        this.numWriteBytes = scope.counter("numWriteBytes4");
-        this.numRetries = scope.counter("numRetries4");
-        this.writeConnectLatency = scope.timer("writeConnectLatency4");
-        this.finishUploadLatency = scope.timer("finishUploadLatency4");
-        this.bufferSize = scope.gauge("bufferSize4");
-    }
+  public WriteClientMetrics(WriteClientMetricsKey key) {
+    super(key);
 
-    public Counter getNumClients() {
-        return numClients;
-    }
+    // The name like "numClients" was used when there were a lot of metric series which caused M3 issue, e.g.
+    // not able to load the values in dashboard. Use new names ending with 3 here.
+    this.numClients = scope.counter("numClients4");
+    this.numWriteBytes = scope.counter("numWriteBytes4");
+    this.numRetries = scope.counter("numRetries4");
+    this.writeConnectLatency = scope.timer("writeConnectLatency4");
+    this.finishUploadLatency = scope.timer("finishUploadLatency4");
+    this.bufferSize = scope.gauge("bufferSize4");
+  }
 
-    public Counter getNumWriteBytes() {
-        return numWriteBytes;
-    }
+  public Counter getNumClients() {
+    return numClients;
+  }
 
-    public Counter getNumRetries() {
-        return numRetries;
-    }
+  public Counter getNumWriteBytes() {
+    return numWriteBytes;
+  }
 
-    public Timer getWriteConnectLatency() {
-        return writeConnectLatency;
-    }
+  public Counter getNumRetries() {
+    return numRetries;
+  }
 
-    public Timer getFinishUploadLatency() {
-        return finishUploadLatency;
-    }
+  public Timer getWriteConnectLatency() {
+    return writeConnectLatency;
+  }
 
-    public Gauge getBufferSize() {
-        return bufferSize;
-    }
+  public Timer getFinishUploadLatency() {
+    return finishUploadLatency;
+  }
 
-    @Override
-    protected Scope createScope(WriteClientMetricsKey key) {
-        Map<String, String> tags = new HashMap<>();
-        tags.put(M3Stats.TAG_NAME_SOURCE, key.getSource());
-        tags.put(M3Stats.TAG_NAME_USER, key.getUser());
-        return M3Stats.createSubScope(tags);
-    }
+  public Gauge getBufferSize() {
+    return bufferSize;
+  }
+
+  @Override
+  protected Scope createScope(WriteClientMetricsKey key) {
+    Map<String, String> tags = new HashMap<>();
+    tags.put(M3Stats.TAG_NAME_SOURCE, key.getSource());
+    tags.put(M3Stats.TAG_NAME_USER, key.getUser());
+    return M3Stats.createSubScope(tags);
+  }
 }

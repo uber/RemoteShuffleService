@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2020 Uber Technologies, Inc.
+ * This file is copied from Uber Remote Shuffle Service
+ * (https://github.com/uber/RemoteShuffleService) and modified.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,43 +21,43 @@ import java.util.concurrent.atomic.AtomicLong;
  * This class contains the state for each application.
  */
 public class ExecutorAppState {
-    private final String appId;
+  private final String appId;
 
-    private final AtomicLong numWriteBytes = new AtomicLong();
-    
-    // The timestamp (milliseconds) to indicate the liveness of the shuffle stage
-    private final AtomicLong livenessTimestamp = new AtomicLong(System.currentTimeMillis());
+  private final AtomicLong numWriteBytes = new AtomicLong();
 
-    public ExecutorAppState(String appId) {
-        this.appId = appId;
-    }
+  // The timestamp (milliseconds) to indicate the liveness of the shuffle stage
+  private final AtomicLong livenessTimestamp = new AtomicLong(System.currentTimeMillis());
 
-    public final String getAppId() {
-        return appId;
-    }
+  public ExecutorAppState(String appId) {
+    this.appId = appId;
+  }
 
-    public final void updateLivenessTimestamp() {
-        livenessTimestamp.set(System.currentTimeMillis());
-    }
-    
-    public final long getLivenessTimestamp() {
-        return livenessTimestamp.get();
-    }
+  public final String getAppId() {
+    return appId;
+  }
 
-    public final long addNumWriteBytes(long delta) {
-        return numWriteBytes.addAndGet(delta);
-    }
+  public final void updateLivenessTimestamp() {
+    livenessTimestamp.set(System.currentTimeMillis());
+  }
 
-    public final long getNumWriteBytes() {
-        return numWriteBytes.get();
-    }
+  public final long getLivenessTimestamp() {
+    return livenessTimestamp.get();
+  }
 
-    @Override
-    public String toString() {
-        return "ExecutorAppState{" +
-                "appId='" + appId + '\'' +
-                ", numWriteBytes=" + numWriteBytes.get() +
-                ", livenessTimestamp=" + livenessTimestamp +
-                '}';
-    }
+  public final long addNumWriteBytes(long delta) {
+    return numWriteBytes.addAndGet(delta);
+  }
+
+  public final long getNumWriteBytes() {
+    return numWriteBytes.get();
+  }
+
+  @Override
+  public String toString() {
+    return "ExecutorAppState{" +
+        "appId='" + appId + '\'' +
+        ", numWriteBytes=" + numWriteBytes.get() +
+        ", livenessTimestamp=" + livenessTimestamp +
+        '}';
+  }
 }

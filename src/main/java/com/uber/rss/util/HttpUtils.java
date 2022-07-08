@@ -1,10 +1,13 @@
 /*
- * Copyright (c) 2020 Uber Technologies, Inc.
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -14,36 +17,33 @@
 
 package com.uber.rss.util;
 
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClients;
 import com.uber.rss.exceptions.RssException;
-import org.apache.commons.httpclient.HttpClient;
-import org.apache.commons.httpclient.HttpMethod;
-import org.apache.commons.httpclient.MultiThreadedHttpConnectionManager;
-import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.commons.io.IOUtils;
 
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+
 public class HttpUtils {
-    private final static MultiThreadedHttpConnectionManager connectionManager = new MultiThreadedHttpConnectionManager();
-    
-    public static String getUrl(String url) {
-        HttpClient client = new HttpClient(connectionManager);
 
-        HttpMethod method = new GetMethod(url);
-        try {
-            client.executeMethod(method);
-
-            if (method.getStatusCode() != 200) {
-                throw new RssException(String.format(
-                        "Failed to get url %s, response %s, %s",
-                        url, method.getStatusCode(), IOUtils.toString(method.getResponseBodyAsStream())));
-            }
-
-            return IOUtils.toString(method.getResponseBodyAsStream());
-        } catch (RssException e) {
-            throw e;
-        } catch (Throwable e) {
-            throw new RuntimeException("Failed to get url " + url, e);
-        } finally {
-            method.releaseConnection();
+  public static String getUrl(String url) {
+    try (CloseableHttpClient httpclient = HttpClients.createDefault()) {
+      HttpGet httpGet = new HttpGet(url);
+      try (CloseableHttpResponse response = httpclient.execute(httpGet)) {
+        if (response.getStatusLine().getStatusCode() != 200) {
+          throw new RssException(String.format(
+              "Failed to get url %s, response %s, %s",
+              url, response.getStatusLine().getStatusCode(),
+              IOUtils.toString(response.getEntity().getContent(), StandardCharsets.UTF_8)));
         }
+        return IOUtils.toString(response.getEntity().getContent(), StandardCharsets.UTF_8);
+      }
+    } catch (IOException e) {
+      throw new RuntimeException("Failed to get url " + url, e);
     }
+  }
+
 }

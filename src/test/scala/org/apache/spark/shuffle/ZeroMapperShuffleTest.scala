@@ -1,10 +1,13 @@
 /*
- * Copyright (c) 2020 Uber Technologies, Inc.
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -16,24 +19,24 @@ package org.apache.spark.shuffle
 
 import java.util.UUID
 
-import com.uber.rss.metadata.ServiceRegistry
-import com.uber.rss.testutil.{RssMiniCluster, RssZookeeperCluster}
-import org.apache.spark.{HashPartitioner, MapOutputTrackerMaster, ShuffleDependency, SparkConf, SparkContext, SparkEnv}
+import com.uber.rss.testutil.RssMiniCluster
+import org.apache.spark._
+import org.apache.spark.executor.TempShuffleReadMetrics
 import org.scalatest.Assertions._
 import org.testng.annotations._
 
 import scala.collection.mutable.ArrayBuffer
 
-/***
+/** *
  * This is to test scenario where there is no mapper task (zero number of mappers).
  */
 class ZeroMapperShuffleTest {
 
   var appId: String = null
   val numRssServers = 2
-  
+
   var sc: SparkContext = null
-  
+
   var rssTestCluster: RssMiniCluster = null
   private var shuffleManagers = ArrayBuffer[RssShuffleManager]()
 
@@ -50,10 +53,11 @@ class ZeroMapperShuffleTest {
     shuffleManagers.foreach(m => m.stop())
     rssTestCluster.stop()
   }
-  
+
   @Test
   def runTest(): Unit = {
-    val conf = TestUtil.newSparkConfWithStandAloneRegistryServer(appId, rssTestCluster.getRegistryServerConnection)
+    val conf = TestUtil
+      .newSparkConfWithStandAloneRegistryServer(appId, rssTestCluster.getRegistryServerConnection)
 
     sc = new SparkContext(conf)
 
@@ -66,14 +70,14 @@ class ZeroMapperShuffleTest {
     val numPartitions = 1
 
     val rdd = sc.parallelize(Seq.empty[Int], numMaps)
-      .map(t=>(t->t*2))
+      .map(t => (t -> t * 2))
       .partitionBy(new HashPartitioner(numPartitions))
 
     assert(rdd.partitions.size === numPartitions)
 
     val shuffleDependency = new ShuffleDependency[Int, Int, Int](rdd, rdd.partitioner.get)
 
-    val shuffleHandle = driverShuffleManager.registerShuffle(shuffleId, numMaps, shuffleDependency)
+    val shuffleHandle = driverShuffleManager.registerShuffle(shuffleId, shuffleDependency)
 
     val mapOutputTrackerMaster = SparkEnv.get.mapOutputTracker.asInstanceOf[MapOutputTrackerMaster]
     mapOutputTrackerMaster.registerShuffle(shuffleId, numMaps)
@@ -83,10 +87,12 @@ class ZeroMapperShuffleTest {
     val executorShuffleManager = new RssShuffleManager(conf)
     shuffleManagers :+= executorShuffleManager
 
-    val reduceTaskContext = new MockTaskContext( shuffleId, partitionId )
-    val shuffleReader = executorShuffleManager.getReader( shuffleHandle, partitionId, partitionId, reduceTaskContext )
+    val reduceTaskContext = new MockTaskContext(shuffleId, partitionId)
+    val shuffleReader = executorShuffleManager
+      .getReader(shuffleHandle, partitionId, partitionId, reduceTaskContext,
+        new TempShuffleReadMetrics())
     val readRecords = shuffleReader.read().toList
-    assert( readRecords.size === 0 )
+    assert(readRecords.size === 0)
   }
 
 }

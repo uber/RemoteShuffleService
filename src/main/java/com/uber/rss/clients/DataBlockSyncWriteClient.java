@@ -1,10 +1,13 @@
 /*
- * Copyright (c) 2020 Uber Technologies, Inc.
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -19,17 +22,14 @@ import com.uber.rss.common.ShuffleMapTaskAttemptId;
 import com.uber.rss.exceptions.RssFinishUploadException;
 import com.uber.rss.exceptions.RssInvalidStateException;
 import com.uber.rss.exceptions.RssNetworkException;
-import com.uber.rss.messages.FinishUploadMessage;
-import com.uber.rss.messages.MessageConstants;
-import com.uber.rss.messages.ConnectUploadRequest;
-import com.uber.rss.messages.ConnectUploadResponse;
-import com.uber.rss.messages.StartUploadMessage;
+import com.uber.rss.messages.*;
 import com.uber.rss.metrics.M3Stats;
 import com.uber.rss.metrics.WriteClientMetrics;
 import com.uber.rss.metrics.WriteClientMetricsKey;
 import com.uber.rss.util.ByteBufUtils;
 import com.uber.rss.util.ExceptionUtils;
 import io.netty.buffer.ByteBuf;
+import com.uber.rss.messages.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -38,7 +38,7 @@ import java.io.IOException;
 /***
  * Shuffle write client to upload data (data blocks) to shuffle server.
  */
-public class DataBlockSyncWriteClient extends com.uber.rss.clients.ClientBase {
+public class DataBlockSyncWriteClient extends ClientBase {
   private static final Logger logger =
       LoggerFactory.getLogger(DataBlockSyncWriteClient.class);
 
@@ -53,11 +53,14 @@ public class DataBlockSyncWriteClient extends com.uber.rss.clients.ClientBase {
 
   private WriteClientMetrics metrics = null;
 
-  public DataBlockSyncWriteClient(String host, int port, int timeoutMillis, String user, String appId, String appAttempt) {
+  public DataBlockSyncWriteClient(String host, int port, int timeoutMillis, String user,
+                                  String appId, String appAttempt) {
     this(host, port, timeoutMillis, true, user, appId, appAttempt);
   }
-  
-  public DataBlockSyncWriteClient(String host, int port, int timeoutMillis, boolean finishUploadAck, String user, String appId, String appAttempt) {
+
+  public DataBlockSyncWriteClient(String host, int port, int timeoutMillis,
+                                  boolean finishUploadAck, String user, String appId,
+                                  String appAttempt) {
     super(host, port, timeoutMillis);
     this.finishUploadAck = finishUploadAck;
     this.user = user;
@@ -80,7 +83,8 @@ public class DataBlockSyncWriteClient extends com.uber.rss.clients.ClientBase {
 
   private ConnectUploadResponse connectImpl() {
     if (socket != null) {
-      throw new RssInvalidStateException(String.format("Already connected to server, cannot connect again: %s", connectionInfo));
+      throw new RssInvalidStateException(
+          String.format("Already connected to server, cannot connect again: %s", connectionInfo));
     }
 
     ConnectUploadRequest connectUploadRequest = new ConnectUploadRequest(user, appId, appAttempt);
@@ -94,14 +98,18 @@ public class DataBlockSyncWriteClient extends com.uber.rss.clients.ClientBase {
 
     writeControlMessageAndWaitResponseStatus(connectUploadRequest);
 
-    ConnectUploadResponse connectUploadResponse = readResponseMessage(MessageConstants.MESSAGE_ConnectUploadResponse, ConnectUploadResponse::deserialize);
+    ConnectUploadResponse connectUploadResponse =
+        readResponseMessage(MessageConstants.MESSAGE_ConnectUploadResponse,
+            ConnectUploadResponse::deserialize);
 
-    logger.info(String.format("Connected to server: %s, response: %s", connectionInfo, connectUploadResponse));
+    logger.info(String
+        .format("Connected to server: %s, response: %s", connectionInfo, connectUploadResponse));
     return connectUploadResponse;
   }
 
   // TODO do not need mapId/taskAttamptId for StartUploadMessage
-  public void startUpload(ShuffleMapTaskAttemptId shuffleMapTaskAttemptId, int numMaps, int numPartitions, ShuffleWriteConfig shuffleWriteConfig) {
+  public void startUpload(ShuffleMapTaskAttemptId shuffleMapTaskAttemptId, int numMaps,
+                          int numPartitions, ShuffleWriteConfig shuffleWriteConfig) {
     logger.debug(String.format("Starting upload %s, %s", shuffleMapTaskAttemptId, connectionInfo));
 
     startUploadShuffleByteSnapshot = totalWriteBytes;
@@ -151,8 +159,10 @@ public class DataBlockSyncWriteClient extends com.uber.rss.clients.ClientBase {
   public void finishUpload(long taskAttemptId) {
     Stopwatch stopwatch = metrics.getFinishUploadLatency().start();
     try {
-      byte ackFlag = finishUploadAck ? FinishUploadMessage.ACK_FLAG_HAS_ACK : FinishUploadMessage.ACK_FLAG_NO_ACK;
-      FinishUploadMessage message = new FinishUploadMessage(taskAttemptId, System.currentTimeMillis(), ackFlag);
+      byte ackFlag = finishUploadAck ? FinishUploadMessage.ACK_FLAG_HAS_ACK :
+          FinishUploadMessage.ACK_FLAG_NO_ACK;
+      FinishUploadMessage message =
+          new FinishUploadMessage(taskAttemptId, System.currentTimeMillis(), ackFlag);
       if (ackFlag == FinishUploadMessage.ACK_FLAG_NO_ACK) {
         writeControlMessageNotWaitResponseStatus(message);
       } else {
@@ -160,8 +170,11 @@ public class DataBlockSyncWriteClient extends com.uber.rss.clients.ClientBase {
       }
     } catch (Throwable e) {
       String msg = String.format(
-          "Failed to finish upload to server %s, %s, %s. If the network is good, this error may indicate your shuffle data exceeds the server side limit. This shuffle client has written %s bytes.",
-          taskAttemptId, connectionInfo, ExceptionUtils.getSimpleMessage(e), getShuffleWriteBytes());
+          "Failed to finish upload to server %s, %s, %s. If the network is good, this error " +
+              "may indicate your shuffle data exceeds the server side limit. This shuffle " +
+              "client has written %s bytes.",
+          taskAttemptId, connectionInfo, ExceptionUtils.getSimpleMessage(e),
+          getShuffleWriteBytes());
       throw new RssFinishUploadException(msg, e);
     } finally {
       stopwatch.stop();

@@ -1,10 +1,13 @@
 /*
- * Copyright (c) 2020 Uber Technologies, Inc.
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -22,64 +25,64 @@ import java.util.List;
  */
 public interface ShuffleStorage {
 
-    /***
-     * Check whether this is local storage on Remote Shuffle Service, or
-     * external storage like HDFS.
-     * @return
-     */
-    boolean isLocalStorage();
+  /***
+   * Check whether this is local storage on Remote Shuffle Service, or
+   * external storage like HDFS.
+   * @return
+   */
+  boolean isLocalStorage();
 
-    /***
-     * Check whether the file exists.
-     * @param path
-     * @return
-     */
-    boolean exists(String path);
+  /***
+   * Check whether the file exists.
+   * @param path
+   * @return
+   */
+  boolean exists(String path);
 
-    /***
-     * List all files under a directory.
-     * @param dir
-     * @return
-     */
-    List<String> listAllFiles(String dir);
+  /***
+   * List all files under a directory.
+   * @param dir
+   * @return
+   */
+  List<String> listAllFiles(String dir);
 
-    /***
-     * Create directory and its parents.
-     * @param dir
-     */
-    void createDirectories(String dir);
+  /***
+   * Create directory and its parents.
+   * @param dir
+   */
+  void createDirectories(String dir);
 
-    /***
-     * Delete directory and its children.
-     * @param dir
-     */
-    void deleteDirectory(String dir);
+  /***
+   * Delete directory and its children.
+   * @param dir
+   */
+  void deleteDirectory(String dir);
 
-    /***
-     * Delete file.
-     * @param path
-     */
-    void deleteFile(String path);
-    
-    /***
-     * Get the size of the file.
-     * @param path
-     * @return
-     */
-    long size(String path);
+  /***
+   * Delete file.
+   * @param path
+   */
+  void deleteFile(String path);
 
-    /***
-     * Create a stream for a given file path to write shuffle data.
-     * @param path
-     * @param compressionCodec
-     * @return
-     */
-    ShuffleOutputStream createWriterStream(String path, String compressionCodec);
+  /***
+   * Get the size of the file.
+   * @param path
+   * @return
+   */
+  long size(String path);
 
-    /***
-     * Create a stream for a given file path to read shuffle data.
-     * @param path
-     * @return
-     */
-    InputStream createReaderStream(String path);
+  /***
+   * Create a stream for a given file path to write shuffle data.
+   * @param path
+   * @param compressionCodec
+   * @return
+   */
+  ShuffleOutputStream createWriterStream(String path, String compressionCodec);
+
+  /***
+   * Create a stream for a given file path to read shuffle data.
+   * @param path
+   * @return
+   */
+  InputStream createReaderStream(String path);
 }

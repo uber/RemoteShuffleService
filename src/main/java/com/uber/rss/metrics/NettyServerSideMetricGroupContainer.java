@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2020 Uber Technologies, Inc.
+ * This file is copied from Uber Remote Shuffle Service
+ * (https://github.com/uber/RemoteShuffleService) and modified.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,18 +17,20 @@ package com.uber.rss.metrics;
 
 import java.util.function.Function;
 
-public class NettyServerSideMetricGroupContainer <M extends MetricGroup<NettyServerSideMetricsKey>>  {
-    private MetricGroupContainer<NettyServerSideMetricsKey, M> metricGroupContainer;
-    
-    public NettyServerSideMetricGroupContainer(Function<NettyServerSideMetricsKey, ? extends M> createFunction) {
-        this.metricGroupContainer = new MetricGroupContainer<NettyServerSideMetricsKey, M>(createFunction);
-    }
+public class NettyServerSideMetricGroupContainer<M extends MetricGroup<NettyServerSideMetricsKey>> {
+  private MetricGroupContainer<NettyServerSideMetricsKey, M> metricGroupContainer;
 
-    public M getMetricGroup(String user) {
-        return metricGroupContainer.getMetricGroup(new NettyServerSideMetricsKey(user));
-    }
+  public NettyServerSideMetricGroupContainer(
+      Function<NettyServerSideMetricsKey, ? extends M> createFunction) {
+    this.metricGroupContainer =
+        new MetricGroupContainer<NettyServerSideMetricsKey, M>(createFunction);
+  }
 
-    public void removeMetricGroup(String user) {
-        metricGroupContainer.removeMetricGroup(new NettyServerSideMetricsKey(user));
-    }
+  public M getMetricGroup(String user) {
+    return metricGroupContainer.getMetricGroup(new NettyServerSideMetricsKey(user));
+  }
+
+  public void removeMetricGroup(String user) {
+    metricGroupContainer.removeMetricGroup(new NettyServerSideMetricsKey(user));
+  }
 }

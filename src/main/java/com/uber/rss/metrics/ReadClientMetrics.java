@@ -1,10 +1,13 @@
 /*
- * Copyright (c) 2020 Uber Technologies, Inc.
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -24,50 +27,50 @@ import java.util.Map;
 
 public class ReadClientMetrics extends MetricGroup<ReadClientMetricsKey> {
 
-    private final Counter numIgnoredBlocks;
-    private final Counter numReadBytes;
-    private final Timer readConnectLatency;
-    private final Timer reducerWaitTime;
+  private final Counter numIgnoredBlocks;
+  private final Counter numReadBytes;
+  private final Timer readConnectLatency;
+  private final Timer reducerWaitTime;
 
-    private final Gauge bufferSize;
-    
-    public ReadClientMetrics(ReadClientMetricsKey key) {
-        super(key);
+  private final Gauge bufferSize;
 
-        // The name like "numClients" was used when there were a lot of metric series which caused M3 issue, e.g.
-        // not able to load the values in dashboard. Use new names ending with a number suffix to create new metrics in M3.
-        this.numIgnoredBlocks = scope.counter("numIgnoredBlocks4");
-        this.numReadBytes = scope.counter("numReadBytes4");
-        this.readConnectLatency = scope.timer("readConnectLatency4");
-        this.reducerWaitTime = scope.timer("reducerWaitTime4");
-        this.bufferSize = scope.gauge("bufferSize4");
-    }
+  public ReadClientMetrics(ReadClientMetricsKey key) {
+    super(key);
 
-    public Counter getNumIgnoredBlocks() {
-        return numIgnoredBlocks;
-    }
+    // The name like "numClients" was used when there were a lot of metric series which caused M3 issue, e.g.
+    // not able to load the values in dashboard. Use new names ending with a number suffix to create new metrics in M3.
+    this.numIgnoredBlocks = scope.counter("numIgnoredBlocks4");
+    this.numReadBytes = scope.counter("numReadBytes4");
+    this.readConnectLatency = scope.timer("readConnectLatency4");
+    this.reducerWaitTime = scope.timer("reducerWaitTime4");
+    this.bufferSize = scope.gauge("bufferSize4");
+  }
 
-    public Counter getNumReadBytes() {
-        return numReadBytes;
-    }
+  public Counter getNumIgnoredBlocks() {
+    return numIgnoredBlocks;
+  }
 
-    public Timer getReadConnectLatency() {
-        return readConnectLatency;
-    }
+  public Counter getNumReadBytes() {
+    return numReadBytes;
+  }
 
-    public Timer getReducerWaitTime() {
-        return reducerWaitTime;
-    }
+  public Timer getReadConnectLatency() {
+    return readConnectLatency;
+  }
 
-    public Gauge getBufferSize() {
-        return bufferSize;
-    }
+  public Timer getReducerWaitTime() {
+    return reducerWaitTime;
+  }
 
-    @Override
-    protected Scope createScope(ReadClientMetricsKey key) {
-        Map<String, String> tags = new HashMap<>();
-        tags.put(M3Stats.TAG_NAME_SOURCE, key.getSource());
-        tags.put(M3Stats.TAG_NAME_USER, key.getUser());
-        return M3Stats.createSubScope(tags);
-    }
+  public Gauge getBufferSize() {
+    return bufferSize;
+  }
+
+  @Override
+  protected Scope createScope(ReadClientMetricsKey key) {
+    Map<String, String> tags = new HashMap<>();
+    tags.put(M3Stats.TAG_NAME_SOURCE, key.getSource());
+    tags.put(M3Stats.TAG_NAME_USER, key.getUser());
+    return M3Stats.createSubScope(tags);
+  }
 }

@@ -1,10 +1,13 @@
 /*
- * Copyright (c) 2020 Uber Technologies, Inc.
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -40,11 +43,10 @@ public class ReplicatedWriteClient implements MultiServerWriteClient {
 
   private long shuffleWriteBytes = -1;
 
-  public ReplicatedWriteClient(ServerReplicationGroup serverReplicationGroup, int timeoutMillis, boolean finishUploadAck, boolean usePooledConnection, String user, String appId, String appAttempt, ShuffleWriteConfig shuffleWriteConfig) {
-    this(serverReplicationGroup, timeoutMillis, null, finishUploadAck, usePooledConnection, user, appId, appAttempt, shuffleWriteConfig);
-  }
-
-  public ReplicatedWriteClient(ServerReplicationGroup serverReplicationGroup, int timeoutMillis, ServerConnectionRefresher serverConnectionRefresher, boolean finishUploadAck, boolean usePooledConnection, String user, String appId, String appAttempt, ShuffleWriteConfig shuffleWriteConfig) {
+  public ReplicatedWriteClient(ServerReplicationGroup serverReplicationGroup, int timeoutMillis,
+                               boolean finishUploadAck, boolean usePooledConnection, String user,
+                               String appId, String appAttempt,
+                               ShuffleWriteConfig shuffleWriteConfig) {
     this.serverReplicationGroup = serverReplicationGroup;
 
     List<ServerDetail> servers = serverReplicationGroup.getServers();
@@ -55,19 +57,22 @@ public class ReplicatedWriteClient implements MultiServerWriteClient {
     clients = new ServerIdAwareSyncWriteClient[servers.size()];
     for (int i = 0; i < servers.size(); i++) {
       ServerDetail serverDetail = servers.get(i);
-      ServerIdAwareSyncWriteClient client = new ServerIdAwareSyncWriteClient(serverDetail, timeoutMillis, finishUploadAck, usePooledConnection, user, appId, appAttempt, shuffleWriteConfig, serverConnectionRefresher);
+      ServerIdAwareSyncWriteClient client =
+          new ServerIdAwareSyncWriteClient(serverDetail, timeoutMillis, finishUploadAck,
+              usePooledConnection, user, appId, appAttempt, shuffleWriteConfig);
       clients[i] = client;
     }
   }
 
   @Override
   public synchronized void connect() {
-    runAllActiveClients(t->t.connect());
+    runAllActiveClients(t -> t.connect());
   }
 
   @Override
-  public synchronized void startUpload(AppTaskAttemptId appTaskAttemptId, int numMaps, int numPartitions) {
-    runAllActiveClients(t->t.startUpload(appTaskAttemptId, numMaps, numPartitions));
+  public synchronized void startUpload(AppTaskAttemptId appTaskAttemptId, int numMaps,
+                                       int numPartitions) {
+    runAllActiveClients(t -> t.startUpload(appTaskAttemptId, numMaps, numPartitions));
   }
 
   @Override
@@ -75,7 +80,7 @@ public class ReplicatedWriteClient implements MultiServerWriteClient {
     if (value != null) {
       value.mark();
     }
-    runAllActiveClients(t-> {
+    runAllActiveClients(t -> {
       if (value != null) {
         value.reset();
       }
@@ -85,7 +90,7 @@ public class ReplicatedWriteClient implements MultiServerWriteClient {
 
   @Override
   public synchronized void finishUpload() {
-    runAllActiveClients(t->t.finishUpload());
+    runAllActiveClients(t -> t.finishUpload());
   }
 
   @Override
@@ -113,7 +118,8 @@ public class ReplicatedWriteClient implements MultiServerWriteClient {
     }
 
     if (shuffleWriteBytes == -1) {
-      throw new RssException("No active client with server replication group: " + serverReplicationGroup);
+      throw new RssException(
+          "No active client with server replication group: " + serverReplicationGroup);
     }
 
     return shuffleWriteBytes;
@@ -128,7 +134,7 @@ public class ReplicatedWriteClient implements MultiServerWriteClient {
     // remember shuffle write bytes because we may not get it back after closing the client
     shuffleWriteBytes = getShuffleWriteBytes();
 
-    runAllActiveClients(t->t.close());
+    runAllActiveClients(t -> t.close());
 
     for (int i = 0; i < clients.length; i++) {
       clients[i] = null;
@@ -169,19 +175,21 @@ public class ReplicatedWriteClient implements MultiServerWriteClient {
     }
 
     if (numActiveClients == 0) {
-      throw new RssException("No active client connecting to server replication group: " + serverReplicationGroup);
+      throw new RssException(
+          "No active client connecting to server replication group: " + serverReplicationGroup);
     }
 
     if (!succeeded) {
       if (exception == null) {
-        throw new RssInvalidStateException(String.format("No underlying client succeeded, but no exception as well, %s", this));
+        throw new RssInvalidStateException(
+            String.format("No underlying client succeeded, but no exception as well, %s", this));
       }
       ExceptionUtils.throwException(exception);
     }
   }
 
   private boolean hasActiveClient() {
-    for (ServerIdAwareSyncWriteClient client: clients) {
+    for (ServerIdAwareSyncWriteClient client : clients) {
       if (client != null) {
         return true;
       }

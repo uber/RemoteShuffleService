@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2020 Uber Technologies, Inc.
+ * This file is copied from Uber Remote Shuffle Service
+ * (https://github.com/uber/RemoteShuffleService) and modified.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,49 +15,40 @@
 
 package com.uber.rss.handlers;
 
-import com.uber.rss.common.MemoryMonitor;
-import com.uber.rss.common.AppTaskAttemptId;
-import com.uber.rss.exceptions.RssDuplicateAppTaskAttemptException;
-import com.uber.rss.exceptions.RssInvalidStateException;
 import com.uber.rss.exceptions.RssMaxConnectionsException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class UploadChannelManager {
-    public static final int DEFAULT_MAX_CONNECTIONS = 60000;
+  public static final int DEFAULT_MAX_CONNECTIONS = 60000;
 
-    private static final Logger logger = LoggerFactory.getLogger(UploadChannelManager.class);
+  private static final Logger logger = LoggerFactory.getLogger(UploadChannelManager.class);
 
-    private AtomicInteger numConnections = new AtomicInteger();
+  private AtomicInteger numConnections = new AtomicInteger();
 
-    private int maxConnections = DEFAULT_MAX_CONNECTIONS;
-    
-    public UploadChannelManager() {
+  private int maxConnections = DEFAULT_MAX_CONNECTIONS;
+
+  public UploadChannelManager() {
+  }
+
+  public void setMaxConnections(int maxConnections) {
+    this.maxConnections = maxConnections;
+  }
+
+  public void checkMaxConnections() throws RssMaxConnectionsException {
+    if (numConnections.get() > maxConnections) {
+      throw new RssMaxConnectionsException(numConnections.get(), maxConnections,
+          "Stream server connections exceed upper limit");
     }
+  }
 
-    public void setMaxConnections(int maxConnections) {
-        this.maxConnections = maxConnections;
-    }
+  public void incNumConnections() {
+    numConnections.incrementAndGet();
+  }
 
-    public void checkMaxConnections() throws RssMaxConnectionsException {
-        if (numConnections.get() > maxConnections) {
-            throw new RssMaxConnectionsException(numConnections.get(), maxConnections,
-                    "Stream server connections exceed upper limit");
-        }
-    }
-
-    public void incNumConnections() {
-        numConnections.incrementAndGet();
-    }
-
-    public void decNumConnections() {
-        numConnections.decrementAndGet();
-    }
+  public void decNumConnections() {
+    numConnections.decrementAndGet();
+  }
 }

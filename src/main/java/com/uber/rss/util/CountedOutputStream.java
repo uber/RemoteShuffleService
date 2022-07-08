@@ -1,10 +1,13 @@
 /*
- * Copyright (c) 2020 Uber Technologies, Inc.
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -18,37 +21,37 @@ import java.io.IOException;
 import java.io.OutputStream;
 
 public class CountedOutputStream extends OutputStream {
-    private long writtenBytes = 0;
+  private long writtenBytes = 0;
 
-    private OutputStream underlyingStream;
+  private OutputStream underlyingStream;
 
-    public CountedOutputStream(OutputStream underlyingStream) {
-        this.underlyingStream = underlyingStream;
-    }
+  public CountedOutputStream(OutputStream underlyingStream) {
+    this.underlyingStream = underlyingStream;
+  }
 
-    @Override
-    public synchronized void write(int i) throws IOException {
-        underlyingStream.write(i);
-        writtenBytes++;
-    }
+  @Override
+  public synchronized void write(int i) throws IOException {
+    underlyingStream.write(i);
+    writtenBytes++;
+  }
 
-    @Override
-    public synchronized void write(byte[] b, int off, int len) throws IOException {
-        underlyingStream.write(b, off, len);
-        writtenBytes += len;
-    }
+  @Override
+  public synchronized void write(byte[] b, int off, int len) throws IOException {
+    underlyingStream.write(b, off, len);
+    writtenBytes += len;
+  }
 
-    @Override
-    public synchronized void flush() throws IOException {
-        underlyingStream.flush();
-    }
+  @Override
+  public synchronized void flush() throws IOException {
+    underlyingStream.flush();
+  }
 
-    @Override
-    public synchronized void close() throws IOException {
-        underlyingStream.close();
-    }
+  @Override
+  public synchronized void close() throws IOException {
+    underlyingStream.close();
+  }
 
-    public synchronized long getWrittenBytes() {
-        return writtenBytes;
-    }
+  public synchronized long getWrittenBytes() {
+    return writtenBytes;
+  }
 }

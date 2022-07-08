@@ -5,12 +5,12 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>com.uber</groupId>
-    <artifactId>remote-shuffle-service</artifactId>
-    <version>0.0.9</version>
+    <groupId>org.datapunch</groupId>
+    <artifactId>${projectArtifactId}</artifactId>
+    <version>0.0.14-SNAPSHOT</version>
     <name>remote-shuffle-service</name>
     <description>Remote shuffle service and client.</description>
-    <url></url>
+    <url>https://www.github.com/datapunchorg/RemoteShuffleService</url>
 
     <licenses>
         <license>
@@ -18,20 +18,38 @@
             <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
         </license>
     </licenses>
+    <scm>
+        <connection>scm:git:git@github.com:datapunchorg/RemoteShuffleService.git</connection>
+        <url>scm:git:git@github.com:datapunchorg/RemoteShuffleService.git</url>
+        <tag>HEAD</tag>
+    </scm>
+    <developers>
+        <developer>
+            <id>datapunchorg</id>
+            <name>DataPunch Organization</name>
+            <email>datapunch2021@gmail.com</email>
+            <url>https://www.github.com/datapunchorg</url>
+            <organization>DataPunch Organization</organization>
+            <organizationUrl>https://www.datapunch.org</organizationUrl>
+        </developer>
+    </developers>
 
     <properties>
+        <projectArtifactId>remote-shuffle-service</projectArtifactId>
+        <artifactIdSuffix>spark31</artifactIdSuffix>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <java.version>1.8</java.version>
-        <maven.compiler.source>1.8</maven.compiler.source>
-        <maven.compiler.target>1.8</maven.compiler.target>
+        <maven.compiler.source>${java.version}</maven.compiler.source>
+        <maven.compiler.target>${java.version}</maven.compiler.target>
         <hadoop.version>2.7.1</hadoop.version>
-        <spark.version>2.4.3</spark.version>
-        <scala.version>2.11.8</scala.version>
-        <scala.compat.version>2.11</scala.compat.version>
+        <spark.version>3.1.1</spark.version>
+        <scala.version>2.12.10</scala.version>
+        <commons.httpclient.version>4.5.13</commons.httpclient.version>
+        <scala.compat.version>2.12</scala.compat.version>
         <jacoco.version>0.8.2</jacoco.version>
         <guava.version>15.0</guava.version>
         <test.runner.version>2.22.1</test.runner.version>
-        <shade.version>3.1.1</shade.version>
+        <shade.version>3.2.4</shade.version>
         <skipIT>true</skipIT>
         <dependency.scope>compile</dependency.scope>
         <useProjectArtifact>false</useProjectArtifact>
@@ -42,7 +60,35 @@
             <id>apache-releases</id>
             <url>https://repository.apache.org/content/groups/public</url>
         </repository>
+        <repository>
+            <id>central</id>
+            <url>https://repo1.maven.org/maven2</url>
+        </repository>
+        <repository>
+            <id>github</id>
+            <url>https://maven.pkg.github.com/datapunchorg/RemoteShuffleService</url>
+            <snapshots>
+              <enabled>true</enabled>
+            </snapshots>
+        </repository>
     </repositories>
+         
+    <distributionManagement>
+        <!-- <repository>
+            <id>github</id>
+            <name>GitHub Packages</name>
+            <url>https://maven.pkg.github.com/datapunchorg/RemoteShuffleService</url>
+        </repository> -->
+        <!-- https://central.sonatype.org/publish/publish-maven/ -->
+        <snapshotRepository>
+            <id>ossrh</id>
+            <url>https://s01.oss.sonatype.org/content/repositories/snapshots</url>
+        </snapshotRepository>
+        <repository>
+            <id>ossrh</id>
+            <url>https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+        </repository>
+    </distributionManagement>
 
     <dependencies>
         <dependency>
@@ -80,6 +126,18 @@
             <groupId>org.apache.hadoop</groupId>
             <artifactId>hadoop-client</artifactId>
             <version>${hadoop.version}</version>
+            <scope>${dependency.scope}</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-log4j12</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.httpcomponents</groupId>
+            <artifactId>httpclient</artifactId>
+            <version>${commons.httpclient.version}</version>
             <scope>${dependency.scope}</scope>
             <exclusions>
                 <exclusion>
@@ -133,6 +191,12 @@
             <scope>test</scope>
         </dependency>
         <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>4.13.1</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>org.assertj</groupId>
             <artifactId>assertj-core</artifactId>
             <version>3.10.0</version>
@@ -147,7 +211,7 @@
         <dependency>
             <groupId>org.scalatest</groupId>
             <artifactId>scalatest_${scala.compat.version}</artifactId>
-            <version>2.2.4</version>
+            <version>3.2.10</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -189,7 +253,7 @@
                         <name>listener</name>
                         <value>org.apache.spark.shuffle.LogListener</value>
                     </property>
-                    <argLine>@{argLine} -Drss.scopeBuilder=com.uber.rss.metrics.M3DummyScopeBuilder</argLine>
+                    <argLine>@{argLine} -Xmx4096m -Drss.scopeBuilder=com.uber.rss.metrics.M3DummyScopeBuilder</argLine>
                     <trimStackTrace>false</trimStackTrace>
                     <enableAssertions>true</enableAssertions>
                     <excludes>
@@ -209,8 +273,6 @@
                             <goal>shade</goal>
                         </goals>
                         <configuration>
-                            <shadedArtifactAttached>true</shadedArtifactAttached>
-                            <shadedClassifierName>client</shadedClassifierName>
                             <filters>
                                 <filter>
                                     <artifact>*:*</artifact>
@@ -296,7 +358,7 @@
             <plugin>
                 <groupId>net.alchim31.maven</groupId>
                 <artifactId>scala-maven-plugin</artifactId>
-                <version>3.2.2</version>
+                <version>4.3.0</version>
                 <executions>
                     <execution>
                         <id>scala-compile</id>
@@ -391,6 +453,43 @@
                     </execution>
                 </executions>
             </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <version>3.1.1</version>
+                <executions>
+                    <execution>
+                        <id>attach-javadocs</id>
+                        <goals>
+                            <goal>jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <doclint>none</doclint>
+                </configuration>
+            </plugin>
+            <plugin>
+                <!-- mvn clean deploy -Dgpg.passphrase=yourpassphrase -->
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-gpg-plugin</artifactId>
+                <version>3.0.1</version>
+                <executions>
+                    <execution>
+                        <id>sign-artifacts</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>sign</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <gpgArguments>
+                        <arg>--pinentry-mode</arg>
+                        <arg>loopback</arg>
+                    </gpgArguments>
+                </configuration>
+            </plugin>
         </plugins>
     </build>
 
@@ -399,6 +498,7 @@
             <!-- Not strictly needed, but useful to confirm the manually specified shaded client dependencies -->
             <id>client</id>
             <properties>
+                <projectArtifactId>remote-shuffle-service-client-${artifactIdSuffix}</projectArtifactId>
                 <dependency.scope>provided</dependency.scope>
             </properties>
             <build>
@@ -408,8 +508,6 @@
                         <artifactId>maven-shade-plugin</artifactId>
                         <version>${shade.version}</version>
                         <configuration>
-                            <shadedArtifactAttached>true</shadedArtifactAttached>
-                            <shadedClassifierName>client</shadedClassifierName>
                             <filters>
                                 <filter>
                                     <artifact>*:*</artifact>
@@ -452,6 +550,10 @@
         </profile>
         <profile>
             <id>server</id>
+            <properties>
+                <projectArtifactId>remote-shuffle-service-server</projectArtifactId>
+                <dependency.scope>compile</dependency.scope>
+            </properties>
             <build>
                 <plugins>
                     <plugin>
@@ -459,8 +561,6 @@
                         <artifactId>maven-shade-plugin</artifactId>
                         <version>${shade.version}</version>
                         <configuration>
-                            <shadedArtifactAttached>true</shadedArtifactAttached>
-                            <shadedClassifierName>server</shadedClassifierName>
                             <filters>
                                 <filter>
                                     <artifact>*:*</artifact>
@@ -469,6 +569,7 @@
                                         <exclude>META-INF/*.DSA</exclude>
                                         <exclude>META-INF/*.RSA</exclude>
                                         <exclude>META-INF/versions/11/org/roaringbitmap/*</exclude>
+                                        <exclude>META-INF/versions/11/org/glassfish/*</exclude>
                                     </excludes>
                                 </filter>
                             </filters>

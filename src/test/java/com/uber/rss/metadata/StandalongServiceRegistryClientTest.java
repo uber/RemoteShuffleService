@@ -1,10 +1,13 @@
 /*
- * Copyright (c) 2020 Uber Technologies, Inc.
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -27,38 +30,40 @@ import java.util.List;
 
 public class StandalongServiceRegistryClientTest {
 
-    @Test
-    public void getServers() {
-        TestStreamServer testServer = TestStreamServer.createRunningServer();
+  @Test
+  public void getServers() {
+    TestStreamServer testServer = TestStreamServer.createRunningServer();
 
-        try (StandaloneServiceRegistryClient client = new StandaloneServiceRegistryClient("localhost", testServer.getShufflePort(), TestConstants.NETWORK_TIMEOUT, "user1")) {
-            List<ServerDetail> servers = client.getServers("dc1", "cluster1", 0, Collections.emptyList());
-            Assert.assertEquals(servers.size(), 0);
+    try (StandaloneServiceRegistryClient client = new StandaloneServiceRegistryClient("localhost",
+        testServer.getShufflePort(), TestConstants.NETWORK_TIMEOUT, "user1")) {
+      List<ServerDetail> servers =
+          client.getServers("dc1", "cluster1", 0, Collections.emptyList());
+      Assert.assertEquals(servers.size(), 0);
 
-            servers = client.getServers("dc1", "cluster1", 10, Collections.emptyList());
-            Assert.assertEquals(servers.size(), 0);
+      servers = client.getServers("dc1", "cluster1", 10, Collections.emptyList());
+      Assert.assertEquals(servers.size(), 0);
 
-            client.registerServer("dc1", "cluster1", "server1", "v1", "host1:1");
-            servers = client.getServers("dc1", "cluster1", 10, Collections.emptyList());
-            Assert.assertEquals(servers.size(), 1);
-            Assert.assertEquals(servers, Arrays.asList(new ServerDetail("server1", "v1", "host1:1")));
+      client.registerServer("dc1", "cluster1", "server1", "host1:1");
+      servers = client.getServers("dc1", "cluster1", 10, Collections.emptyList());
+      Assert.assertEquals(servers.size(), 1);
+      Assert.assertEquals(servers, Arrays.asList(new ServerDetail("server1", "host1:1")));
 
-            servers = client.getServers("dc1", "cluster2", 10, Collections.emptyList());
-            Assert.assertEquals(servers.size(), 0);
+      servers = client.getServers("dc1", "cluster2", 10, Collections.emptyList());
+      Assert.assertEquals(servers.size(), 0);
 
-            client.registerServer("dc1", "cluster1", "server2", "v2", "host2:2");
-            client.registerServer("dc1", "cluster1", "server3", "v3", "host3:3");
+      client.registerServer("dc1", "cluster1", "server2", "host2:2");
+      client.registerServer("dc1", "cluster1", "server3", "host3:3");
 
-            servers = client.lookupServers("dc1", "cluster1", Arrays.asList("server2", "server3"));
-            Assert.assertEquals(servers.size(), 2);
-            servers.sort(Comparator.comparing(ServerDetail::getServerId));
-            Assert.assertEquals(servers,
-                Arrays.asList(
-                    new ServerDetail("server2", "v2", "host2:2"),
-                    new ServerDetail("server3", "v3", "host3:3")));
-        } finally {
-            testServer.shutdown();
-        }
+      servers = client.lookupServers("dc1", "cluster1", Arrays.asList("server2", "server3"));
+      Assert.assertEquals(servers.size(), 2);
+      servers.sort(Comparator.comparing(ServerDetail::getServerId));
+      Assert.assertEquals(servers,
+          Arrays.asList(
+              new ServerDetail("server2", "host2:2"),
+              new ServerDetail("server3", "host3:3")));
+    } finally {
+      testServer.shutdown();
     }
+  }
 
 }

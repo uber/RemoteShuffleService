@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2020 Uber Technologies, Inc.
+ * This file is copied from Uber Remote Shuffle Service
+ * (https://github.com/uber/RemoteShuffleService) and modified.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,7 +27,8 @@ import java.util.concurrent.atomic.AtomicLong;
  * This class is a wrapper on top of another write client, so we could pool (reuse) that client.
  */
 public class PooledShuffleDataSyncWriteClient implements ShuffleDataSyncWriteClient {
-  private static final Logger logger = LoggerFactory.getLogger(PooledShuffleDataSyncWriteClient.class);
+  private static final Logger logger =
+      LoggerFactory.getLogger(PooledShuffleDataSyncWriteClient.class);
 
   private final static AtomicLong clientIdGenerator = new AtomicLong();
 
@@ -39,7 +41,8 @@ public class PooledShuffleDataSyncWriteClient implements ShuffleDataSyncWriteCli
 
   private volatile boolean reusable = false;
 
-  public PooledShuffleDataSyncWriteClient(ShuffleDataSyncWriteClient delegate, PooledWriteClientFactory writeClientFactory) {
+  public PooledShuffleDataSyncWriteClient(ShuffleDataSyncWriteClient delegate,
+                                          PooledWriteClientFactory writeClientFactory) {
     this.delegate = delegate;
     this.writeClientFactory = writeClientFactory;
   }

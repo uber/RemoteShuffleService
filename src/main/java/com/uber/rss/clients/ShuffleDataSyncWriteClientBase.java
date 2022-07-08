@@ -1,10 +1,13 @@
 /*
- * Copyright (c) 2020 Uber Technologies, Inc.
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -41,8 +44,13 @@ public abstract class ShuffleDataSyncWriteClientBase implements ShuffleDataSyncW
 
   protected ShuffleMapTaskAttemptId shuffleMapTaskAttemptId;
 
-  protected ShuffleDataSyncWriteClientBase(String host, int port, int timeoutMillis, boolean finishUploadAck, String user, String appId, String appAttempt, ShuffleWriteConfig shuffleWriteConfig) {
-    this.dataBlockSyncWriteClient = new DataBlockSyncWriteClient(host, port, timeoutMillis, finishUploadAck, user, appId, appAttempt);
+  protected ShuffleDataSyncWriteClientBase(String host, int port, int timeoutMillis,
+                                           boolean finishUploadAck, String user, String appId,
+                                           String appAttempt,
+                                           ShuffleWriteConfig shuffleWriteConfig) {
+    this.dataBlockSyncWriteClient =
+        new DataBlockSyncWriteClient(host, port, timeoutMillis, finishUploadAck, user, appId,
+            appAttempt);
     this.shuffleWriteConfig = shuffleWriteConfig;
 
     this.host = host;
@@ -78,7 +86,8 @@ public abstract class ShuffleDataSyncWriteClientBase implements ShuffleDataSyncW
 
   public void startUpload(AppTaskAttemptId appTaskAttemptId, int numMaps, int numPartitions) {
     shuffleMapTaskAttemptId = appTaskAttemptId.getShuffleMapTaskAttemptId();
-    dataBlockSyncWriteClient.startUpload(shuffleMapTaskAttemptId, numMaps, numPartitions, shuffleWriteConfig);
+    dataBlockSyncWriteClient
+        .startUpload(shuffleMapTaskAttemptId, numMaps, numPartitions, shuffleWriteConfig);
   }
 
   @Override

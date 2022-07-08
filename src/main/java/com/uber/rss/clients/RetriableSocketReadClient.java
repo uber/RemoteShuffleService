@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2020 Uber Technologies, Inc.
+ * This file is copied from Uber Remote Shuffle Service
+ * (https://github.com/uber/RemoteShuffleService) and modified.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -49,11 +50,10 @@ public class RetriableSocketReadClient implements SingleServerReadClient {
         dataOptions.getDataAvailableWaitTime());
 
     this.retryClientCreator = () -> {
-      ServerDetail retryServerDetail = retryOptions.getRetryConnectionResolver().refreshConnection(serverDetail);
-      return new ServerIdAwareSocketReadClient(retryServerDetail,
-            timeoutMillis,
-            user,
-            appShufflePartitionId,
+      return new ServerIdAwareSocketReadClient(serverDetail,
+          timeoutMillis,
+          user,
+          appShufflePartitionId,
           dataOptions.getFetchTaskAttemptIds(),
           dataOptions.getDataAvailablePollInterval(),
           dataOptions.getDataAvailableWaitTime());
@@ -71,13 +71,15 @@ public class RetriableSocketReadClient implements SingleServerReadClient {
         lastException = ex;
         logger.warn(String.format("Failed to connect to server: %s", delegate), ex);
         closeDelegate();
-        long retryRemainingMillis = startTime + retryOptions.getRetryMaxMillis() - System.currentTimeMillis();
+        long retryRemainingMillis =
+            startTime + retryOptions.getRetryMaxMillis() - System.currentTimeMillis();
         if (retryRemainingMillis <= 0) {
           break;
         } else {
           delegate = retryClientCreator.get();
           long waitMillis = Math.min(retryOptions.getRetryIntervalMillis(), retryRemainingMillis);
-          logger.info(String.format("Waiting %s milliseconds (total retry milliseconds: %s, remaining milliseconds: %s) and retry to connect to server: %s",
+          logger.info(String.format(
+              "Waiting %s milliseconds (total retry milliseconds: %s, remaining milliseconds: %s) and retry to connect to server: %s",
               waitMillis, retryOptions.getRetryMaxMillis(), retryRemainingMillis, delegate));
           ThreadUtils.sleep(waitMillis);
         }

@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2020 Uber Technologies, Inc.
+ * This file is copied from Uber Remote Shuffle Service
+ * (https://github.com/uber/RemoteShuffleService) and modified.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,23 +19,24 @@ import org.testng.Assert;
 import org.testng.annotations.Test;
 
 public class MonitorUtilsTest {
-    
-    @Test
-    public void hasRssException() {
-        Assert.assertFalse(MonitorUtils.hasRssException(null));
-        Assert.assertFalse(MonitorUtils.hasRssException(""));
-        Assert.assertFalse(MonitorUtils.hasRssException(" "));
 
-        Assert.assertFalse(MonitorUtils.hasRssException("  abc \n def \r from com.uber \n\r"));
+  @Test
+  public void hasRssException() {
+    Assert.assertFalse(MonitorUtils.hasRssException(null));
+    Assert.assertFalse(MonitorUtils.hasRssException(""));
+    Assert.assertFalse(MonitorUtils.hasRssException(" "));
 
-        Assert.assertFalse(MonitorUtils.hasRssException("  abc \n def \r from com.uber.rss.xyz \n\r"));
+    Assert.assertFalse(MonitorUtils.hasRssException("  abc \n def \r from com.uber \n\r"));
 
-        Assert.assertFalse(MonitorUtils.hasRssException("  abc \n def \r abc.RuntimeException() \n\r"));
-        Assert.assertTrue(MonitorUtils.hasRssException("  abc \n def \r abc.RssException() \n\r"));
-        Assert.assertTrue(MonitorUtils.hasRssException("  abc \n def \r abc.RssXyzException() \n\r"));
+    Assert.assertFalse(MonitorUtils.hasRssException("  abc \n def \r from com.uber.rss.xyz \n\r"));
 
-        Assert.assertTrue(MonitorUtils.hasRssException("  abc \n def \r abc.OutOfMemoryError() \n\r"));
-        Assert.assertTrue(MonitorUtils.hasRssException("  abc \n def \r abc.KryoException() \n\r"));
-    }
+    Assert
+        .assertFalse(MonitorUtils.hasRssException("  abc \n def \r abc.RuntimeException() \n\r"));
+    Assert.assertTrue(MonitorUtils.hasRssException("  abc \n def \r abc.RssException() \n\r"));
+    Assert.assertTrue(MonitorUtils.hasRssException("  abc \n def \r abc.RssXyzException() \n\r"));
+
+    Assert.assertTrue(MonitorUtils.hasRssException("  abc \n def \r abc.OutOfMemoryError() \n\r"));
+    Assert.assertTrue(MonitorUtils.hasRssException("  abc \n def \r abc.KryoException() \n\r"));
+  }
 
 }

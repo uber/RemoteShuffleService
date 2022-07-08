@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2020 Uber Technologies, Inc.
+ * This file is copied from Uber Remote Shuffle Service
+ * (https://github.com/uber/RemoteShuffleService) and modified.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,59 +23,60 @@ import io.netty.buffer.ByteBuf;
  */
 public class GetDataAvailabilityResponse extends BaseMessage {
 
-    // this could be null
-    private MapTaskCommitStatus mapTaskCommitStatus;
+  // this could be null
+  private MapTaskCommitStatus mapTaskCommitStatus;
 
-    // if dataAvailable is true, the server sends shuffle data immediately after this message
-    private boolean dataAvailable;
+  // if dataAvailable is true, the server sends shuffle data immediately after this message
+  private boolean dataAvailable;
 
-    public GetDataAvailabilityResponse(MapTaskCommitStatus mapTaskCommitStatus, boolean dataAvailable) {
-        this.mapTaskCommitStatus = mapTaskCommitStatus;
-        this.dataAvailable = dataAvailable;
+  public GetDataAvailabilityResponse(MapTaskCommitStatus mapTaskCommitStatus,
+                                     boolean dataAvailable) {
+    this.mapTaskCommitStatus = mapTaskCommitStatus;
+    this.dataAvailable = dataAvailable;
+  }
+
+  @Override
+  public int getMessageType() {
+    return MessageConstants.MESSAGE_GetDataAvailabilityResponse;
+  }
+
+  @Override
+  public void serialize(ByteBuf buf) {
+    if (mapTaskCommitStatus == null) {
+      buf.writeBoolean(false);
+    } else {
+      buf.writeBoolean(true);
+      mapTaskCommitStatus.serialize(buf);
     }
 
-    @Override
-    public int getMessageType() {
-        return MessageConstants.MESSAGE_GetDataAvailabilityResponse;
+    buf.writeBoolean(dataAvailable);
+  }
+
+  public static GetDataAvailabilityResponse deserialize(ByteBuf buf) {
+    MapTaskCommitStatus mapTaskCommitStatus = null;
+    boolean mapTaskCommitStatusExisting = buf.readBoolean();
+    if (mapTaskCommitStatusExisting) {
+      mapTaskCommitStatus = MapTaskCommitStatus.deserialize(buf);
     }
 
-    @Override
-    public void serialize(ByteBuf buf) {
-        if (mapTaskCommitStatus == null) {
-            buf.writeBoolean(false);
-        } else {
-            buf.writeBoolean(true);
-            mapTaskCommitStatus.serialize(buf);
-        }
+    boolean dataAvailable = buf.readBoolean();
 
-        buf.writeBoolean(dataAvailable);
-    }
+    return new GetDataAvailabilityResponse(mapTaskCommitStatus, dataAvailable);
+  }
 
-    public static GetDataAvailabilityResponse deserialize(ByteBuf buf) {
-        MapTaskCommitStatus mapTaskCommitStatus = null;
-        boolean mapTaskCommitStatusExisting = buf.readBoolean();
-        if (mapTaskCommitStatusExisting) {
-            mapTaskCommitStatus = MapTaskCommitStatus.deserialize(buf);
-        }
+  public MapTaskCommitStatus getMapTaskCommitStatus() {
+    return mapTaskCommitStatus;
+  }
 
-        boolean dataAvailable = buf.readBoolean();
+  public boolean isDataAvailable() {
+    return dataAvailable;
+  }
 
-        return new GetDataAvailabilityResponse(mapTaskCommitStatus, dataAvailable);
-    }
-
-    public MapTaskCommitStatus getMapTaskCommitStatus() {
-        return mapTaskCommitStatus;
-    }
-
-    public boolean isDataAvailable() {
-        return dataAvailable;
-    }
-
-    @Override
-    public String toString() {
-        return "GetDataAvailabilityResponse{" +
-            "mapTaskCommitStatus=" + mapTaskCommitStatus +
-            "dataAvailable=" + dataAvailable +
-            '}';
-    }
+  @Override
+  public String toString() {
+    return "GetDataAvailabilityResponse{" +
+        "mapTaskCommitStatus=" + mapTaskCommitStatus +
+        "dataAvailable=" + dataAvailable +
+        '}';
+  }
 }

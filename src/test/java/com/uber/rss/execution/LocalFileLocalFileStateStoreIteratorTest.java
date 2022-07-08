@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2020 Uber Technologies, Inc.
+ * This file is copied from Uber Remote Shuffle Service
+ * (https://github.com/uber/RemoteShuffleService) and modified.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,16 +19,9 @@ import com.uber.rss.clients.ShuffleWriteConfig;
 import com.uber.rss.common.AppShuffleId;
 import com.uber.rss.common.AppTaskAttemptId;
 import com.uber.rss.common.PartitionFilePathAndLength;
-import com.uber.rss.messages.AppDeletionStateItem;
-import com.uber.rss.messages.BaseMessage;
-import com.uber.rss.messages.MessageConstants;
-import com.uber.rss.messages.ShuffleStageStatus;
-import com.uber.rss.messages.StageCorruptionStateItem;
-import com.uber.rss.messages.StageInfoStateItem;
-import com.uber.rss.messages.TaskAttemptCommitStateItem;
+import com.uber.rss.messages.*;
 import com.uber.rss.util.ByteBufUtils;
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
+import com.uber.rss.messages.*;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
@@ -122,7 +116,8 @@ public class LocalFileLocalFileStateStoreIteratorTest {
     File file2 = Paths.get(tempPath.toString(), "file2").toFile();
     file2.deleteOnExit();
     try (FileOutputStream fileOutputStream2 = new FileOutputStream(file2)) {
-      fileOutputStream2.write(ByteBufUtils.convertIntToBytes(MessageConstants.MESSAGE_StageInfoStateItem));
+      fileOutputStream2
+          .write(ByteBufUtils.convertIntToBytes(MessageConstants.MESSAGE_StageInfoStateItem));
       fileOutputStream2.write(ByteBufUtils.convertIntToBytes(-1));
       fileOutputStream2.write(1);
     }
@@ -130,7 +125,8 @@ public class LocalFileLocalFileStateStoreIteratorTest {
     File file3 = Paths.get(tempPath.toString(), "file3").toFile();
     file3.deleteOnExit();
     try (FileOutputStream fileOutputStream3 = new FileOutputStream(file3)) {
-      fileOutputStream3.write(ByteBufUtils.convertIntToBytes(MessageConstants.MESSAGE_StageInfoStateItem));
+      fileOutputStream3
+          .write(ByteBufUtils.convertIntToBytes(MessageConstants.MESSAGE_StageInfoStateItem));
       fileOutputStream3.write(ByteBufUtils.convertIntToBytes(2));
       fileOutputStream3.write(1);
     }
@@ -138,7 +134,8 @@ public class LocalFileLocalFileStateStoreIteratorTest {
     File file4 = Paths.get(tempPath.toString(), "file4").toFile();
     file4.deleteOnExit();
     try (FileOutputStream fileOutputStream4 = new FileOutputStream(file4)) {
-      fileOutputStream4.write(ByteBufUtils.convertIntToBytes(MessageConstants.MESSAGE_StageInfoStateItem));
+      fileOutputStream4
+          .write(ByteBufUtils.convertIntToBytes(MessageConstants.MESSAGE_StageInfoStateItem));
       fileOutputStream4.write(ByteBufUtils.convertIntToBytes(2));
       fileOutputStream4.write(1);
       fileOutputStream4.write(1);
@@ -178,7 +175,8 @@ public class LocalFileLocalFileStateStoreIteratorTest {
     Assert.assertNull(iterator.next());
 
     iterator = new LocalFileStateStoreIterator(
-        Arrays.asList(file1.getAbsolutePath(), file2.getAbsolutePath(), file3.getAbsolutePath(), file4.getAbsolutePath()));
+        Arrays.asList(file1.getAbsolutePath(), file2.getAbsolutePath(), file3.getAbsolutePath(),
+            file4.getAbsolutePath()));
     Assert.assertFalse(iterator.hasNext());
     Assert.assertNull(iterator.next());
     Assert.assertFalse(iterator.hasNext());
@@ -197,10 +195,12 @@ public class LocalFileLocalFileStateStoreIteratorTest {
     AppShuffleId appShuffleId1 = new AppShuffleId("app1", "1", 2);
     AppTaskAttemptId appTaskAttemptId1 = new AppTaskAttemptId(appShuffleId1, 1, 99L);
     ShuffleWriteConfig shuffleWriteConfig1 = new ShuffleWriteConfig((short) 6);
-    PartitionFilePathAndLength partitionFilePathAndLength1 = new PartitionFilePathAndLength(1, "file1", 123);
+    PartitionFilePathAndLength partitionFilePathAndLength1 =
+        new PartitionFilePathAndLength(1, "file1", 123);
 
     LocalFileStateStore store = new LocalFileStateStore(tempPath.toString());
-    store.storeStageInfo(appShuffleId1, new StagePersistentInfo(4, 5, shuffleWriteConfig1, ShuffleStageStatus.FILE_STATUS_OK));
+    store.storeStageInfo(appShuffleId1,
+        new StagePersistentInfo(4, 5, shuffleWriteConfig1, ShuffleStageStatus.FILE_STATUS_OK));
     store.storeTaskAttemptCommit(appShuffleId1,
         Arrays.asList(appTaskAttemptId1.getTaskAttemptId()),
         Arrays.asList(partitionFilePathAndLength1));
@@ -216,7 +216,7 @@ public class LocalFileLocalFileStateStoreIteratorTest {
     Assert.assertTrue(iterator.hasNext());
     BaseMessage dataItem = iterator.next();
     Assert.assertTrue(dataItem instanceof StageInfoStateItem);
-    StageInfoStateItem stageInfoStateItem = (StageInfoStateItem)dataItem;
+    StageInfoStateItem stageInfoStateItem = (StageInfoStateItem) dataItem;
     Assert.assertEquals(stageInfoStateItem.getAppShuffleId(), appShuffleId1);
     Assert.assertEquals(stageInfoStateItem.getNumPartitions(), 4);
     Assert.assertEquals(stageInfoStateItem.getFileStartIndex(), 5);
@@ -226,27 +226,30 @@ public class LocalFileLocalFileStateStoreIteratorTest {
     Assert.assertTrue(iterator.hasNext());
     dataItem = iterator.next();
     Assert.assertTrue(dataItem instanceof TaskAttemptCommitStateItem);
-    TaskAttemptCommitStateItem taskAttemptCommitStateItem = (TaskAttemptCommitStateItem)dataItem;
-    Assert.assertEquals(taskAttemptCommitStateItem.getAppShuffleId(), appTaskAttemptId1.getAppShuffleId());
-    Assert.assertEquals(taskAttemptCommitStateItem.getMapTaskAttemptIds(), Arrays.asList(appTaskAttemptId1.getTaskAttemptId()));
-    Assert.assertEquals(taskAttemptCommitStateItem.getPartitionFilePathAndLengths(), Arrays.asList(partitionFilePathAndLength1));
+    TaskAttemptCommitStateItem taskAttemptCommitStateItem = (TaskAttemptCommitStateItem) dataItem;
+    Assert.assertEquals(taskAttemptCommitStateItem.getAppShuffleId(),
+        appTaskAttemptId1.getAppShuffleId());
+    Assert.assertEquals(taskAttemptCommitStateItem.getMapTaskAttemptIds(),
+        Arrays.asList(appTaskAttemptId1.getTaskAttemptId()));
+    Assert.assertEquals(taskAttemptCommitStateItem.getPartitionFilePathAndLengths(),
+        Arrays.asList(partitionFilePathAndLength1));
 
     Assert.assertTrue(iterator.hasNext());
     dataItem = iterator.next();
     Assert.assertTrue(dataItem instanceof AppDeletionStateItem);
-    AppDeletionStateItem appDeletionStateItem = (AppDeletionStateItem)dataItem;
+    AppDeletionStateItem appDeletionStateItem = (AppDeletionStateItem) dataItem;
     Assert.assertEquals(appDeletionStateItem.getAppId(), "deletedApp");
 
     Assert.assertTrue(iterator.hasNext());
     dataItem = iterator.next();
     Assert.assertTrue(dataItem instanceof AppDeletionStateItem);
-    appDeletionStateItem = (AppDeletionStateItem)dataItem;
+    appDeletionStateItem = (AppDeletionStateItem) dataItem;
     Assert.assertEquals(appDeletionStateItem.getAppId(), appShuffleId1.getAppId());
 
     Assert.assertTrue(iterator.hasNext());
     dataItem = iterator.next();
     Assert.assertTrue(dataItem instanceof StageCorruptionStateItem);
-    StageCorruptionStateItem stageCorruptionStateItem = (StageCorruptionStateItem)dataItem;
+    StageCorruptionStateItem stageCorruptionStateItem = (StageCorruptionStateItem) dataItem;
     Assert.assertEquals(stageCorruptionStateItem.getAppShuffleId(), appShuffleId1);
 
     Assert.assertFalse(iterator.hasNext());

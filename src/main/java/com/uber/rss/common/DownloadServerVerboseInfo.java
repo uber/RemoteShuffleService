@@ -1,10 +1,13 @@
 /*
- * Copyright (c) 2020 Uber Technologies, Inc.
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -16,41 +19,31 @@ package com.uber.rss.common;
 
 // TODO create a constructor to pass fields
 public class DownloadServerVerboseInfo {
-    private String runningVersion;
-    private String id;
+  private String id;
 
-    private MapTaskCommitStatus mapTaskCommitStatus;
+  private MapTaskCommitStatus mapTaskCommitStatus;
 
-    public String getRunningVersion() {
-        return runningVersion;
-    }
+  public String getId() {
+    return id;
+  }
 
-    public void setRunningVersion(String runningVersion) {
-        this.runningVersion = runningVersion;
-    }
+  public void setId(String id) {
+    this.id = id;
+  }
 
-    public String getId() {
-        return id;
-    }
+  public MapTaskCommitStatus getMapTaskCommitStatus() {
+    return mapTaskCommitStatus;
+  }
 
-    public void setId(String id) {
-        this.id = id;
-    }
+  public void setMapTaskCommitStatus(MapTaskCommitStatus mapTaskCommitStatus) {
+    this.mapTaskCommitStatus = mapTaskCommitStatus;
+  }
 
-    public MapTaskCommitStatus getMapTaskCommitStatus() {
-        return mapTaskCommitStatus;
-    }
-
-    public void setMapTaskCommitStatus(MapTaskCommitStatus mapTaskCommitStatus) {
-        this.mapTaskCommitStatus = mapTaskCommitStatus;
-    }
-
-    @Override
-    public String toString() {
-        return "DownloadServerVerboseInfo{" +
-                "runningVersion='" + runningVersion + '\'' +
-                ", id='" + id + '\'' +
-                ", mapTaskCommitStatus=" + mapTaskCommitStatus +
-                '}';
-    }
+  @Override
+  public String toString() {
+    return "DownloadServerVerboseInfo{" +
+        ", id='" + id + '\'' +
+        ", mapTaskCommitStatus=" + mapTaskCommitStatus +
+        '}';
+  }
 }

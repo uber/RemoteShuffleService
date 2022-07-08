@@ -1,10 +1,13 @@
 /*
- * Copyright (c) 2020 Uber Technologies, Inc.
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -21,67 +24,53 @@ import com.uber.rss.metrics.M3Stats;
 import com.uber.rss.metrics.MetadataClientMetrics;
 import com.uber.rss.metrics.MetadataClientMetricsContainer;
 import com.uber.rss.util.ExceptionUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.Collection;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Supplier;
 
 /**
  * This class wraps a ServiceRegistry instance and add metrics for its method call.
  */
 public class ServiceRegistryWrapper implements ServiceRegistry {
-  private static final Logger logger = LoggerFactory.getLogger(ServiceRegistryWrapper.class);
-  private static final MetadataClientMetricsContainer metricsContainer = new MetadataClientMetricsContainer();
-  private static final AtomicLong metaDataConnections = new AtomicLong();
-  private static final String METADATA_CONNECTED = "metadata_connected";
+  private static MetadataClientMetricsContainer metricsContainer =
+      new MetadataClientMetricsContainer();
 
-  private final ServiceRegistry delegate;
+  private ServiceRegistry delegate;
 
   public ServiceRegistryWrapper(ServiceRegistry delegate) {
     this.delegate = delegate;
-    updateMetaDataOperation(delegate, 1);
   }
 
   @Override
-  public void registerServer(String dataCenter, String cluster, String serverId, String runningVersion, String hostAndPort) {
+  public void registerServer(String dataCenter, String cluster, String serverId,
+                             String hostAndPort) {
     invokeRunnable(
-        ()->delegate.registerServer(dataCenter, cluster, serverId, runningVersion, hostAndPort),
+        () -> delegate.registerServer(dataCenter, cluster, serverId, hostAndPort),
         "registerServer");
   }
 
   @Override
-  public List<ServerDetail> getServers(String dataCenter, String cluster, int maxCount, Collection<String> excludeHosts) {
+  public List<ServerDetail> getServers(String dataCenter, String cluster, int maxCount,
+                                       Collection<String> excludeHosts) {
     return invokeRunnable(
-        ()->delegate.getServers(dataCenter, cluster, maxCount, excludeHosts),
+        () -> delegate.getServers(dataCenter, cluster, maxCount, excludeHosts),
         "getServers");
   }
 
   @Override
-  public List<ServerDetail> lookupServers(String dataCenter, String cluster, Collection<String> serverIds) {
+  public List<ServerDetail> lookupServers(String dataCenter, String cluster,
+                                          Collection<String> serverIds) {
     return invokeRunnable(
-        ()->delegate.lookupServers(dataCenter, cluster, serverIds),
+        () -> delegate.lookupServers(dataCenter, cluster, serverIds),
         "lookupServers");
   }
 
   @Override
   public void close() {
     invokeRunnable(
-        ()-> {
-          delegate.close();
-          updateMetaDataOperation(delegate, -1);
-        },
+        () -> delegate.close(),
         "close");
-  }
-
-  private void updateMetaDataOperation(ServiceRegistry delegate, int delta) {
-    metricsContainer
-            .getMetricGroup(delegate.getClass().getSimpleName(), METADATA_CONNECTED)
-            .getNumConnections()
-            .update(metaDataConnections.addAndGet(delta));
-    logger.info("ServiceRegistry {}({}) {} , current count {}", delegate.getClass().getSimpleName(), delegate.hashCode(), (delta == 1 ? " opened" : " closed"), metaDataConnections.get());
   }
 
   private void invokeRunnable(Runnable runnable, String name) {
@@ -109,7 +98,8 @@ public class ServiceRegistryWrapper implements ServiceRegistry {
       metrics.getNumFailures().inc(1);
       M3Stats.addException(e, this.getClass().getSimpleName());
       ExceptionUtils.throwException(e);
-      throw new RssInvalidStateException("Should not run into here because the previous line of code will throw out exception");
+      throw new RssInvalidStateException(
+          "Should not run into here because the previous line of code will throw out exception");
     } finally {
       stopWatch.stop();
     }

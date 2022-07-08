@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2020 Uber Technologies, Inc.
+ * This file is copied from Uber Remote Shuffle Service
+ * (https://github.com/uber/RemoteShuffleService) and modified.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,56 +22,56 @@ import io.netty.buffer.ByteBuf;
  */
 public class FinishUploadMessage extends BaseMessage {
 
-    public static final byte ACK_FLAG_NO_ACK = 0;
-    public static final byte ACK_FLAG_HAS_ACK = 1;
+  public static final byte ACK_FLAG_NO_ACK = 0;
+  public static final byte ACK_FLAG_HAS_ACK = 1;
 
-    private long taskAttemptId;
-    private long timestamp;
-    private byte ackFlag;
+  private long taskAttemptId;
+  private long timestamp;
+  private byte ackFlag;
 
-    public FinishUploadMessage(long taskAttemptId, long timestamp, byte ackFlag) {
-        this.taskAttemptId = taskAttemptId;
-        this.timestamp = timestamp;
-        this.ackFlag = ackFlag;
-    }
+  public FinishUploadMessage(long taskAttemptId, long timestamp, byte ackFlag) {
+    this.taskAttemptId = taskAttemptId;
+    this.timestamp = timestamp;
+    this.ackFlag = ackFlag;
+  }
 
-    @Override
-    public int getMessageType() {
-        return MessageConstants.MESSAGE_FinishUploadMessage;
-    }
+  @Override
+  public int getMessageType() {
+    return MessageConstants.MESSAGE_FinishUploadMessage;
+  }
 
-    @Override
-    public void serialize(ByteBuf buf) {
-        buf.writeLong(taskAttemptId);
-        buf.writeLong(timestamp);
-        buf.writeByte(ackFlag);
-    }
+  @Override
+  public void serialize(ByteBuf buf) {
+    buf.writeLong(taskAttemptId);
+    buf.writeLong(timestamp);
+    buf.writeByte(ackFlag);
+  }
 
-    public static FinishUploadMessage deserialize(ByteBuf buf) {
-        long taskAttemptId = buf.readLong();
-        long timestamp = buf.readLong();
-        byte ackFlag = buf.readByte();
-        return new FinishUploadMessage(taskAttemptId, timestamp, ackFlag);
-    }
+  public static FinishUploadMessage deserialize(ByteBuf buf) {
+    long taskAttemptId = buf.readLong();
+    long timestamp = buf.readLong();
+    byte ackFlag = buf.readByte();
+    return new FinishUploadMessage(taskAttemptId, timestamp, ackFlag);
+  }
 
-    public long getTaskAttemptId() {
-        return taskAttemptId;
-    }
+  public long getTaskAttemptId() {
+    return taskAttemptId;
+  }
 
-    public long getTimestamp() {
-        return timestamp;
-    }
+  public long getTimestamp() {
+    return timestamp;
+  }
 
-    public byte getAckFlag() {
-        return ackFlag;
-    }
+  public byte getAckFlag() {
+    return ackFlag;
+  }
 
-    @Override
-    public String toString() {
-        return "FinishUploadMessage{" +
-                "taskAttemptId=" + taskAttemptId +
-                ",timestamp=" + timestamp +
-                ",ackFlag=" + ackFlag +
-                '}';
-    }
+  @Override
+  public String toString() {
+    return "FinishUploadMessage{" +
+        "taskAttemptId=" + taskAttemptId +
+        ",timestamp=" + timestamp +
+        ",ackFlag=" + ackFlag +
+        '}';
+  }
 }

@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2020 Uber Technologies, Inc.
+ * This file is copied from Uber Remote Shuffle Service
+ * (https://github.com/uber/RemoteShuffleService) and modified.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,53 +19,53 @@ import com.uber.rss.util.ByteBufUtils;
 import io.netty.buffer.ByteBuf;
 
 public class ConnectUploadRequest extends BaseMessage {
-    private String user;
-    private String appId;
-    private String appAttempt;
+  private String user;
+  private String appId;
+  private String appAttempt;
 
-    public ConnectUploadRequest(String user, String appId, String appAttempt) {
-        this.user = user;
-        this.appId = appId;
-        this.appAttempt = appAttempt;
-    }
+  public ConnectUploadRequest(String user, String appId, String appAttempt) {
+    this.user = user;
+    this.appId = appId;
+    this.appAttempt = appAttempt;
+  }
 
-    @Override
-    public int getMessageType() {
-        return MessageConstants.MESSAGE_ConnectUploadRequest;
-    }
+  @Override
+  public int getMessageType() {
+    return MessageConstants.MESSAGE_ConnectUploadRequest;
+  }
 
-    @Override
-    public void serialize(ByteBuf buf) {
-        ByteBufUtils.writeLengthAndString(buf, user);
-        ByteBufUtils.writeLengthAndString(buf, appId);
-        ByteBufUtils.writeLengthAndString(buf, appAttempt);
-    }
+  @Override
+  public void serialize(ByteBuf buf) {
+    ByteBufUtils.writeLengthAndString(buf, user);
+    ByteBufUtils.writeLengthAndString(buf, appId);
+    ByteBufUtils.writeLengthAndString(buf, appAttempt);
+  }
 
-    public static ConnectUploadRequest deserialize(ByteBuf buf) {
-        String user = ByteBufUtils.readLengthAndString(buf);
-        String appId = ByteBufUtils.readLengthAndString(buf);
-        String appAttempt = ByteBufUtils.readLengthAndString(buf);
-        return new ConnectUploadRequest(user, appId, appAttempt);
-    }
+  public static ConnectUploadRequest deserialize(ByteBuf buf) {
+    String user = ByteBufUtils.readLengthAndString(buf);
+    String appId = ByteBufUtils.readLengthAndString(buf);
+    String appAttempt = ByteBufUtils.readLengthAndString(buf);
+    return new ConnectUploadRequest(user, appId, appAttempt);
+  }
 
-    public String getUser() {
-        return user;
-    }
+  public String getUser() {
+    return user;
+  }
 
-    public String getAppId() {
-        return appId;
-    }
+  public String getAppId() {
+    return appId;
+  }
 
-    public String getAppAttempt() {
-        return appAttempt;
-    }
+  public String getAppAttempt() {
+    return appAttempt;
+  }
 
-    @Override
-    public String toString() {
-        return "ConnectUploadRequest{" +
-                "user='" + user + '\'' +
-                ", appId='" + appId + '\'' +
-                ", appAttempt='" + appAttempt + '\'' +
-                '}';
-    }
+  @Override
+  public String toString() {
+    return "ConnectUploadRequest{" +
+        "user='" + user + '\'' +
+        ", appId='" + appId + '\'' +
+        ", appAttempt='" + appAttempt + '\'' +
+        '}';
+  }
 }

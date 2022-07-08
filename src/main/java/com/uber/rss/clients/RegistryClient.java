@@ -1,10 +1,13 @@
 /*
- * Copyright (c) 2020 Uber Technologies, Inc.
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -16,13 +19,8 @@ package com.uber.rss.clients;
 
 import com.uber.rss.common.ServerDetail;
 import com.uber.rss.exceptions.RssInvalidStateException;
-import com.uber.rss.messages.GetServersRequestMessage;
-import com.uber.rss.messages.GetServersResponseMessage;
-import com.uber.rss.messages.MessageConstants;
-import com.uber.rss.messages.RegisterServerRequestMessage;
-import com.uber.rss.messages.RegisterServerResponseMessage;
-import com.uber.rss.messages.ConnectRegistryRequest;
-import com.uber.rss.messages.ConnectRegistryResponse;
+import com.uber.rss.messages.*;
+import com.uber.rss.messages.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -31,7 +29,7 @@ import java.util.List;
 /***
  * Client connecting to registry server.
  */
-public class RegistryClient extends com.uber.rss.clients.ClientBase {
+public class RegistryClient extends ClientBase {
   private static final Logger logger =
       LoggerFactory.getLogger(RegistryClient.class);
 
@@ -44,7 +42,8 @@ public class RegistryClient extends com.uber.rss.clients.ClientBase {
 
   public ConnectRegistryResponse connect() {
     if (socket != null) {
-      throw new RssInvalidStateException(String.format("Already connected to server, cannot connect again: %s", connectionInfo));
+      throw new RssInvalidStateException(
+          String.format("Already connected to server, cannot connect again: %s", connectionInfo));
     }
 
     logger.debug(String.format("Connecting to server: %s", connectionInfo));
@@ -58,15 +57,20 @@ public class RegistryClient extends com.uber.rss.clients.ClientBase {
 
     writeControlMessageAndWaitResponseStatus(connectRequest);
 
-    ConnectRegistryResponse connectResponse = readResponseMessage(MessageConstants.MESSAGE_ConnectRegistryResponse, ConnectRegistryResponse::deserialize);
+    ConnectRegistryResponse connectResponse =
+        readResponseMessage(MessageConstants.MESSAGE_ConnectRegistryResponse,
+            ConnectRegistryResponse::deserialize);
 
-    logger.info(String.format("Connected to server: %s, response: %s", connectionInfo, connectResponse));
+    logger.info(
+        String.format("Connected to server: %s, response: %s", connectionInfo, connectResponse));
 
     return connectResponse;
   }
 
-  public void registerServer(String dataCenter, String cluster, String serverId, String runningVersion, String connectionString) {
-    RegisterServerRequestMessage request = new RegisterServerRequestMessage(dataCenter, cluster, serverId, runningVersion, connectionString);
+  public void registerServer(String dataCenter, String cluster, String serverId,
+                             String connectionString) {
+    RegisterServerRequestMessage request =
+        new RegisterServerRequestMessage(dataCenter, cluster, serverId, connectionString);
 
     writeControlMessageAndWaitResponseStatus(request);
 
@@ -78,7 +82,8 @@ public class RegistryClient extends com.uber.rss.clients.ClientBase {
 
     writeControlMessageAndWaitResponseStatus(request);
 
-    GetServersResponseMessage response = readMessageLengthAndContent(GetServersResponseMessage::deserialize);
+    GetServersResponseMessage response =
+        readMessageLengthAndContent(GetServersResponseMessage::deserialize);
     return response.getServers();
   }
 

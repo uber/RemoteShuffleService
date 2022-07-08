@@ -1,10 +1,13 @@
 /*
- * Copyright (c) 2020 Uber Technologies, Inc.
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -15,32 +18,34 @@
 package org.apache.spark.shuffle
 
 import com.uber.rss.common.{AppShuffleId, ServerList}
+import org.apache.spark.{InterruptibleIterator, ShuffleDependency, TaskContext}
 import org.apache.spark.internal.Logging
+import com.uber.rss.common.ServerList
 import org.apache.spark.serializer.Serializer
-import org.apache.spark.shuffle.rss.BlockDownloaderPartitionRangeRecordIterator
+import org.apache.spark.shuffle.internal.BlockDownloaderPartitionRangeRecordIterator
 import org.apache.spark.util.CompletionIterator
 import org.apache.spark.util.collection.ExternalSorter
-import org.apache.spark.{InterruptibleIterator, ShuffleDependency, TaskContext}
 
 class RssShuffleReader[K, C](
                               user: String,
                               shuffleInfo: AppShuffleId,
+                              startMapIndex: Int,
+                              endMapIndex: Int,
                               startPartition: Int,
                               endPartition: Int,
                               serializer: Serializer,
                               context: TaskContext,
                               shuffleDependency: ShuffleDependency[K, _, C],
-                              numMaps: Int,
                               rssServers: ServerList,
                               partitionFanout: Int,
-                              serviceRegistryDataCenter: String,
-                              serviceRegistryCluster: String,
                               timeoutMillis: Int,
                               maxRetryMillis: Int,
                               dataAvailablePollInterval: Long,
                               dataAvailableWaitTime: Long,
                               shuffleReplicas: Int,
-                              checkShuffleReplicaConsistency: Boolean) extends ShuffleReader[K, C] with Logging {
+                              checkShuffleReplicaConsistency: Boolean,
+                              shuffleMetrics: ShuffleReadMetricsReporter)
+  extends ShuffleReader[K, C] with Logging {
 
   logInfo(s"Using ShuffleReader: ${this.getClass.getSimpleName}")
 
@@ -52,27 +57,29 @@ class RssShuffleReader[K, C](
       appId = shuffleInfo.getAppId,
       appAttempt = shuffleInfo.getAppAttempt,
       shuffleId = shuffleInfo.getShuffleId,
+      startMapIndex = startMapIndex,
+      endMapIndex = endMapIndex,
       startPartition = startPartition,
       endPartition = endPartition,
       serializer = serializer,
-      numMaps = numMaps,
+      context = context,
       rssServers = rssServers,
       partitionFanout = partitionFanout,
-      serviceRegistryDataCenter = serviceRegistryDataCenter,
-      serviceRegistryCluster = serviceRegistryCluster,
       timeoutMillis = timeoutMillis,
       maxRetryMillis = maxRetryMillis,
       dataAvailablePollInterval = dataAvailablePollInterval,
       dataAvailableWaitTime = dataAvailableWaitTime,
       shuffleReplicas = shuffleReplicas,
       checkShuffleReplicaConsistency = checkShuffleReplicaConsistency,
-      shuffleReadMetrics = context.taskMetrics().shuffleReadMetrics
+      shuffleReadMetrics = shuffleMetrics
     )
 
     val dep = shuffleDependency
-    
-    logInfo(s"dep.aggregator.isDefined: ${dep.aggregator.isDefined}, dep.mapSideCombine: ${dep.mapSideCombine}, dep.keyOrdering: ${dep.keyOrdering}")
-    
+
+    logInfo(s"dep.aggregator.isDefined: ${dep.aggregator.isDefined}, dep.mapSideCombine: ${
+      dep.mapSideCombine
+    }, dep.keyOrdering: ${dep.keyOrdering}")
+
     val aggregatedIter: Iterator[Product2[K, C]] = if (dep.aggregator.isDefined) {
       if (dep.mapSideCombine) {
         // We are reading values that are already combined
@@ -93,19 +100,25 @@ class RssShuffleReader[K, C](
     val resultIter = dep.keyOrdering match {
       case Some(keyOrd: Ordering[K]) =>
         // Create an ExternalSorter to sort the data
-        val sorter = new ExternalSorter[K, C, C](context, ordering = Some(keyOrd), serializer = dep.serializer)
+        val sorter = new ExternalSorter[K, C, C](context, ordering = Some(keyOrd),
+          serializer = dep.serializer)
         logInfo(s"Inserting aggregated records to sorter: $shuffleInfo")
         val startTime = System.currentTimeMillis()
         sorter.insertAll(aggregatedIter)
-        logInfo(s"Inserted aggregated records to sorter: $shuffleInfo, partition [$startPartition, $endPartition), millis: ${System.currentTimeMillis() - startTime}")
+        logInfo(
+          s"Inserted aggregated records to sorter: $shuffleInfo, " +
+            s"partition [$startPartition, $endPartition), millis: ${
+            System.currentTimeMillis() - startTime
+          }")
         context.taskMetrics().incMemoryBytesSpilled(sorter.memoryBytesSpilled)
         context.taskMetrics().incDiskBytesSpilled(sorter.diskBytesSpilled)
         context.taskMetrics().incPeakExecutionMemory(sorter.peakMemoryUsedBytes)
         // Use completion callback to stop sorter if task was finished/cancelled.
-        context.addTaskCompletionListener(_ => {
+        context.addTaskCompletionListener[Unit](_ => {
           sorter.stop()
         })
-        CompletionIterator[Product2[K, C], Iterator[Product2[K, C]]](sorter.iterator, sorter.stop())
+        CompletionIterator[Product2[K, C], Iterator[Product2[K, C]]](sorter.iterator,
+          sorter.stop())
       case None =>
         aggregatedIter
     }

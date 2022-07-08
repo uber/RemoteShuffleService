@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2020 Uber Technologies, Inc.
+ * This file is copied from Uber Remote Shuffle Service
+ * (https://github.com/uber/RemoteShuffleService) and modified.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,44 +16,43 @@
 package com.uber.rss.messages;
 
 import com.uber.rss.common.AppShuffleId;
-import com.uber.rss.common.AppTaskAttemptId;
 import com.uber.rss.util.ByteBufUtils;
 import io.netty.buffer.ByteBuf;
 
 public class StageCorruptionStateItem extends BaseMessage {
-    private final AppShuffleId appShuffleId;
+  private final AppShuffleId appShuffleId;
 
-    public StageCorruptionStateItem(AppShuffleId appShuffleId) {
-        this.appShuffleId = appShuffleId;
-    }
+  public StageCorruptionStateItem(AppShuffleId appShuffleId) {
+    this.appShuffleId = appShuffleId;
+  }
 
-    @Override
-    public int getMessageType() {
-        return MessageConstants.MESSAGE_StageCorruptionStateItem;
-    }
+  @Override
+  public int getMessageType() {
+    return MessageConstants.MESSAGE_StageCorruptionStateItem;
+  }
 
-    @Override
-    public void serialize(ByteBuf buf) {
-        ByteBufUtils.writeLengthAndString(buf, appShuffleId.getAppId());
-        ByteBufUtils.writeLengthAndString(buf, appShuffleId.getAppAttempt());
-        buf.writeInt(appShuffleId.getShuffleId());
-    }
+  @Override
+  public void serialize(ByteBuf buf) {
+    ByteBufUtils.writeLengthAndString(buf, appShuffleId.getAppId());
+    ByteBufUtils.writeLengthAndString(buf, appShuffleId.getAppAttempt());
+    buf.writeInt(appShuffleId.getShuffleId());
+  }
 
-    public static StageCorruptionStateItem deserialize(ByteBuf buf) {
-        String appId = ByteBufUtils.readLengthAndString(buf);
-        String appAttempt = ByteBufUtils.readLengthAndString(buf);
-        int shuffleId = buf.readInt();
-        return new StageCorruptionStateItem(new AppShuffleId(appId, appAttempt, shuffleId));
-    }
+  public static StageCorruptionStateItem deserialize(ByteBuf buf) {
+    String appId = ByteBufUtils.readLengthAndString(buf);
+    String appAttempt = ByteBufUtils.readLengthAndString(buf);
+    int shuffleId = buf.readInt();
+    return new StageCorruptionStateItem(new AppShuffleId(appId, appAttempt, shuffleId));
+  }
 
-    public AppShuffleId getAppShuffleId() {
-        return appShuffleId;
-    }
+  public AppShuffleId getAppShuffleId() {
+    return appShuffleId;
+  }
 
-    @Override
-    public String toString() {
-        return "StageCorruptionStateItem{" +
-            "AppShuffleId=" + appShuffleId +
-            '}';
-    }
+  @Override
+  public String toString() {
+    return "StageCorruptionStateItem{" +
+        "AppShuffleId=" + appShuffleId +
+        '}';
+  }
 }

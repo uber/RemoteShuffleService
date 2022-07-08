@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2020 Uber Technologies, Inc.
+ * This file is copied from Uber Remote Shuffle Service
+ * (https://github.com/uber/RemoteShuffleService) and modified.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,62 +19,62 @@ import com.uber.rss.util.ByteBufUtils;
 import io.netty.buffer.ByteBuf;
 
 public class HeartbeatMessage extends BaseMessage {
-    private String user;
-    private String appId;
-    private String appAttempt;
-    private boolean keepLive;
+  private String user;
+  private String appId;
+  private String appAttempt;
+  private boolean keepLive;
 
-    public HeartbeatMessage(String user, String appId, String appAttempt, boolean keepLive) {
-        this.user = user;
-        this.appId = appId;
-        this.appAttempt = appAttempt;
-        this.keepLive = keepLive;
-    }
+  public HeartbeatMessage(String user, String appId, String appAttempt, boolean keepLive) {
+    this.user = user;
+    this.appId = appId;
+    this.appAttempt = appAttempt;
+    this.keepLive = keepLive;
+  }
 
-    @Override
-    public int getMessageType() {
-        return MessageConstants.MESSAGE_HeartbeatMessage;
-    }
+  @Override
+  public int getMessageType() {
+    return MessageConstants.MESSAGE_HeartbeatMessage;
+  }
 
-    @Override
-    public void serialize(ByteBuf buf) {
-        ByteBufUtils.writeLengthAndString(buf, user);
-        ByteBufUtils.writeLengthAndString(buf, appId);
-        ByteBufUtils.writeLengthAndString(buf, appAttempt);
-        buf.writeBoolean(keepLive);
-    }
+  @Override
+  public void serialize(ByteBuf buf) {
+    ByteBufUtils.writeLengthAndString(buf, user);
+    ByteBufUtils.writeLengthAndString(buf, appId);
+    ByteBufUtils.writeLengthAndString(buf, appAttempt);
+    buf.writeBoolean(keepLive);
+  }
 
-    public static HeartbeatMessage deserialize(ByteBuf buf) {
-        String user = ByteBufUtils.readLengthAndString(buf);
-        String appId = ByteBufUtils.readLengthAndString(buf);
-        String appAttempt = ByteBufUtils.readLengthAndString(buf);
-        boolean keepLive = buf.readBoolean();
-        return new HeartbeatMessage(user, appId, appAttempt, keepLive);
-    }
+  public static HeartbeatMessage deserialize(ByteBuf buf) {
+    String user = ByteBufUtils.readLengthAndString(buf);
+    String appId = ByteBufUtils.readLengthAndString(buf);
+    String appAttempt = ByteBufUtils.readLengthAndString(buf);
+    boolean keepLive = buf.readBoolean();
+    return new HeartbeatMessage(user, appId, appAttempt, keepLive);
+  }
 
-    public String getUser() {
-        return user;
-    }
+  public String getUser() {
+    return user;
+  }
 
-    public String getAppId() {
-        return appId;
-    }
+  public String getAppId() {
+    return appId;
+  }
 
-    public String getAppAttempt() {
-        return appAttempt;
-    }
+  public String getAppAttempt() {
+    return appAttempt;
+  }
 
-    public boolean isKeepLive() {
-        return keepLive;
-    }
+  public boolean isKeepLive() {
+    return keepLive;
+  }
 
-    @Override
-    public String toString() {
-        return "HeartbeatMessage{" +
-                "user='" + user + '\'' +
-                ", appId='" + appId + '\'' +
-                ", appAttempt='" + appAttempt + '\'' +
-                ", keepLive='" + keepLive + '\'' +
-                '}';
-    }
+  @Override
+  public String toString() {
+    return "HeartbeatMessage{" +
+        "user='" + user + '\'' +
+        ", appId='" + appId + '\'' +
+        ", appAttempt='" + appAttempt + '\'' +
+        ", keepLive='" + keepLive + '\'' +
+        '}';
+  }
 }

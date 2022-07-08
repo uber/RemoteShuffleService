@@ -1,10 +1,13 @@
 /*
- * Copyright (c) 2020 Uber Technologies, Inc.
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -19,23 +22,13 @@ import com.google.common.collect.Maps;
 import com.uber.rss.common.AppShufflePartitionId;
 import com.uber.rss.common.ServerDetail;
 import com.uber.rss.common.ServerReplicationGroup;
-import com.uber.rss.exceptions.RssAggregateException;
-import com.uber.rss.exceptions.RssException;
-import com.uber.rss.exceptions.RssInconsistentReplicaException;
-import com.uber.rss.exceptions.RssInvalidStateException;
-import com.uber.rss.exceptions.RssNoActiveReadClientException;
-import com.uber.rss.exceptions.RssNonRecoverableException;
+import com.uber.rss.exceptions.*;
 import com.uber.rss.metrics.M3Stats;
+import com.uber.rss.exceptions.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -80,7 +73,7 @@ public class ReplicatedReadClient implements MultiServerReadClient {
                               ReadClientDataOptions dataOptions) {
     this(serverReplicationGroup,
         timeoutMillis,
-        new ClientRetryOptions(dataOptions.getDataAvailablePollInterval(), timeoutMillis, serverDetail->serverDetail),
+        new ClientRetryOptions(dataOptions.getDataAvailablePollInterval(), timeoutMillis),
         user,
         appShufflePartitionId,
         dataOptions,
@@ -95,7 +88,7 @@ public class ReplicatedReadClient implements MultiServerReadClient {
                               boolean checkDataConsistency) {
     this(serverReplicationGroup,
         timeoutMillis,
-        new ClientRetryOptions(dataOptions.getDataAvailablePollInterval(), timeoutMillis, serverDetail->serverDetail),
+        new ClientRetryOptions(dataOptions.getDataAvailablePollInterval(), timeoutMillis),
         user,
         appShufflePartitionId,
         dataOptions,
@@ -154,7 +147,7 @@ public class ReplicatedReadClient implements MultiServerReadClient {
           resetClientInstances();
           try {
             Thread.sleep(sleepMillis);
-            sleepMillis*=2;
+            sleepMillis *= 2;
           } catch (InterruptedException e) {
             logger.warn("Interrupted while waiting", e);
           }
@@ -243,14 +236,17 @@ public class ReplicatedReadClient implements MultiServerReadClient {
         if (retriable && tryMoreClients) {
           logger.warn(String.format(
               "Failed to read after reading %s records in client (current index: %s): %s. Will try next client in the replication group",
-              numReadRecordsMap.values().stream().mapToLong(t->t).sum(), currentClientIndex, clients[currentClientIndex]),
+              numReadRecordsMap.values().stream().mapToLong(t -> t).sum(), currentClientIndex,
+              clients[currentClientIndex]),
               ex);
           currentClientIndex++;
         } else if (!tryMoreClients) {
           // last client failed, throw out exception
           throw ex;
         } else {
-          throw new RssNonRecoverableException("Failed to read records from server replication group: " + serverReplicationGroup, ex);
+          throw new RssNonRecoverableException(
+              "Failed to read records from server replication group: " + serverReplicationGroup,
+              ex);
         }
       }
     }
@@ -282,7 +278,8 @@ public class ReplicatedReadClient implements MultiServerReadClient {
           clientRetryOptions,
           user,
           appShufflePartitionId,
-          new ReadClientDataOptions(fetchTaskAttemptIds, dataAvailablePollInterval, dataAvailableWaitTime));
+          new ReadClientDataOptions(fetchTaskAttemptIds, dataAvailablePollInterval,
+              dataAvailableWaitTime));
       clients[i] = client;
       clientsInitialized[i] = false;
     }
@@ -305,11 +302,14 @@ public class ReplicatedReadClient implements MultiServerReadClient {
         if (exceptions == null) {
           exceptions = new ArrayList<>();
         }
-        exceptions.add(new ExceptionLogInfo("Failed to initialize: " + clients[currentClientIndex].toString(), ex));
+        exceptions.add(
+            new ExceptionLogInfo("Failed to initialize: " + clients[currentClientIndex].toString(),
+                ex));
 
         if (currentClientIndex >= clients.length - 1) {
           // last client failed, throw out exception
-          throw new RssAggregateException(exceptions.stream().map(t -> t.exception).collect(Collectors.toList()));
+          throw new RssAggregateException(
+              exceptions.stream().map(t -> t.exception).collect(Collectors.toList()));
         }
       }
     }
@@ -317,9 +317,11 @@ public class ReplicatedReadClient implements MultiServerReadClient {
     if (!succeeded) {
       // not succeeded, throw out exception
       if (exceptions == null || exceptions.isEmpty()) {
-        throw new RssInvalidStateException("Invalid read client state: failed to initialized, but no exceptions");
+        throw new RssInvalidStateException(
+            "Invalid read client state: failed to initialized, but no exceptions");
       } else {
-        throw new RssAggregateException(exceptions.stream().map(t->t.exception).collect(Collectors.toList()));
+        throw new RssAggregateException(
+            exceptions.stream().map(t -> t.exception).collect(Collectors.toList()));
       }
     } else {
       // succeeded, log exceptions as warning
@@ -355,7 +357,9 @@ public class ReplicatedReadClient implements MultiServerReadClient {
       long oldValue = recordCountMap.getOrDefault(taskAttemptId, 0L);
       recordCountMap.put(taskAttemptId, oldValue + 1);
     } catch (Throwable ex) {
-      throw new RssNonRecoverableException(String.format("Failed to increase number of read records for task attempt %s, %s", taskAttemptId, this), ex);
+      throw new RssNonRecoverableException(String
+          .format("Failed to increase number of read records for task attempt %s, %s",
+              taskAttemptId, this), ex);
     }
   }
 
@@ -375,8 +379,10 @@ public class ReplicatedReadClient implements MultiServerReadClient {
         TaskDataBlock lastReadRecord = lastReadRecordsMap.get(taskAttemptId);
         if (!recordEquals(lastConsumedRecord, lastReadRecord)) {
           throw new RssInconsistentReplicaException(
-              String.format("Got different records from two servers in the replication group for task attempt %s (after %s records), record from previous server: %s, record from new server: %s (%s)",
-                  taskAttemptId, numReadCount, lastConsumedRecord, lastReadRecord, clients[currentClientIndex])
+              String.format(
+                  "Got different records from two servers in the replication group for task attempt %s (after %s records), record from previous server: %s, record from new server: %s (%s)",
+                  taskAttemptId, numReadCount, lastConsumedRecord, lastReadRecord,
+                  clients[currentClientIndex])
           );
         }
       }
@@ -392,7 +398,8 @@ public class ReplicatedReadClient implements MultiServerReadClient {
   }
 
   private void checkRecordDataConsistency() {
-    MapDifference<Long, Long>  numRecordsDifference = Maps.difference(numReadRecordsMap, numConsumedRecordsMap);
+    MapDifference<Long, Long> numRecordsDifference =
+        Maps.difference(numReadRecordsMap, numConsumedRecordsMap);
     if (!numRecordsDifference.areEqual()) {
       throw new RssInconsistentReplicaException(String.format(
           "Data corrupted! Number of consumed records (returned to caller): %s. Number of records read from current server: %s ((%s))",
@@ -401,7 +408,8 @@ public class ReplicatedReadClient implements MultiServerReadClient {
           clients[currentClientIndex]));
     }
     if (checkDataConsistency) {
-      MapDifference<Long, TaskDataBlock> lastRecordsDifference = Maps.difference(lastReadRecordsMap, lastConsumedRecordsMap);
+      MapDifference<Long, TaskDataBlock> lastRecordsDifference =
+          Maps.difference(lastReadRecordsMap, lastConsumedRecordsMap);
       if (!lastRecordsDifference.areEqual()) {
         // TODO refine exception message
         throw new RssInconsistentReplicaException(String.format(
@@ -415,7 +423,8 @@ public class ReplicatedReadClient implements MultiServerReadClient {
 
   private RetriableSocketReadClient getActiveClient() {
     if (currentClientIndex > clients.length - 1) {
-      throw new RssNoActiveReadClientException("No active read client for server replication group: " + serverReplicationGroup);
+      throw new RssNoActiveReadClientException(
+          "No active read client for server replication group: " + serverReplicationGroup);
     }
     return clients[currentClientIndex];
   }

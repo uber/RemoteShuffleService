@@ -1,10 +1,13 @@
 /*
- * Copyright (c) 2020 Uber Technologies, Inc.
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -29,120 +32,117 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class M3Stats {
-    private static final Logger logger = LoggerFactory.getLogger(M3Stats.class);
+  private static final Logger logger = LoggerFactory.getLogger(M3Stats.class);
 
-    public static final String TAG_NAME_SOURCE = "source";
-    public static final String TAG_NAME_CLIENT = "client";
-    public static final String TAG_NAME_OPERATION = "operation";
-    public static final String TAG_NAME_REMOTE = "remote";
-    
-    public static final String TAG_NAME_USER = "user";
-    public static final String TAG_NAME_QUEUE = "queue";
-    public static final String TAG_NAME_ATTEMPT_ID = "attemptId";
-    public static final String TAG_NAME_JOB_STATUS = "jobStatus";
+  public static final String TAG_NAME_SOURCE = "source";
+  public static final String TAG_NAME_CLIENT = "client";
+  public static final String TAG_NAME_OPERATION = "operation";
+  public static final String TAG_NAME_REMOTE = "remote";
 
-    public static final String TAG_VALUE_SERVER_DECODER = "serverDecoder";
-    public static final String TAG_VALUE_SERVER_HANDLER = "serverHandler";
-    public static final String TAG_VALUE_DOWNLOAD_PROCESSOR = "downloadProcessor";
-    public static final String TAG_VALUE_SHUFFLE_OUTPUT_STREAM = "shuffleOutputStream";
-    public static final String TAG_VALUE_MEMORY_MONITOR = "memoryMonitor";
-    public static final String TAG_VALUE_STRESS_TOOL = "stressTool";
+  public static final String TAG_NAME_USER = "user";
+  public static final String TAG_NAME_QUEUE = "queue";
+  public static final String TAG_NAME_ATTEMPT_ID = "attemptId";
+  public static final String TAG_NAME_JOB_STATUS = "jobStatus";
 
-    private static final AtomicInteger numM3ScopesAtomicInteger;
-    
-    private static final Scope defaultScope;
-    private static boolean defaultScopeClosed = false;
-    private static Object defaultScopeClosedLock = new Object();
+  private static final AtomicInteger numM3ScopesAtomicInteger;
 
-    private static final Gauge numM3Scopes;
-    
-    private static final ConcurrentLinkedQueue<StatsReporter> reporters = new ConcurrentLinkedQueue<>();
+  private static final Scope defaultScope;
+  private static boolean defaultScopeClosed = false;
+  private static Object defaultScopeClosedLock = new Object();
 
-    private static final ExceptionMetricGroupContainer exceptionMetricGroupContainer;
-    
-    static {
-        numM3ScopesAtomicInteger = new AtomicInteger();
-        
-        defaultScope = createScopeHelper();
-        numM3Scopes = defaultScope.gauge("numM3Scopes");
+  private static final Gauge numM3Scopes;
 
-        exceptionMetricGroupContainer = new ExceptionMetricGroupContainer();
-        
-        Runtime.getRuntime().addShutdownHook(new Thread() {
-            @Override
-            public void run() {
-                closeDefaultScope();
-            }
-        });
-    }
-    
-    public static Scope getDefaultScope() {
-        return defaultScope;
-    }
+  private static final ConcurrentLinkedQueue<StatsReporter> reporters =
+      new ConcurrentLinkedQueue<>();
 
-    public static Scope createSubScope(Map<String, String> tags) {
-        Scope scope = defaultScope.tagged(tags);
+  private static final ExceptionMetricGroupContainer exceptionMetricGroupContainer;
 
-        int numM3ScopesValue = numM3ScopesAtomicInteger.incrementAndGet();
-        numM3Scopes.update(numM3ScopesValue);
-        
-        return scope;
-    }
+  static {
+    numM3ScopesAtomicInteger = new AtomicInteger();
 
-    public static void decreaseNumM3Scopes() {
-        int numM3ScopesValue = numM3ScopesAtomicInteger.decrementAndGet();
-        numM3Scopes.update(numM3ScopesValue);
-    }
+    defaultScope = createScopeHelper();
+    numM3Scopes = defaultScope.gauge("numM3Scopes");
 
-    public static void addException(Throwable ex, String exceptionSource) {
-        exceptionMetricGroupContainer.getMetricGroup(ex, exceptionSource).getNumExceptions().inc(1);
-    }
-    
-    public static void closeDefaultScope() {
-        synchronized (defaultScopeClosedLock) {
-            if (defaultScopeClosed) {
-                logger.info("M3 scope already closed, do not close again");
-                return;
-            }
+    exceptionMetricGroupContainer = new ExceptionMetricGroupContainer();
 
-            logger.info("Closing M3 reporters");
-            for (StatsReporter reporter : reporters) {
-                try {
-                    reporter.close();
-                } catch (Throwable e) {
-                    logger.warn("Failed to close one M3 reporter", e);
-                }
-            }
-            logger.info("Closed M3 reporters");
+    Runtime.getRuntime().addShutdownHook(new Thread() {
+      @Override
+      public void run() {
+        closeDefaultScope();
+      }
+    });
+  }
 
-            logger.info("Closing M3 scope");
-            try {
-                defaultScope.close();
-            } catch (Throwable e) {
-                logger.warn("Failed to close one M3 scope", e);
-            }
-            logger.info("Closed M3 scope");
+  public static Scope getDefaultScope() {
+    return defaultScope;
+  }
 
-            defaultScopeClosed = true;
-        }
-    }
+  public static Scope createSubScope(Map<String, String> tags) {
+    Scope scope = defaultScope.tagged(tags);
 
-    private static Scope createScopeHelper() {
-        String scopeBuilderClassName = System.getProperty("rss.scopeBuilder");
-        if (scopeBuilderClassName == null || scopeBuilderClassName.isEmpty()) {
-            scopeBuilderClassName = M3DummyScopeBuilder.class.getName();
-        }
-        logger.info(String.format("Using scope builder: %s", scopeBuilderClassName));
+    int numM3ScopesValue = numM3ScopesAtomicInteger.incrementAndGet();
+    numM3Scopes.update(numM3ScopesValue);
 
-        ScopeBuilder scopeBuilder;
+    return scope;
+  }
+
+  public static void decreaseNumM3Scopes() {
+    int numM3ScopesValue = numM3ScopesAtomicInteger.decrementAndGet();
+    numM3Scopes.update(numM3ScopesValue);
+  }
+
+  public static void addException(Throwable ex, String exceptionSource) {
+    exceptionMetricGroupContainer.getMetricGroup(ex, exceptionSource).getNumExceptions().inc(1);
+  }
+
+  public static void closeDefaultScope() {
+    synchronized (defaultScopeClosedLock) {
+      if (defaultScopeClosed) {
+        logger.info("M3 scope already closed, do not close again");
+        return;
+      }
+
+      logger.info("Closing M3 reporters");
+      for (StatsReporter reporter : reporters) {
         try {
-            Class<? extends ScopeBuilder> scopeBuilderClass = Class.forName(scopeBuilderClassName).asSubclass(ScopeBuilder.class);
-            scopeBuilder = scopeBuilderClass.getConstructor().newInstance();
-        } catch (ClassNotFoundException | NoSuchMethodException | InstantiationException | IllegalAccessException | InvocationTargetException e) {
-            throw new RssException(String.format("Failed to create ScopeBuilder instance from class name %s", scopeBuilderClassName), e);
+          reporter.close();
+        } catch (Throwable e) {
+          logger.warn("Failed to close one M3 reporter", e);
         }
+      }
+      logger.info("Closed M3 reporters");
 
-        Scope scope = scopeBuilder.reportEvery(Duration.ofSeconds(30));
-        return scope;
+      logger.info("Closing M3 scope");
+      try {
+        defaultScope.close();
+      } catch (Throwable e) {
+        logger.warn("Failed to close one M3 scope", e);
+      }
+      logger.info("Closed M3 scope");
+
+      defaultScopeClosed = true;
     }
+  }
+
+  private static Scope createScopeHelper() {
+    String scopeBuilderClassName = System.getProperty("rss.scopeBuilder");
+    if (scopeBuilderClassName == null || scopeBuilderClassName.isEmpty()) {
+      scopeBuilderClassName = M3DummyScopeBuilder.class.getName();
+    }
+    logger.info(String.format("Using scope builder: %s", scopeBuilderClassName));
+
+    ScopeBuilder scopeBuilder;
+    try {
+      Class<? extends ScopeBuilder> scopeBuilderClass =
+          Class.forName(scopeBuilderClassName).asSubclass(ScopeBuilder.class);
+      scopeBuilder = scopeBuilderClass.getConstructor().newInstance();
+    } catch (ClassNotFoundException | NoSuchMethodException | InstantiationException | IllegalAccessException | InvocationTargetException e) {
+      throw new RssException(String
+          .format("Failed to create ScopeBuilder instance from class name %s",
+              scopeBuilderClassName), e);
+    }
+
+    Scope scope = scopeBuilder.reportEvery(Duration.ofSeconds(30));
+    return scope;
+  }
 }

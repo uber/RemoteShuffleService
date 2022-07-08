@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2020 Uber Technologies, Inc.
+ * This file is copied from Uber Remote Shuffle Service
+ * (https://github.com/uber/RemoteShuffleService) and modified.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,8 +19,8 @@ import com.uber.rss.common.AppShufflePartitionId;
 import com.uber.rss.common.AppTaskAttemptId;
 import com.uber.rss.common.ServerDetail;
 import com.uber.rss.common.ServerReplicationGroup;
-import com.uber.rss.exceptions.RssMissingShuffleWriteConfigException;
 import com.uber.rss.exceptions.RssAggregateException;
+import com.uber.rss.exceptions.RssMissingShuffleWriteConfigException;
 import com.uber.rss.exceptions.RssShuffleDataNotAvailableException;
 import com.uber.rss.exceptions.RssShuffleStageNotStartedException;
 import com.uber.rss.testutil.TestConstants;
@@ -38,15 +39,17 @@ public class MultiServerSocketReadClientTest {
 
   @DataProvider(name = "data-provider")
   public Object[][] dataProviderMethod() {
-    return new Object[][] { { false }, { true } };
+    return new Object[][]{{false}, {true}};
   }
 
   @Test(dataProvider = "data-provider")
   public void oneServer(boolean finishUploadAck) {
     TestStreamServer testServer1 = TestStreamServer.createRunningServer();
 
-    ServerDetail serverDetail = new ServerDetail(testServer1.getServerId(), testServer1.getRunningVersion(), testServer1.getShuffleConnectionString());
-    ServerReplicationGroup serverReplicationGroup = new ServerReplicationGroup(Arrays.asList(serverDetail));
+    ServerDetail serverDetail =
+        new ServerDetail(testServer1.getServerId(), testServer1.getShuffleConnectionString());
+    ServerReplicationGroup serverReplicationGroup =
+        new ServerReplicationGroup(Arrays.asList(serverDetail));
 
     try {
       String appId = "app1";
@@ -56,7 +59,8 @@ public class MultiServerSocketReadClientTest {
       int numPartitions = 10;
       int mapId = 2;
       long taskAttemptId = 3;
-      AppTaskAttemptId appTaskAttemptId = new AppTaskAttemptId(appId, appAttempt, shuffleId, mapId, taskAttemptId);
+      AppTaskAttemptId appTaskAttemptId =
+          new AppTaskAttemptId(appId, appAttempt, shuffleId, mapId, taskAttemptId);
 
       try (ReplicatedWriteClient writeClient = new ReplicatedWriteClient(
           serverReplicationGroup,
@@ -90,12 +94,15 @@ public class MultiServerSocketReadClientTest {
         writeClient.finishUpload();
       }
 
-      AppShufflePartitionId appShufflePartitionId = new AppShufflePartitionId(appId, appAttempt, shuffleId, 1);
-      try (MultiServerSocketReadClient readClient = new MultiServerSocketReadClient(Arrays.asList(serverReplicationGroup),
+      AppShufflePartitionId appShufflePartitionId =
+          new AppShufflePartitionId(appId, appAttempt, shuffleId, 1);
+      try (MultiServerSocketReadClient readClient = new MultiServerSocketReadClient(
+          Arrays.asList(serverReplicationGroup),
           TestConstants.NETWORK_TIMEOUT,
           "user1",
           appShufflePartitionId,
-          new ReadClientDataOptions(Arrays.asList(appTaskAttemptId.getTaskAttemptId()), TestConstants.DATA_AVAILABLE_POLL_INTERVAL, TestConstants.DATA_AVAILABLE_TIMEOUT),
+          new ReadClientDataOptions(Arrays.asList(appTaskAttemptId.getTaskAttemptId()),
+              TestConstants.DATA_AVAILABLE_POLL_INTERVAL, TestConstants.DATA_AVAILABLE_TIMEOUT),
           checkShuffleReplicaConsistency)) {
         Assert.assertEquals(readClient.getShuffleReadBytes(), 0);
 
@@ -145,17 +152,25 @@ public class MultiServerSocketReadClientTest {
     TestStreamServer testServer3 = TestStreamServer.createRunningServer();
     TestStreamServer testServer4 = TestStreamServer.createRunningServer();
 
-    ServerDetail serverDetail1 = new ServerDetail(testServer1.getServerId(), testServer1.getRunningVersion(), testServer1.getShuffleConnectionString());
-    ServerReplicationGroup serverReplicationGroup1 = new ServerReplicationGroup(Arrays.asList(serverDetail1));
+    ServerDetail serverDetail1 =
+        new ServerDetail(testServer1.getServerId(), testServer1.getShuffleConnectionString());
+    ServerReplicationGroup serverReplicationGroup1 =
+        new ServerReplicationGroup(Arrays.asList(serverDetail1));
 
-    ServerDetail serverDetail2 = new ServerDetail(testServer2.getServerId(), testServer2.getRunningVersion(), testServer2.getShuffleConnectionString());
-    ServerReplicationGroup serverReplicationGroup2 = new ServerReplicationGroup(Arrays.asList(serverDetail2));
+    ServerDetail serverDetail2 =
+        new ServerDetail(testServer2.getServerId(), testServer2.getShuffleConnectionString());
+    ServerReplicationGroup serverReplicationGroup2 =
+        new ServerReplicationGroup(Arrays.asList(serverDetail2));
 
-    ServerDetail serverDetail3 = new ServerDetail(testServer3.getServerId(), testServer3.getRunningVersion(), testServer3.getShuffleConnectionString());
-    ServerReplicationGroup serverReplicationGroup3 = new ServerReplicationGroup(Arrays.asList(serverDetail3));
+    ServerDetail serverDetail3 =
+        new ServerDetail(testServer3.getServerId(), testServer3.getShuffleConnectionString());
+    ServerReplicationGroup serverReplicationGroup3 =
+        new ServerReplicationGroup(Arrays.asList(serverDetail3));
 
-    ServerDetail serverDetail4 = new ServerDetail(testServer4.getServerId(), testServer4.getRunningVersion(), testServer4.getShuffleConnectionString());
-    ServerReplicationGroup serverReplicationGroup4 = new ServerReplicationGroup(Arrays.asList(serverDetail4));
+    ServerDetail serverDetail4 =
+        new ServerDetail(testServer4.getServerId(), testServer4.getShuffleConnectionString());
+    ServerReplicationGroup serverReplicationGroup4 =
+        new ServerReplicationGroup(Arrays.asList(serverDetail4));
 
     try {
       String appId = "app1";
@@ -165,7 +180,8 @@ public class MultiServerSocketReadClientTest {
       int numPartitions = 10;
       int mapId = 2;
       long taskAttemptId = 3;
-      AppTaskAttemptId appTaskAttemptId = new AppTaskAttemptId(appId, appAttempt, shuffleId, mapId, taskAttemptId);
+      AppTaskAttemptId appTaskAttemptId =
+          new AppTaskAttemptId(appId, appAttempt, shuffleId, mapId, taskAttemptId);
 
       try (ReplicatedWriteClient writeClient = new ReplicatedWriteClient(
           serverReplicationGroup2,
@@ -244,12 +260,16 @@ public class MultiServerSocketReadClientTest {
         writeClient.finishUpload();
       }
 
-      AppShufflePartitionId appShufflePartitionId = new AppShufflePartitionId(appId, appAttempt, shuffleId, 1);
-      try (MultiServerSocketReadClient readClient = new MultiServerSocketReadClient(Arrays.asList(serverReplicationGroup1, serverReplicationGroup2, serverReplicationGroup3, serverReplicationGroup4),
+      AppShufflePartitionId appShufflePartitionId =
+          new AppShufflePartitionId(appId, appAttempt, shuffleId, 1);
+      try (MultiServerSocketReadClient readClient = new MultiServerSocketReadClient(Arrays
+          .asList(serverReplicationGroup1, serverReplicationGroup2, serverReplicationGroup3,
+              serverReplicationGroup4),
           TestConstants.NETWORK_TIMEOUT,
           "user1",
           appShufflePartitionId,
-          new ReadClientDataOptions(Arrays.asList(appTaskAttemptId.getTaskAttemptId()), TestConstants.DATA_AVAILABLE_POLL_INTERVAL, TestConstants.DATA_AVAILABLE_TIMEOUT),
+          new ReadClientDataOptions(Arrays.asList(appTaskAttemptId.getTaskAttemptId()),
+              TestConstants.DATA_AVAILABLE_POLL_INTERVAL, TestConstants.DATA_AVAILABLE_TIMEOUT),
           checkShuffleReplicaConsistency)) {
         Assert.assertEquals(readClient.getShuffleReadBytes(), 0);
 
@@ -302,17 +322,25 @@ public class MultiServerSocketReadClientTest {
     TestStreamServer testServer3 = TestStreamServer.createRunningServer();
     TestStreamServer testServer4 = TestStreamServer.createRunningServer();
 
-    ServerDetail serverDetail1 = new ServerDetail(testServer1.getServerId(), testServer1.getRunningVersion(), testServer1.getShuffleConnectionString());
-    ServerReplicationGroup serverReplicationGroup1 = new ServerReplicationGroup(Arrays.asList(serverDetail1));
+    ServerDetail serverDetail1 =
+        new ServerDetail(testServer1.getServerId(), testServer1.getShuffleConnectionString());
+    ServerReplicationGroup serverReplicationGroup1 =
+        new ServerReplicationGroup(Arrays.asList(serverDetail1));
 
-    ServerDetail serverDetail2 = new ServerDetail(testServer2.getServerId(), testServer2.getRunningVersion(), testServer2.getShuffleConnectionString());
-    ServerReplicationGroup serverReplicationGroup2 = new ServerReplicationGroup(Arrays.asList(serverDetail2));
+    ServerDetail serverDetail2 =
+        new ServerDetail(testServer2.getServerId(), testServer2.getShuffleConnectionString());
+    ServerReplicationGroup serverReplicationGroup2 =
+        new ServerReplicationGroup(Arrays.asList(serverDetail2));
 
-    ServerDetail serverDetail3 = new ServerDetail(testServer3.getServerId(), testServer3.getRunningVersion(), testServer3.getShuffleConnectionString());
-    ServerReplicationGroup serverReplicationGroup3 = new ServerReplicationGroup(Arrays.asList(serverDetail3));
+    ServerDetail serverDetail3 =
+        new ServerDetail(testServer3.getServerId(), testServer3.getShuffleConnectionString());
+    ServerReplicationGroup serverReplicationGroup3 =
+        new ServerReplicationGroup(Arrays.asList(serverDetail3));
 
-    ServerDetail serverDetail4 = new ServerDetail(testServer4.getServerId(), testServer4.getRunningVersion(), testServer4.getShuffleConnectionString());
-    ServerReplicationGroup serverReplicationGroup4 = new ServerReplicationGroup(Arrays.asList(serverDetail4));
+    ServerDetail serverDetail4 =
+        new ServerDetail(testServer4.getServerId(), testServer4.getShuffleConnectionString());
+    ServerReplicationGroup serverReplicationGroup4 =
+        new ServerReplicationGroup(Arrays.asList(serverDetail4));
 
     try {
       String appId = "app1";
@@ -322,7 +350,8 @@ public class MultiServerSocketReadClientTest {
       int numPartitions = 10;
       int mapId = 2;
       long taskAttemptId = 3;
-      AppTaskAttemptId appTaskAttemptId = new AppTaskAttemptId(appId, appAttempt, shuffleId, mapId, taskAttemptId);
+      AppTaskAttemptId appTaskAttemptId =
+          new AppTaskAttemptId(appId, appAttempt, shuffleId, mapId, taskAttemptId);
 
       try (ReplicatedWriteClient writeClient = new ReplicatedWriteClient(
           serverReplicationGroup2,
@@ -409,12 +438,16 @@ public class MultiServerSocketReadClientTest {
       }
 
       // read partition 1
-      AppShufflePartitionId appShufflePartitionId = new AppShufflePartitionId(appId, appAttempt, shuffleId, 1);
-      try (MultiServerSocketReadClient readClient = new MultiServerSocketReadClient(Arrays.asList(serverReplicationGroup1, serverReplicationGroup2, serverReplicationGroup3, serverReplicationGroup4),
+      AppShufflePartitionId appShufflePartitionId =
+          new AppShufflePartitionId(appId, appAttempt, shuffleId, 1);
+      try (MultiServerSocketReadClient readClient = new MultiServerSocketReadClient(Arrays
+          .asList(serverReplicationGroup1, serverReplicationGroup2, serverReplicationGroup3,
+              serverReplicationGroup4),
           TestConstants.NETWORK_TIMEOUT,
           "user1",
           appShufflePartitionId,
-          new ReadClientDataOptions(Arrays.asList(appTaskAttemptId.getTaskAttemptId()), TestConstants.DATA_AVAILABLE_POLL_INTERVAL, TestConstants.DATA_AVAILABLE_TIMEOUT),
+          new ReadClientDataOptions(Arrays.asList(appTaskAttemptId.getTaskAttemptId()),
+              TestConstants.DATA_AVAILABLE_POLL_INTERVAL, TestConstants.DATA_AVAILABLE_TIMEOUT),
           checkShuffleReplicaConsistency)) {
         Assert.assertEquals(readClient.getShuffleReadBytes(), 0);
 
@@ -462,12 +495,16 @@ public class MultiServerSocketReadClientTest {
       }
 
       // read partition 2
-      AppShufflePartitionId appShufflePartitionId2 = new AppShufflePartitionId(appId, appAttempt, shuffleId, 2);
-      try (MultiServerSocketReadClient readClient = new MultiServerSocketReadClient(Arrays.asList(serverReplicationGroup1, serverReplicationGroup2, serverReplicationGroup3, serverReplicationGroup4),
+      AppShufflePartitionId appShufflePartitionId2 =
+          new AppShufflePartitionId(appId, appAttempt, shuffleId, 2);
+      try (MultiServerSocketReadClient readClient = new MultiServerSocketReadClient(Arrays
+          .asList(serverReplicationGroup1, serverReplicationGroup2, serverReplicationGroup3,
+              serverReplicationGroup4),
           TestConstants.NETWORK_TIMEOUT,
           "user1",
           appShufflePartitionId2,
-          new ReadClientDataOptions(Arrays.asList(appTaskAttemptId.getTaskAttemptId()), TestConstants.DATA_AVAILABLE_POLL_INTERVAL, TestConstants.DATA_AVAILABLE_TIMEOUT),
+          new ReadClientDataOptions(Arrays.asList(appTaskAttemptId.getTaskAttemptId()),
+              TestConstants.DATA_AVAILABLE_POLL_INTERVAL, TestConstants.DATA_AVAILABLE_TIMEOUT),
           checkShuffleReplicaConsistency)) {
         Assert.assertEquals(readClient.getShuffleReadBytes(), 0);
 
@@ -491,12 +528,16 @@ public class MultiServerSocketReadClientTest {
       }
 
       // read partition 3
-      AppShufflePartitionId appShufflePartitionId3 = new AppShufflePartitionId(appId, appAttempt, shuffleId, 3);
-      try (MultiServerSocketReadClient readClient = new MultiServerSocketReadClient(Arrays.asList(serverReplicationGroup1, serverReplicationGroup2, serverReplicationGroup3, serverReplicationGroup4),
+      AppShufflePartitionId appShufflePartitionId3 =
+          new AppShufflePartitionId(appId, appAttempt, shuffleId, 3);
+      try (MultiServerSocketReadClient readClient = new MultiServerSocketReadClient(Arrays
+          .asList(serverReplicationGroup1, serverReplicationGroup2, serverReplicationGroup3,
+              serverReplicationGroup4),
           TestConstants.NETWORK_TIMEOUT,
           "user1",
           appShufflePartitionId3,
-          new ReadClientDataOptions(Arrays.asList(appTaskAttemptId.getTaskAttemptId()), TestConstants.DATA_AVAILABLE_POLL_INTERVAL, TestConstants.DATA_AVAILABLE_TIMEOUT),
+          new ReadClientDataOptions(Arrays.asList(appTaskAttemptId.getTaskAttemptId()),
+              TestConstants.DATA_AVAILABLE_POLL_INTERVAL, TestConstants.DATA_AVAILABLE_TIMEOUT),
           checkShuffleReplicaConsistency)) {
         Assert.assertEquals(readClient.getShuffleReadBytes(), 0);
 
@@ -519,12 +560,16 @@ public class MultiServerSocketReadClientTest {
       }
 
       // read partition 4 (no data)
-      AppShufflePartitionId appShufflePartitionId4 = new AppShufflePartitionId(appId, appAttempt, shuffleId, 4);
-      try (MultiServerSocketReadClient readClient = new MultiServerSocketReadClient(Arrays.asList(serverReplicationGroup1, serverReplicationGroup2, serverReplicationGroup3, serverReplicationGroup4),
+      AppShufflePartitionId appShufflePartitionId4 =
+          new AppShufflePartitionId(appId, appAttempt, shuffleId, 4);
+      try (MultiServerSocketReadClient readClient = new MultiServerSocketReadClient(Arrays
+          .asList(serverReplicationGroup1, serverReplicationGroup2, serverReplicationGroup3,
+              serverReplicationGroup4),
           TestConstants.NETWORK_TIMEOUT,
           "user1",
           appShufflePartitionId4,
-          new ReadClientDataOptions(Arrays.asList(appTaskAttemptId.getTaskAttemptId()), TestConstants.DATA_AVAILABLE_POLL_INTERVAL, TestConstants.DATA_AVAILABLE_TIMEOUT),
+          new ReadClientDataOptions(Arrays.asList(appTaskAttemptId.getTaskAttemptId()),
+              TestConstants.DATA_AVAILABLE_POLL_INTERVAL, TestConstants.DATA_AVAILABLE_TIMEOUT),
           checkShuffleReplicaConsistency)) {
         Assert.assertEquals(readClient.getShuffleReadBytes(), 0);
 
@@ -548,16 +593,23 @@ public class MultiServerSocketReadClientTest {
     }
   }
 
-  @Test(dataProvider = "data-provider", expectedExceptions = {RssMissingShuffleWriteConfigException.class, RssShuffleStageNotStartedException.class, RssShuffleDataNotAvailableException.class, RssAggregateException.class})
+  @Test(dataProvider = "data-provider",
+      expectedExceptions = {RssMissingShuffleWriteConfigException.class,
+          RssShuffleStageNotStartedException.class, RssShuffleDataNotAvailableException.class,
+          RssAggregateException.class})
   public void twoServers_firstServerHasNoUpload(boolean finishUploadAck) {
     TestStreamServer testServer1 = TestStreamServer.createRunningServer();
     TestStreamServer testServer2 = TestStreamServer.createRunningServer();
 
-    ServerDetail serverDetail1 = new ServerDetail(testServer1.getServerId(), testServer1.getRunningVersion(), testServer1.getShuffleConnectionString());
-    ServerReplicationGroup serverReplicationGroup1 = new ServerReplicationGroup(Arrays.asList(serverDetail1));
+    ServerDetail serverDetail1 =
+        new ServerDetail(testServer1.getServerId(), testServer1.getShuffleConnectionString());
+    ServerReplicationGroup serverReplicationGroup1 =
+        new ServerReplicationGroup(Arrays.asList(serverDetail1));
 
-    ServerDetail serverDetail2 = new ServerDetail(testServer2.getServerId(), testServer2.getRunningVersion(), testServer2.getShuffleConnectionString());
-    ServerReplicationGroup serverReplicationGroup2 = new ServerReplicationGroup(Arrays.asList(serverDetail2));
+    ServerDetail serverDetail2 =
+        new ServerDetail(testServer2.getServerId(), testServer2.getShuffleConnectionString());
+    ServerReplicationGroup serverReplicationGroup2 =
+        new ServerReplicationGroup(Arrays.asList(serverDetail2));
 
     try {
       String appId = "app1";
@@ -567,7 +619,8 @@ public class MultiServerSocketReadClientTest {
       int numPartitions = 10;
       int mapId = 2;
       long taskAttemptId = 3;
-      AppTaskAttemptId appTaskAttemptId = new AppTaskAttemptId(appId, appAttempt, shuffleId, mapId, taskAttemptId);
+      AppTaskAttemptId appTaskAttemptId =
+          new AppTaskAttemptId(appId, appAttempt, shuffleId, mapId, taskAttemptId);
 
       try (ReplicatedWriteClient writeClient = new ReplicatedWriteClient(
           serverReplicationGroup2,
@@ -604,12 +657,15 @@ public class MultiServerSocketReadClientTest {
       // use short wait time to make the test finish fast
       int timeoutMillis = 500;
       int dataAvailableMaxWaitTime = 500;
-      AppShufflePartitionId appShufflePartitionId = new AppShufflePartitionId(appId, appAttempt, shuffleId, 1);
-      try (MultiServerSocketReadClient readClient = new MultiServerSocketReadClient(Arrays.asList(serverReplicationGroup1, serverReplicationGroup2),
+      AppShufflePartitionId appShufflePartitionId =
+          new AppShufflePartitionId(appId, appAttempt, shuffleId, 1);
+      try (MultiServerSocketReadClient readClient = new MultiServerSocketReadClient(
+          Arrays.asList(serverReplicationGroup1, serverReplicationGroup2),
           timeoutMillis,
           "user1",
           appShufflePartitionId,
-          new ReadClientDataOptions(Arrays.asList(appTaskAttemptId.getTaskAttemptId()), TestConstants.DATA_AVAILABLE_POLL_INTERVAL, dataAvailableMaxWaitTime),
+          new ReadClientDataOptions(Arrays.asList(appTaskAttemptId.getTaskAttemptId()),
+              TestConstants.DATA_AVAILABLE_POLL_INTERVAL, dataAvailableMaxWaitTime),
           checkShuffleReplicaConsistency)) {
         readClient.connect();
         readClient.readDataBlock();
@@ -620,16 +676,23 @@ public class MultiServerSocketReadClientTest {
     }
   }
 
-  @Test(dataProvider = "data-provider", expectedExceptions = {RssMissingShuffleWriteConfigException.class, RssShuffleStageNotStartedException.class, RssShuffleDataNotAvailableException.class, RssAggregateException.class})
+  @Test(dataProvider = "data-provider",
+      expectedExceptions = {RssMissingShuffleWriteConfigException.class,
+          RssShuffleStageNotStartedException.class, RssShuffleDataNotAvailableException.class,
+          RssAggregateException.class})
   public void twoServers_secondServerHasNoUpload(boolean finishUploadAck) {
     TestStreamServer testServer1 = TestStreamServer.createRunningServer();
     TestStreamServer testServer2 = TestStreamServer.createRunningServer();
 
-    ServerDetail serverDetail1 = new ServerDetail(testServer1.getServerId(), testServer1.getRunningVersion(), testServer1.getShuffleConnectionString());
-    ServerReplicationGroup serverReplicationGroup1 = new ServerReplicationGroup(Arrays.asList(serverDetail1));
+    ServerDetail serverDetail1 =
+        new ServerDetail(testServer1.getServerId(), testServer1.getShuffleConnectionString());
+    ServerReplicationGroup serverReplicationGroup1 =
+        new ServerReplicationGroup(Arrays.asList(serverDetail1));
 
-    ServerDetail serverDetail2 = new ServerDetail(testServer2.getServerId(), testServer2.getRunningVersion(), testServer2.getShuffleConnectionString());
-    ServerReplicationGroup serverReplicationGroup2 = new ServerReplicationGroup(Arrays.asList(serverDetail2));
+    ServerDetail serverDetail2 =
+        new ServerDetail(testServer2.getServerId(), testServer2.getShuffleConnectionString());
+    ServerReplicationGroup serverReplicationGroup2 =
+        new ServerReplicationGroup(Arrays.asList(serverDetail2));
 
     try {
       String appId = "app1";
@@ -639,7 +702,8 @@ public class MultiServerSocketReadClientTest {
       int numPartitions = 10;
       int mapId = 2;
       long taskAttemptId = 3;
-      AppTaskAttemptId appTaskAttemptId = new AppTaskAttemptId(appId, appAttempt, shuffleId, mapId, taskAttemptId);
+      AppTaskAttemptId appTaskAttemptId =
+          new AppTaskAttemptId(appId, appAttempt, shuffleId, mapId, taskAttemptId);
 
       try (ReplicatedWriteClient writeClient = new ReplicatedWriteClient(
           serverReplicationGroup1,
@@ -676,12 +740,15 @@ public class MultiServerSocketReadClientTest {
       // use short wait time to make the test finish fast
       int timeoutMillis = 500;
       int dataAvailableMaxWaitTime = 500;
-      AppShufflePartitionId appShufflePartitionId = new AppShufflePartitionId(appId, appAttempt, shuffleId, 1);
-      try (MultiServerSocketReadClient readClient = new MultiServerSocketReadClient(Arrays.asList(serverReplicationGroup1, serverReplicationGroup2),
+      AppShufflePartitionId appShufflePartitionId =
+          new AppShufflePartitionId(appId, appAttempt, shuffleId, 1);
+      try (MultiServerSocketReadClient readClient = new MultiServerSocketReadClient(
+          Arrays.asList(serverReplicationGroup1, serverReplicationGroup2),
           timeoutMillis,
           "user1",
           appShufflePartitionId,
-          new ReadClientDataOptions(Arrays.asList(appTaskAttemptId.getTaskAttemptId()), TestConstants.DATA_AVAILABLE_POLL_INTERVAL, dataAvailableMaxWaitTime),
+          new ReadClientDataOptions(Arrays.asList(appTaskAttemptId.getTaskAttemptId()),
+              TestConstants.DATA_AVAILABLE_POLL_INTERVAL, dataAvailableMaxWaitTime),
           checkShuffleReplicaConsistency)) {
         readClient.connect();
         TaskDataBlock record = readClient.readDataBlock();

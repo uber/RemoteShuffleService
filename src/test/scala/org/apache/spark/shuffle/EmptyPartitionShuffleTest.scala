@@ -1,10 +1,13 @@
 /*
- * Copyright (c) 2020 Uber Technologies, Inc.
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -16,27 +19,27 @@ package org.apache.spark.shuffle
 
 import java.util.UUID
 
-import com.uber.rss.testutil.{RssMiniCluster, RssZookeeperCluster}
-
-import org.apache.spark.{HashPartitioner, MapOutputTrackerMaster, ShuffleDependency, SparkConf, SparkContext, SparkEnv}
+import com.uber.rss.testutil.RssMiniCluster
+import org.apache.spark._
+import org.apache.spark.executor.{ShuffleWriteMetrics, TempShuffleReadMetrics}
 import org.scalatest.Assertions._
 import org.testng.annotations._
 
 import scala.collection.mutable.ArrayBuffer
 
-/***
+/** *
  * This is to test scenario where there is some partitions with no data.
  */
 class EmptyPartitionShuffleTest {
 
   var appId: String = null
   val numRssServers = 2
-  
+
   var sc: SparkContext = null
-  
+
   var rssTestCluster: RssMiniCluster = null
   private var shuffleManagers = ArrayBuffer[RssShuffleManager]();
-  
+
   @BeforeMethod
   def beforeTestMethod(): Unit = {
     appId = UUID.randomUUID().toString()
@@ -50,10 +53,11 @@ class EmptyPartitionShuffleTest {
     shuffleManagers.foreach(m => m.stop())
     rssTestCluster.stop()
   }
-  
+
   @Test
   def runTest(): Unit = {
-    val conf = TestUtil.newSparkConfWithStandAloneRegistryServer(appId, rssTestCluster.getRegistryServerConnection)
+    val conf = TestUtil
+      .newSparkConfWithStandAloneRegistryServer(appId, rssTestCluster.getRegistryServerConnection)
 
     sc = new SparkContext(conf)
 
@@ -71,12 +75,12 @@ class EmptyPartitionShuffleTest {
     // be empty.
 
     val rdd = sc.parallelize(1 to 1, numMaps)
-      .map(t=>(t*2->t))
+      .map(t => (t * 2 -> t))
       .partitionBy(new HashPartitioner(numPartitions))
 
     val shuffleDependency = new ShuffleDependency[Int, Int, Int](rdd, rdd.partitioner.get)
 
-    val shuffleHandle = driverShuffleManager.registerShuffle(shuffleId, numMaps, shuffleDependency)
+    val shuffleHandle = driverShuffleManager.registerShuffle(shuffleId, shuffleDependency)
 
     val mapOutputTrackerMaster = SparkEnv.get.mapOutputTracker.asInstanceOf[MapOutputTrackerMaster]
     mapOutputTrackerMaster.registerShuffle(shuffleId, numMaps)
@@ -88,8 +92,9 @@ class EmptyPartitionShuffleTest {
 
     (0 until numMaps).toList.par.map(mapId => {
       val mapTaskContext = new MockTaskContext(shuffleId, mapId)
-      val shuffleWriter = executorShuffleManager.getWriter[Int, Int]( shuffleHandle, mapId, mapTaskContext )
-      val records = (0 until numValuesInMap).map(t => t*2 -> t).iterator
+      val shuffleWriter = executorShuffleManager
+        .getWriter[Int, Int](shuffleHandle, mapId, mapTaskContext, new ShuffleWriteMetrics())
+      val records = (0 until numValuesInMap).map(t => t * 2 -> t).iterator
       shuffleWriter.write(records)
       val mapStatus = shuffleWriter.stop(true).get
       mapOutputTrackerMaster.registerMapOutput(shuffleId, mapId, mapStatus)
@@ -99,23 +104,27 @@ class EmptyPartitionShuffleTest {
     {
       val startPartition = 0
       val endPartition = 0
-      val reduceTaskContext = new MockTaskContext( shuffleId, startPartition )
-      val shuffleReader = executorShuffleManager.getReader( shuffleHandle, startPartition, endPartition, reduceTaskContext )
+      val reduceTaskContext = new MockTaskContext(shuffleId, startPartition)
+      val shuffleReader = executorShuffleManager
+        .getReader(shuffleHandle, startPartition, endPartition, reduceTaskContext,
+          new TempShuffleReadMetrics())
       val readRecords = shuffleReader.read().toList
-      assert( readRecords.size === numValuesInMap )
-      assert( readRecords(0)._1.toString === "0" )
-      assert( readRecords(0)._2.toString === "0" )
-      assert( readRecords(4)._1.toString === "8" )
-      assert( readRecords(4)._2.toString === "4" )
+      assert(readRecords.size === numValuesInMap)
+      assert(readRecords(0)._1.toString === "0")
+      assert(readRecords(0)._2.toString === "0")
+      assert(readRecords(4)._1.toString === "8")
+      assert(readRecords(4)._2.toString === "4")
     }
     // partition 1 should has no data
     {
       val startPartition = 1
       val endPartition = 1
-      val reduceTaskContext = new MockTaskContext( shuffleId, startPartition )
-      val shuffleReader = executorShuffleManager.getReader( shuffleHandle, startPartition, endPartition, reduceTaskContext )
+      val reduceTaskContext = new MockTaskContext(shuffleId, startPartition)
+      val shuffleReader = executorShuffleManager
+        .getReader(shuffleHandle, startPartition, endPartition, reduceTaskContext,
+          new TempShuffleReadMetrics())
       val readRecords = shuffleReader.read().toList
-      assert( readRecords.size === 0 )
+      assert(readRecords.size === 0)
     }
   }
 

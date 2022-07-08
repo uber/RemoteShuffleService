@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2020 Uber Technologies, Inc.
+ * This file is copied from Uber Remote Shuffle Service
+ * (https://github.com/uber/RemoteShuffleService) and modified.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,22 +16,23 @@
 package com.uber.rss.exceptions;
 
 public class RssException extends RuntimeException {
-    public RssException() {
-    }
+  public RssException() {
+  }
 
-    public RssException(String message) {
-        super(message);
-    }
+  public RssException(String message) {
+    super(message);
+  }
 
-    public RssException(String message, Throwable cause) {
-        super(message, cause);
-    }
+  public RssException(String message, Throwable cause) {
+    super(message, cause);
+  }
 
-    public RssException(Throwable cause) {
-        super(cause);
-    }
+  public RssException(Throwable cause) {
+    super(cause);
+  }
 
-    public RssException(String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace) {
-        super(message, cause, enableSuppression, writableStackTrace);
-    }
+  public RssException(String message, Throwable cause, boolean enableSuppression,
+                      boolean writableStackTrace) {
+    super(message, cause, enableSuppression, writableStackTrace);
+  }
 }

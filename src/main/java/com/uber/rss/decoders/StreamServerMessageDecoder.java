@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2020 Uber Technologies, Inc.
+ * This file is copied from Uber Remote Shuffle Service
+ * (https://github.com/uber/RemoteShuffleService) and modified.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,27 +18,7 @@ package com.uber.rss.decoders;
 import com.uber.rss.common.DataBlockHeader;
 import com.uber.rss.exceptions.RssException;
 import com.uber.rss.exceptions.RssInvalidDataException;
-import com.uber.rss.messages.ConnectDownloadRequest;
-import com.uber.rss.messages.ConnectDownloadResponse;
-import com.uber.rss.messages.ConnectNotifyRequest;
-import com.uber.rss.messages.ConnectNotifyResponse;
-import com.uber.rss.messages.ConnectRegistryRequest;
-import com.uber.rss.messages.ConnectRegistryResponse;
-import com.uber.rss.messages.ConnectUploadRequest;
-import com.uber.rss.messages.ConnectUploadResponse;
-import com.uber.rss.messages.FinishApplicationAttemptRequestMessage;
-import com.uber.rss.messages.FinishApplicationJobRequestMessage;
-import com.uber.rss.messages.FinishUploadMessage;
-import com.uber.rss.messages.GetBusyStatusRequest;
-import com.uber.rss.messages.GetBusyStatusResponse;
-import com.uber.rss.messages.GetDataAvailabilityRequest;
-import com.uber.rss.messages.GetDataAvailabilityResponse;
-import com.uber.rss.messages.GetServersRequestMessage;
-import com.uber.rss.messages.HeartbeatMessage;
-import com.uber.rss.messages.MessageConstants;
-import com.uber.rss.messages.RegisterServerRequestMessage;
-import com.uber.rss.messages.ShuffleDataWrapper;
-import com.uber.rss.messages.StartUploadMessage;
+import com.uber.rss.messages.*;
 import com.uber.rss.metrics.M3Stats;
 import com.uber.rss.metrics.NettyServerSideMetricGroupContainer;
 import com.uber.rss.metrics.ServerHandlerMetrics;
@@ -47,6 +28,7 @@ import com.uber.rss.util.NettyUtils;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.ByteToMessageDecoder;
+import com.uber.rss.messages.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -110,8 +92,11 @@ public class StreamServerMessageDecoder extends ByteToMessageDecoder {
     metricGroupContainer.removeMetricGroup(user);
 
     String connectionInfo = NettyUtils.getServerConnectionInfo(ctx);
-    double dataSpeed = LogUtils.calculateMegaBytesPerSecond(System.currentTimeMillis() - startTime, numIncomingBytes);
-    logger.debug("Decoder finished, total bytes: {}, speed: {} mbs, {}", numIncomingBytes, dataSpeed, connectionInfo);
+    double dataSpeed = LogUtils
+        .calculateMegaBytesPerSecond(System.currentTimeMillis() - startTime, numIncomingBytes);
+    logger
+        .debug("Decoder finished, total bytes: {}, speed: {} mbs, {}", numIncomingBytes, dataSpeed,
+            connectionInfo);
   }
 
   @Override
@@ -129,8 +114,8 @@ public class StreamServerMessageDecoder extends ByteToMessageDecoder {
   }
 
   private void decodeImpl(ChannelHandlerContext ctx,
-                        ByteBuf in,
-                        List<Object> out) {
+                          ByteBuf in,
+                          List<Object> out) {
     metrics.getNumIncomingRequests().inc(1);
 
     if (in.readableBytes() == 0) {
@@ -305,7 +290,7 @@ public class StreamServerMessageDecoder extends ByteToMessageDecoder {
 
   @Override
   public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
-    M3Stats.addException(cause, M3Stats.TAG_VALUE_SERVER_DECODER);
+    M3Stats.addException(cause, this.getClass().getSimpleName());
 
     String connectionInfo = NettyUtils.getServerConnectionInfo(ctx);
     String msg = "Got exception " + connectionInfo;
