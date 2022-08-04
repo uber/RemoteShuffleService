@@ -17,44 +17,42 @@
 
 package com.uber.rss.storage;
 
-import com.uber.rss.metrics.M3Stats;
-import com.uber.rss.exceptions.RssException;
-import com.uber.rss.exceptions.RssFileCorruptedException;
-import com.uber.rss.util.CountedOutputStream;
-import com.uber.rss.util.ExceptionUtils;
-
-import io.netty.buffer.ByteBuf;
+import java.io.File;
+import java.io.RandomAccessFile;
+import java.nio.channels.FileChannel;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.OutputStream;
+import com.uber.rss.exceptions.RssException;
+import com.uber.rss.exceptions.RssFileCorruptedException;
+import com.uber.rss.metrics.M3Stats;
+import com.uber.rss.util.ExceptionUtils;
+
+import io.netty.buffer.ByteBuf;
 
 /***
  * Local file based shuffle output stream.
  */
-public class ShuffleFileOutputStream implements ShuffleOutputStream {
-  private static final Logger logger = LoggerFactory.getLogger(ShuffleFileOutputStream.class);
+public class ShuffleFileChannelOutputStream implements ShuffleOutputStream {
+  private static final Logger logger = LoggerFactory.getLogger(ShuffleFileChannelOutputStream.class);
 
   private final String filePath;
-  private OutputStream outputStream;
-  private long initialFileSize = 0L;
-  private CountedOutputStream internalCountedOutputStream;
 
-  public ShuffleFileOutputStream(File file) {
+  private FileChannel channel;
+  private RandomAccessFile raf;
+  private long bytesWritten;
+
+  public ShuffleFileChannelOutputStream(File file) {
     this.filePath = file.getAbsolutePath();
     try {
-      FileOutputStream fileOutputStream = new FileOutputStream(file, true);
-      initialFileSize = fileOutputStream.getChannel().position();
-      outputStream = fileOutputStream;
-      internalCountedOutputStream = new CountedOutputStream(outputStream);
-      outputStream = internalCountedOutputStream;
+      raf = new RandomAccessFile(file, "rw");
+      channel = raf.getChannel();
+      channel.position(raf.length());
+      bytesWritten = channel.position();
     } catch (Throwable e) {
       M3Stats.addException(e, this.getClass().getSimpleName());
-      throw new RssException(
-          "Failed to open or create writable file: " + this.filePath, e);
+      throw new RssException("Failed to open or create writable file: " + this.filePath, e);
     }
   }
 
@@ -65,13 +63,19 @@ public class ShuffleFileOutputStream implements ShuffleOutputStream {
     }
 
     try {
-      bytes.readBytes(outputStream, bytes.readableBytes());
-      int count = bytes.readableBytes();
-      return count;
+      int bytesToRead = bytes.readableBytes();
+      int readBytes = 0;
+      while (readBytes < bytesToRead) {
+        int transferedBytes = bytes.readBytes(channel, bytesWritten,
+            bytesToRead - readBytes);
+        bytesWritten += transferedBytes;
+        readBytes += transferedBytes;
+      }
+      return readBytes;
     } catch (Throwable e) {
-      throw new RssFileCorruptedException(String.format(
-          "Failed to write %s bytes to file %s with exception %s",
-          bytes.readableBytes(), filePath, ExceptionUtils.getSimpleMessage(e)),
+      throw new RssFileCorruptedException(
+          String.format("Failed to write %s bytes to file %s with exception %s",
+              bytes.readableBytes(), filePath, ExceptionUtils.getSimpleMessage(e)),
           e);
     }
   }
@@ -79,12 +83,12 @@ public class ShuffleFileOutputStream implements ShuffleOutputStream {
   @Override
   public void close() {
     try {
-      outputStream.close();
+      channel.force(true);
+      channel.close();
+      raf.close();
     } catch (Throwable e) {
-      throw new RssFileCorruptedException(String.format(
-          "Failed to close file %s with exception %s",
-          filePath, ExceptionUtils.getSimpleMessage(e)),
-          e);
+      throw new RssFileCorruptedException(String.format("Failed to close file %s with exception %s",
+          filePath, ExceptionUtils.getSimpleMessage(e)), e);
     }
   }
 
@@ -95,13 +99,11 @@ public class ShuffleFileOutputStream implements ShuffleOutputStream {
 
   @Override
   public long getWrittenBytes() {
-    return initialFileSize + internalCountedOutputStream.getWrittenBytes();
+    return bytesWritten;
   }
 
   @Override
   public String toString() {
-    return "ShuffleFileOutputStream{" +
-        "filePath='" + filePath + '\'' +
-        '}';
+    return "ShuffleFileOutputStream{" + "filePath='" + filePath + '\'' + '}';
   }
 }

@@ -97,7 +97,7 @@ public class ShuffleFileStorage implements ShuffleStorage {
   @Override
   public ShuffleOutputStream createWriterStream(String path, String compressionCodec) {
     // TODO remove compressionCodec from storage API
-    return new ShuffleFileOutputStream(new File(path));
+    return new ShuffleFileChannelOutputStream(new File(path));
   }
 
   @Override

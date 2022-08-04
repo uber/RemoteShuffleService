@@ -15,6 +15,8 @@
 
 package com.uber.rss.messages;
 
+import io.netty.buffer.ByteBuf;
+
 /***
  * This class wraps a chunk of data inside the shuffle file. The data (bytes) should
  * be written to shuffle file directly.
@@ -22,9 +24,9 @@ package com.uber.rss.messages;
 public class ShuffleDataWrapper {
   private final int partitionId;
   private final long taskAttemptId;
-  private final byte[] bytes;
+  private final ByteBuf bytes;
 
-  public ShuffleDataWrapper(int partitionId, long taskAttemptId, byte[] bytes) {
+  public ShuffleDataWrapper(int partitionId, long taskAttemptId, ByteBuf bytes) {
     if (bytes == null) {
       throw new NullPointerException("bytes");
     }
@@ -42,7 +44,7 @@ public class ShuffleDataWrapper {
     return taskAttemptId;
   }
 
-  public byte[] getBytes() {
+  public ByteBuf getBytes() {
     return bytes;
   }
 
@@ -51,7 +53,7 @@ public class ShuffleDataWrapper {
     return "ShuffleDataWrapper{" +
         "partitionId=" + partitionId +
         ", taskAttemptId=" + taskAttemptId +
-        ", bytes.length=" + bytes.length +
+        ", bytes.length=" + bytes.readableBytes() +
         '}';
   }
 }
