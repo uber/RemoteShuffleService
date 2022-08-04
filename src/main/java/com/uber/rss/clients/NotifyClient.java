@@ -17,6 +17,7 @@ package com.uber.rss.clients;
 import com.uber.rss.exceptions.RssInvalidStateException;
 import com.uber.rss.messages.FinishApplicationAttemptRequestMessage;
 import com.uber.rss.messages.FinishApplicationJobRequestMessage;
+import com.uber.rss.messages.FinishApplicationStageRequestMessage;
 import com.uber.rss.messages.MessageConstants;
 import com.uber.rss.messages.ConnectNotifyRequest;
 import com.uber.rss.messages.ConnectNotifyResponse;
@@ -76,6 +77,12 @@ public class NotifyClient extends com.uber.rss.clients.ClientBase {
 
   public void finishApplicationAttempt(String appId, String appAttempt) {
     FinishApplicationAttemptRequestMessage request = new FinishApplicationAttemptRequestMessage(appId, appAttempt);
+
+    writeControlMessageAndWaitResponseStatus(request);
+  }
+
+  public void finishApplicationStage(String appId, String appAttempt, int stageId) {
+    FinishApplicationStageRequestMessage request = new FinishApplicationStageRequestMessage(appId, appAttempt, stageId);
 
     writeControlMessageAndWaitResponseStatus(request);
   }

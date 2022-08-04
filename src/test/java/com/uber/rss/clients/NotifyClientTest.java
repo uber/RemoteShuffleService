@@ -56,4 +56,21 @@ public class NotifyClientTest {
         }
     }
 
+    @Test
+    public void finishApplicationStage() {
+        TestStreamServer testServer = TestStreamServer.createRunningServer();
+
+        try (NotifyClient client = new NotifyClient("localhost", testServer.getShufflePort(), TestConstants.NETWORK_TIMEOUT, "user1")) {
+            client.connect();
+            // send same request twice to make sure it is still good
+            client.finishApplicationStage("app1", "exec1", 1);
+            client.finishApplicationStage("app1", "exec1", 1);
+            // send different request to make sure it is still good
+            client.finishApplicationStage("app1", "exec2", 2);
+            client.finishApplicationStage("app2", "exec2", 2);
+        } finally {
+            testServer.shutdown();
+        }
+    }
+
 }

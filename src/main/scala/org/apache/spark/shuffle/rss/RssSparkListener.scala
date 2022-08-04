@@ -21,9 +21,10 @@ import com.uber.rss.clients.{MultiServerHeartbeatClient, NotifyClient}
 import com.uber.rss.metrics.M3Stats
 import com.uber.rss.util.ServerHostAndPort
 import org.apache.commons.lang3.exception.ExceptionUtils
-import org.apache.spark.SparkContext
+import org.apache.spark.{SparkConf, SparkContext}
 import org.apache.spark.internal.Logging
 import org.apache.spark.scheduler.{JobFailed, _}
+import org.apache.spark.shuffle.RssOpts
 
 object RssSparkListener extends Logging {
 
@@ -64,7 +65,7 @@ object RssSparkListener extends Logging {
   * @param attemptId
   * @param notifyServers
   */
-class RssSparkListener(val user: String, val appId: String, val attemptId: String, val notifyServers: Array[String], val networkTimeoutMillis: Int)
+class RssSparkListener(val conf: SparkConf, val user: String, val appId: String, val attemptId: String, val notifyServers: Array[String], val networkTimeoutMillis: Int)
   extends SparkListener with Logging {
 
   private val m3Tags: util.Map[String, String] = new util.HashMap[String, String]
@@ -132,6 +133,41 @@ class RssSparkListener(val user: String, val appId: String, val attemptId: Strin
     invokeRandomNotifyServer(client => {
       client.finishApplicationAttempt(appId, attemptId)
     })
+  }
+
+  override def onStageCompleted(stageCompleted: SparkListenerStageCompleted): Unit = {
+    if (notifyServers == null || notifyServers.length == 0) {
+      return
+    }
+
+    val processOnStageCompleted = conf.get(RssOpts.enableListenForOnStageCompleted)
+
+    if (processOnStageCompleted) {
+      // ensures each server writes its partitions to s3 when stage completes vs picking a random one
+      invokeAllServers(client => {
+        client.finishApplicationStage(appId, attemptId, stageCompleted.stageInfo.stageId)
+      })
+    }
+  }
+
+  private def invokeAllServers(run: NotifyClient=>Unit): Unit = {
+    var client: NotifyClient = null
+    for (notifyServer <- notifyServers) {
+      try {
+        logInfo(s"Invoking control server $notifyServer")
+        val server = ServerHostAndPort.fromString(notifyServer)
+        client = new NotifyClient(server.getHost, server.getPort, networkTimeoutMillis, user)
+        client.connect()
+        run(client)
+      } catch {
+        case e: Throwable => {
+          logWarning("Failed to invoke control server", e)
+          M3Stats.addException(e, this.getClass().getSimpleName())
+        }
+      } finally {
+        client.close()
+      }
+    }
   }
 
   private def invokeRandomNotifyServer(run: NotifyClient=>Unit) = {

@@ -27,6 +27,7 @@ import com.uber.rss.messages.ConnectUploadRequest;
 import com.uber.rss.messages.ConnectUploadResponse;
 import com.uber.rss.messages.FinishApplicationAttemptRequestMessage;
 import com.uber.rss.messages.FinishApplicationJobRequestMessage;
+import com.uber.rss.messages.FinishApplicationStageRequestMessage;
 import com.uber.rss.messages.FinishUploadMessage;
 import com.uber.rss.messages.GetBusyStatusRequest;
 import com.uber.rss.messages.GetBusyStatusResponse;
@@ -359,6 +360,8 @@ public class StreamServerMessageDecoder extends ByteToMessageDecoder {
         return FinishApplicationJobRequestMessage.deserialize(in);
       case MessageConstants.MESSAGE_FinishApplicationAttemptRequest:
         return FinishApplicationAttemptRequestMessage.deserialize(in);
+      case MessageConstants.MESSAGE_FinishApplicationStageRequest:
+        return FinishApplicationStageRequestMessage.deserialize(in);
       case MessageConstants.MESSAGE_ConnectRegistryRequest:
         return ConnectRegistryRequest.deserialize(in);
       case MessageConstants.MESSAGE_ConnectRegistryResponse:

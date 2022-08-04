@@ -19,15 +19,20 @@ import io.netty.buffer.ByteBuf;
 
 public class StartUploadMessage extends BaseMessage {
 
-    private int shuffleId;
-    private int mapId;
-    private long attemptId;
-    private int numMaps;
-    private int numPartitions;
-    private String fileCompressionCodec;
-    private short numSplits;
+    private final int shuffleId;
+    private final int mapId;
+    private final long attemptId;
+    private final int numMaps;
+    private final int numPartitions;
+    private final String fileCompressionCodec;
+    private final short numSplits;
+    private final int stageId;
 
     public StartUploadMessage(int shuffleId, int mapId, long attemptId, int numMaps, int numPartitions, String fileCompressionCodec, short numSplits) {
+        this(shuffleId, mapId, attemptId, numMaps, numPartitions, fileCompressionCodec, numSplits, -1);
+    }
+
+    public StartUploadMessage(int shuffleId, int mapId, long attemptId, int numMaps, int numPartitions, String fileCompressionCodec, short numSplits, int stageId) {
         this.shuffleId = shuffleId;
         this.mapId = mapId;
         this.attemptId = attemptId;
@@ -35,6 +40,7 @@ public class StartUploadMessage extends BaseMessage {
         this.numPartitions = numPartitions;
         this.fileCompressionCodec = fileCompressionCodec;
         this.numSplits = numSplits;
+        this.stageId = stageId;
     }
 
     @Override
@@ -51,6 +57,7 @@ public class StartUploadMessage extends BaseMessage {
         buf.writeInt(numPartitions);
         ByteBufUtils.writeLengthAndString(buf, fileCompressionCodec);
         buf.writeShort(numSplits);
+        buf.writeInt(stageId);
     }
 
     public static StartUploadMessage deserialize(ByteBuf buf) {
@@ -61,7 +68,8 @@ public class StartUploadMessage extends BaseMessage {
         int numPartitions = buf.readInt();
         String fileCompressionCodec = ByteBufUtils.readLengthAndString(buf);
         short numSplits = buf.readShort();
-        return new StartUploadMessage(shuffleId, mapId, attemptId, numMaps, numPartitions, fileCompressionCodec, numSplits);
+        int stageId = buf.readInt();
+        return new StartUploadMessage(shuffleId, mapId, attemptId, numMaps, numPartitions, fileCompressionCodec, numSplits, stageId);
     }
 
     public int getShuffleId() {
@@ -92,6 +100,10 @@ public class StartUploadMessage extends BaseMessage {
         return numSplits;
     }
 
+    public int getStageId() {
+        return stageId;
+    }
+
     @Override
     public String toString() {
         return "StartUploadMessage{" +
@@ -102,6 +114,7 @@ public class StartUploadMessage extends BaseMessage {
             ", numPartitions=" + numPartitions +
             ", fileCompressionCodec='" + fileCompressionCodec + '\'' +
             ", numSplits=" + numSplits +
+            ", stageId= " + stageId +
             '}';
     }
 }

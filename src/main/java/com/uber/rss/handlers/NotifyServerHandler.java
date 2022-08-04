@@ -14,11 +14,17 @@
 
 package com.uber.rss.handlers;
 
+import com.uber.rss.common.AppShuffleId;
+import com.uber.rss.exceptions.RssException;
+import com.uber.rss.exceptions.RssShuffleStageNotStartedException;
+import com.uber.rss.execution.ShuffleExecutor;
 import com.uber.rss.messages.FinishApplicationJobRequestMessage;
 import com.uber.rss.messages.FinishApplicationAttemptRequestMessage;
+import com.uber.rss.messages.FinishApplicationStageRequestMessage;
 import com.uber.rss.messages.MessageConstants;
 import com.uber.rss.messages.ConnectNotifyRequest;
 import com.uber.rss.messages.ConnectNotifyResponse;
+import com.uber.rss.messages.ShuffleStageStatus;
 import com.uber.rss.metrics.ApplicationJobStatusMetrics;
 import com.uber.rss.metrics.ApplicationMetrics;
 import com.uber.rss.metrics.NotifyServerMetricsContainer;
@@ -37,11 +43,13 @@ public class NotifyServerHandler {
     private static final NotifyServerMetricsContainer metricsContainer = new NotifyServerMetricsContainer();
 
     private final String serverId;
+    private final ShuffleExecutor executor;
 
     private String user;
 
-    public NotifyServerHandler(String serverId) {
+    public NotifyServerHandler(String serverId, ShuffleExecutor executor) {
         this.serverId = serverId;
+        this.executor = executor;
     }
 
     public void handleMessage(ChannelHandlerContext ctx, ConnectNotifyRequest msg) {
@@ -71,6 +79,40 @@ public class NotifyServerHandler {
 
         ApplicationMetrics metrics = metricsContainer.getApplicationMetrics(user, msg.getAppAttempt());
         metrics.getNumApplications().inc(1);
+    }
+
+    public void handleMessage(ChannelHandlerContext ctx, FinishApplicationStageRequestMessage msg) {
+        writeAndFlushByte(ctx, MessageConstants.RESPONSE_STATUS_OK);
+
+        logger.info("finishApplicationStage, appId: {}, appAttempt: {}, stageId: {}",
+            msg.getAppId(),
+            msg.getAppAttempt(),
+            msg.getStageId());
+
+        // TODO investigate further whether stageId->shuffleId is 1-1. initial investigations suggest so but would
+        // be worth knowing 100%
+        AppShuffleId shuffleId;
+        try  {
+            shuffleId = executor.getShuffleId(msg.getStageId());
+        } catch (RssException e) {
+            logger.debug("Shuffle Stage {} does not do any writing", msg.getStageId(), e);
+            return;
+        }
+
+        ShuffleStageStatus status = executor.getShuffleStageStatus(shuffleId);
+        if (status.getFileStatus() == ShuffleStageStatus.FILE_STATUS_SHUFFLE_STAGE_NOT_STARTED) {
+            // This case "should" never occur unless thread handling uploadMessage got stuck and this ran first
+            String error = String.format("Shuffle stage was not started for stage=%s shuffle=%s unable to close shuffle files", msg.getStageId(), shuffleId);
+            logger.error(error);
+            throw new RssShuffleStageNotStartedException(error);
+        }
+
+        // TODO investigate whether its possible for next stage to start before this handler is done running
+        // in current rss implementation, this would be a problem as download requests start before the shuffle
+        // files had made it to a storage like s3 which is slower than local or hdfs
+        executor.getStageState(shuffleId).closeWriters();
+
+        logger.info("writing is complete for stage= {}, shuffleId= {} ", msg.getStageId(), shuffleId);
     }
 
     private void writeAndFlushByte(ChannelHandlerContext ctx, byte value) {

@@ -16,8 +16,10 @@ package com.uber.rss.handlers;
 
 import com.uber.rss.clients.ShuffleWriteConfig;
 import com.uber.rss.common.AppMapId;
+import com.uber.rss.common.AppShuffleId;
 import com.uber.rss.common.AppTaskAttemptId;
 import com.uber.rss.exceptions.RssInvalidDataException;
+import com.uber.rss.exceptions.RssInvalidStageException;
 import com.uber.rss.exceptions.RssInvalidStateException;
 import com.uber.rss.exceptions.RssMaxConnectionsException;
 import com.uber.rss.execution.ShuffleDataWrapper;
@@ -117,6 +119,17 @@ public class UploadServerHandler {
         AppMapId appMapId = getAppMapId(taskAttemptId);
         AppTaskAttemptId appTaskAttemptIdToFinishUpload = new AppTaskAttemptId(appMapId, taskAttemptId);
         finishUploadImpl(appTaskAttemptIdToFinishUpload);
+    }
+
+    public void registerStageId(int stageId, AppShuffleId appShuffleId) {
+        // stageId default is -1. this would only occur in cases if method not called for StartUploadMessage or error occurred
+        if (stageId != -1) {
+            executor.registerShuffleId(stageId, appShuffleId);
+        } else {
+            String error = String.format("registerStageId called not using StartUploadMessage or stageId never set for shuffle=%s", appShuffleId);
+            logger.error(error);
+            throw new RssInvalidStageException(error);
+        }
     }
 
     private void finishUploadImpl(AppTaskAttemptId appTaskAttemptIdToFinishUpload) {
