@@ -18,6 +18,7 @@ import com.uber.m3.tally.Counter;
 import com.uber.m3.tally.Gauge;
 import com.uber.rss.clients.ShuffleWriteConfig;
 import com.uber.rss.common.*;
+import com.uber.rss.exceptions.RssInvalidStageException;
 import com.uber.rss.exceptions.RssShuffleCorruptedException;
 import com.uber.rss.exceptions.RssShuffleStageNotStartedException;
 import com.uber.rss.exceptions.RssTooMuchDataException;
@@ -90,6 +91,11 @@ public class ShuffleExecutor {
     
     // This field stores states for different shuffle stages
     private final ConcurrentHashMap<AppShuffleId, ExecutorShuffleStageState> stageStates
+            = new ConcurrentHashMap<>();
+
+    // TODO should rename so its clear its only for writing stages?
+    // This field stores the shuffleId for any associated WRITING stage
+    private final ConcurrentHashMap<Integer, AppShuffleId> stageIdToShuffleIdMap
             = new ConcurrentHashMap<>();
 
     private final StateStore stateStore;
@@ -449,6 +455,20 @@ public class ShuffleExecutor {
         checkAppMaxWriteBytes(appId, appWriteBytes);
     }
 
+    public void registerShuffleId(int stageId, AppShuffleId appShuffleId) {
+        stageIdToShuffleIdMap.putIfAbsent(stageId, appShuffleId);
+    }
+
+    public AppShuffleId getShuffleId(int stageId) {
+        AppShuffleId shuffleId = stageIdToShuffleIdMap.get(stageId);
+        if (shuffleId != null) {
+            return shuffleId;
+        }
+        String error = String.format("unable to get a shuffleId for stage= %s could be because this stage doesn't write", stageId);
+        logger.warn(error);
+        throw new RssInvalidStageException(error);
+    }
+
     private void checkAppMaxWriteBytes(AppShuffleId appShuffleId, long currentAppWriteBytes) {
       if (currentAppWriteBytes > appMaxWriteBytes) {
         numTruncatedApplications.inc(1);
@@ -485,7 +505,7 @@ public class ShuffleExecutor {
         }
     }
     
-    private ExecutorShuffleStageState getStageState(AppShuffleId appShuffleId) {
+    public ExecutorShuffleStageState getStageState(AppShuffleId appShuffleId) {
         ExecutorShuffleStageState state = stageStates.get(appShuffleId);
         if (state != null) {
             return state;

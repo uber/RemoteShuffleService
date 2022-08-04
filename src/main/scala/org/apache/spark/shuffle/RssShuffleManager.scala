@@ -118,6 +118,7 @@ class RssShuffleManager(conf: SparkConf) extends ShuffleManager with Logging {
 
     RssSparkListener.registerSparkListenerOnlyOnce(sparkContext, () =>
       new RssSparkListener(
+        conf,
         user,
         conf.getAppId,
         appAttempt,
@@ -158,7 +159,8 @@ class RssShuffleManager(conf: SparkConf) extends ShuffleManager with Logging {
           rssShuffleHandle.appAttempt,
           handle.shuffleId,
           mapId,
-          context.taskAttemptId()
+          context.taskAttemptId(),
+          context.stageId()
         )
 
         logDebug( s"getWriter $mapInfo" )

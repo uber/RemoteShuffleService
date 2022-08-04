@@ -118,6 +118,25 @@ public class DataBlockSyncWriteClient extends com.uber.rss.clients.ClientBase {
     writeControlMessageNotWaitResponseStatus(startUploadMessage);
   }
 
+  // TODO do not need mapId/taskAttemptId for StartUploadMessage
+  public void startUpload(ShuffleMapTaskAttemptId shuffleMapTaskAttemptId, int stageId, int numMaps, int numPartitions, ShuffleWriteConfig shuffleWriteConfig) {
+    logger.debug(String.format("Starting upload %s, %s", shuffleMapTaskAttemptId, connectionInfo));
+
+    startUploadShuffleByteSnapshot = totalWriteBytes;
+    
+    StartUploadMessage startUploadMessage = new StartUploadMessage(
+            shuffleMapTaskAttemptId.getShuffleId(),
+            shuffleMapTaskAttemptId.getMapId(),
+            shuffleMapTaskAttemptId.getTaskAttemptId(),
+            numMaps,
+            numPartitions,
+            "",
+            shuffleWriteConfig.getNumSplits(),
+            stageId);
+
+    writeControlMessageNotWaitResponseStatus(startUploadMessage);
+  }
+
   public void writeData(int partitionId, long taskAttemptId, ByteBuf data) {
     final int headerByteCount = Integer.BYTES + Long.BYTES + Integer.BYTES;
     final int dataByteCount = data.readableBytes();

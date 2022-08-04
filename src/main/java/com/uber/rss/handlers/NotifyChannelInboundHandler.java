@@ -15,9 +15,11 @@
 package com.uber.rss.handlers;
 
 import com.uber.rss.exceptions.RssInvalidDataException;
+import com.uber.rss.execution.ShuffleExecutor;
 import com.uber.rss.messages.FinishApplicationAttemptRequestMessage;
 import com.uber.rss.messages.FinishApplicationJobRequestMessage;
 import com.uber.rss.messages.ConnectNotifyRequest;
+import com.uber.rss.messages.FinishApplicationStageRequestMessage;
 import com.uber.rss.metrics.M3Stats;
 import com.uber.rss.util.NettyUtils;
 import io.netty.channel.ChannelHandlerContext;
@@ -33,8 +35,8 @@ public class NotifyChannelInboundHandler extends ChannelInboundHandlerAdapter {
 
     private final NotifyServerHandler serverHandler;
 
-    public NotifyChannelInboundHandler(String serverId) {
-        serverHandler = new NotifyServerHandler(serverId);
+    public NotifyChannelInboundHandler(String serverId, ShuffleExecutor executor) {
+        serverHandler = new NotifyServerHandler(serverId, executor);
     }
 
     @Override
@@ -61,6 +63,8 @@ public class NotifyChannelInboundHandler extends ChannelInboundHandlerAdapter {
                 serverHandler.handleMessage(ctx, (FinishApplicationJobRequestMessage)msg);
             } else if (msg instanceof FinishApplicationAttemptRequestMessage) {
                 serverHandler.handleMessage(ctx, (FinishApplicationAttemptRequestMessage)msg);
+            } else if (msg instanceof FinishApplicationStageRequestMessage) {
+                serverHandler.handleMessage(ctx, (FinishApplicationStageRequestMessage) msg);
             } else {
                 throw new RssInvalidDataException(String.format("Unsupported message: %s, %s", msg, connectionInfo));
             }

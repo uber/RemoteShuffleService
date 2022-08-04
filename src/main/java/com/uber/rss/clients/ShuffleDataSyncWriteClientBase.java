@@ -78,7 +78,7 @@ public abstract class ShuffleDataSyncWriteClientBase implements ShuffleDataSyncW
 
   public void startUpload(AppTaskAttemptId appTaskAttemptId, int numMaps, int numPartitions) {
     shuffleMapTaskAttemptId = appTaskAttemptId.getShuffleMapTaskAttemptId();
-    dataBlockSyncWriteClient.startUpload(shuffleMapTaskAttemptId, numMaps, numPartitions, shuffleWriteConfig);
+    dataBlockSyncWriteClient.startUpload(shuffleMapTaskAttemptId, appTaskAttemptId.getStageId(), numMaps, numPartitions, shuffleWriteConfig);
   }
 
   @Override

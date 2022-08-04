@@ -26,6 +26,9 @@ public class AppTaskAttemptId {
     private final int mapId;
     private final long taskAttemptId;
 
+    // if not associated with startUpload pipeline, value will be -1
+    private final int stageId;
+
     public AppTaskAttemptId(AppShuffleId appShuffleId, int mapId, long taskAttemptId) {
         this(appShuffleId.getAppId(), appShuffleId.getAppAttempt(), appShuffleId.getShuffleId(), mapId, taskAttemptId);
     }
@@ -35,11 +38,16 @@ public class AppTaskAttemptId {
     }
 
     public AppTaskAttemptId(String appId, String appAttempt, int shuffleId, int mapId, long taskAttemptId) {
+        this(appId, appAttempt, shuffleId, mapId, taskAttemptId, -1);
+    }
+
+    public AppTaskAttemptId(String appId, String appAttempt, int shuffleId, int mapId, long taskAttemptId, int stageId) {
         this.appId = appId;
         this.appAttempt = appAttempt;
         this.shuffleId = shuffleId;
         this.mapId = mapId;
         this.taskAttemptId = taskAttemptId;
+        this.stageId = stageId;
     }
 
     public String getAppId() {
@@ -74,6 +82,10 @@ public class AppTaskAttemptId {
         return new ShuffleMapTaskAttemptId(shuffleId, mapId, taskAttemptId);
     }
 
+    public int getStageId() {
+        return stageId;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -83,13 +95,14 @@ public class AppTaskAttemptId {
                 mapId == that.mapId &&
                 taskAttemptId == that.taskAttemptId &&
                 Objects.equals(appId, that.appId) &&
-                Objects.equals(appAttempt, that.appAttempt);
+                Objects.equals(appAttempt, that.appAttempt) &&
+                stageId == that.stageId;
     }
 
     @Override
     public int hashCode() {
 
-        return Objects.hash(appId, appAttempt, shuffleId, mapId, taskAttemptId);
+        return Objects.hash(appId, appAttempt, shuffleId, mapId, taskAttemptId, stageId);
     }
 
     @Override
@@ -100,6 +113,7 @@ public class AppTaskAttemptId {
                 ", shuffleId=" + shuffleId +
                 ", mapId=" + mapId +
                 ", taskAttemptId=" + taskAttemptId +
+                ", stageId=" + stageId +
                 '}';
     }
 }

@@ -84,7 +84,7 @@ public class StreamServerVersionDecoder extends ByteToMessageDecoder {
         } else if (type == MessageConstants.NOTIFY_UPLINK_MAGIC_BYTE &&
                 version == MessageConstants.NOTIFY_UPLINK_VERSION_3) {
             newDecoder = new StreamServerMessageDecoder(null);
-            NotifyChannelInboundHandler channelInboundHandler = new NotifyChannelInboundHandler(serverId);
+            NotifyChannelInboundHandler channelInboundHandler = new NotifyChannelInboundHandler(serverId, executor);
             channelInboundHandler.processChannelActive(ctx);
             newHandler = channelInboundHandler;
         } else if (type == MessageConstants.REGISTRY_UPLINK_MAGIC_BYTE &&

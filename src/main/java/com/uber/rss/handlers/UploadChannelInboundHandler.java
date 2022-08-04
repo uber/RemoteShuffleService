@@ -18,6 +18,7 @@ import com.uber.m3.tally.Counter;
 import com.uber.m3.tally.Gauge;
 import com.uber.rss.RssBuildInfo;
 import com.uber.rss.clients.ShuffleWriteConfig;
+import com.uber.rss.common.AppShuffleId;
 import com.uber.rss.common.AppTaskAttemptId;
 import com.uber.rss.exceptions.RssInvalidDataException;
 import com.uber.rss.exceptions.RssMaxConnectionsException;
@@ -178,11 +179,14 @@ public class UploadChannelInboundHandler extends ChannelInboundHandlerAdapter {
                     appAttempt,
                     startUploadMessage.getShuffleId(),
                     startUploadMessage.getMapId(),
-                    startUploadMessage.getAttemptId());
+                    startUploadMessage.getAttemptId(),
+                    startUploadMessage.getStageId());
 
                 ShuffleWriteConfig writeConfig = new ShuffleWriteConfig(startUploadMessage.getNumSplits());
                 uploadServerHandler.initializeAppTaskAttempt(appTaskAttemptId, startUploadMessage.getNumPartitions(),
                                                                 writeConfig, ctx);
+                uploadServerHandler.registerStageId(startUploadMessage.getStageId(),
+                        new AppShuffleId(appId, appAttempt, startUploadMessage.getShuffleId()));
             } else if (msg instanceof FinishUploadMessage) {
                 logger.debug("FinishUploadMessage, {}, {}", msg, connectionInfo);
                 FinishUploadMessage finishUploadMessage = (FinishUploadMessage)msg;

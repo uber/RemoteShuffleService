@@ -38,6 +38,7 @@ public class MessageConstants {
     public final static int MESSAGE_RegisterServerRequest = -9;
     public final static int MESSAGE_GetServersRequest = -10;
     public final static int MESSAGE_FinishApplicationJobRequest = -12;
+    public final static int MESSAGE_FinishApplicationStageRequest = -13;
 
     public final static int MESSAGE_GetServersResponse = -16;
     public final static int MESSAGE_RegisterServerResponse = -19;

@@ -177,4 +177,9 @@ object RssOpts {
       .doc("Create lazy connections from mappers to RSS servers just before sending the shuffle data")
       .booleanConf
       .createWithDefault(true)
+  val enableListenForOnStageCompleted: ConfigEntry[Boolean] =
+    ConfigBuilder("spark.shuffle.rss.enableListenForOnStageCompleted")
+      .doc("Tell RSS to process onStageCompleted events from SparkListener")
+      .booleanConf
+      .createWithDefault(false)
 }
