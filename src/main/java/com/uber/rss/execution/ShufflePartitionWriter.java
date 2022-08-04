@@ -15,6 +15,16 @@
 
 package com.uber.rss.execution;
 
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.uber.m3.tally.Counter;
 import com.uber.m3.tally.Gauge;
 import com.uber.rss.common.AppShufflePartitionId;
@@ -22,17 +32,8 @@ import com.uber.rss.common.FilePathAndLength;
 import com.uber.rss.metrics.M3Stats;
 import com.uber.rss.storage.ShuffleOutputStream;
 import com.uber.rss.storage.ShuffleStorage;
-import com.uber.rss.util.ByteBufUtils;
-import io.netty.buffer.ByteBuf;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
+import io.netty.buffer.ByteBuf;
 
 /***
  * This class wraps logic to write for a single shuffle output file.
@@ -101,11 +102,8 @@ public class ShufflePartitionWriter {
       int outputStreamIndex = (int) (taskAttemptId % outputStreams.length);
       ShuffleOutputStream outputStream = outputStreams[outputStreamIndex];
 
-      int writtenBytes = bytes.readableBytes();
-      byte[] byteArray = ByteBufUtils.readBytes(bytes);
-
       isDirty = true;
-      outputStream.write(byteArray);
+      int writtenBytes = outputStream.write(bytes);
 
       streamPersistedBytesSnapshots
           .put(outputStream.getLocation(), outputStream.getWrittenBytes());

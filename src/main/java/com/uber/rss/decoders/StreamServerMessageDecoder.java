@@ -26,6 +26,11 @@ import com.uber.rss.util.ByteBufUtils;
 import com.uber.rss.util.LogUtils;
 import com.uber.rss.util.NettyUtils;
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufAllocator;
+import io.netty.buffer.CompositeByteBuf;
+import io.netty.buffer.PooledByteBufAllocator;
+import io.netty.buffer.Unpooled;
+import io.netty.buffer.UnpooledByteBufAllocator;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.ByteToMessageDecoder;
 import com.uber.rss.messages.*;
@@ -362,11 +367,17 @@ public class StreamServerMessageDecoder extends ByteToMessageDecoder {
 
   private ShuffleDataWrapper createShuffleDataWrapper(ByteBuf in, int byteCount) {
     metrics.getNumIncomingBlocks().inc(1);
-    byte[] headerBytes = DataBlockHeader.serializeToBytes(taskAttemptIdBytes, byteCount);
-    byte[] bytes = new byte[headerBytes.length + byteCount];
-    System.arraycopy(headerBytes, 0, bytes, 0, headerBytes.length);
-    in.readBytes(bytes, headerBytes.length, byteCount);
-    return new ShuffleDataWrapper(partitionId, taskAttemptId, bytes);
+    
+//    byte[] headerBytes = DataBlockHeader.serializeToBytes(taskAttemptIdBytes, byteCount);
+//    ByteBuf buffer = ByteBufAllocator.DEFAULT.buffer(headerBytes.length + byteCount);
+//    buffer.writeBytes(headerBytes);
+//    in.readBytes(buffer, headerBytes.length, byteCount);
+    
+    CompositeByteBuf compositeBuffer = ByteBufAllocator.DEFAULT.compositeBuffer();
+    compositeBuffer.addComponent(true, DataBlockHeader.serializeToBuf(taskAttemptIdBytes, byteCount));
+    compositeBuffer.addComponent(true, in.readRetainedSlice(byteCount));
+    
+    return new ShuffleDataWrapper(partitionId, taskAttemptId, compositeBuffer);
   }
 
   private void resetData() {

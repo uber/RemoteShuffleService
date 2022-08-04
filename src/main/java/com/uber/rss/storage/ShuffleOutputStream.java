@@ -17,6 +17,8 @@
 
 package com.uber.rss.storage;
 
+import io.netty.buffer.ByteBuf;
+
 /***
  * Shuffle output stream interface.
  */
@@ -25,7 +27,7 @@ public interface ShuffleOutputStream extends AutoCloseable {
    * Write data to the stream.
    * @param bytes
    */
-  void write(byte[] bytes);
+  int write(ByteBuf bytes);
 
 
   /***

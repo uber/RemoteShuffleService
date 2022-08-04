@@ -19,6 +19,9 @@ package com.uber.rss.common;
 
 import com.uber.rss.util.ByteBufUtils;
 
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufAllocator;
+
 public class DataBlockHeader {
   public static int NUM_BYTES = Long.BYTES + Integer.BYTES;
 
@@ -27,6 +30,13 @@ public class DataBlockHeader {
     System.arraycopy(taskAttemptIdBytes, 0, bytes, 0, Long.BYTES);
     ByteBufUtils.writeInt(bytes, Long.BYTES, length);
     return bytes;
+  }
+
+  public static ByteBuf serializeToBuf(byte[] taskAttemptIdBytes, int length) {
+    ByteBuf buffer = ByteBufAllocator.DEFAULT.buffer(NUM_BYTES);
+    buffer.writeBytes(taskAttemptIdBytes);
+    buffer.writeInt(length);
+    return buffer;
   }
 
   public static DataBlockHeader deserializeFromBytes(byte[] bytes) {
@@ -53,9 +63,6 @@ public class DataBlockHeader {
 
   @Override
   public String toString() {
-    return "DataBlockHeader{" +
-        "taskAttemptId=" + taskAttemptId +
-        ", length=" + length +
-        '}';
+    return "DataBlockHeader{" + "taskAttemptId=" + taskAttemptId + ", length=" + length + '}';
   }
 }

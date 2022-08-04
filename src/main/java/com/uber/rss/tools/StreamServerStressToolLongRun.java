@@ -121,6 +121,8 @@ public class StreamServerStressToolLongRun {
         System.exit(-1);
       }
     });
+    
+    long ts = System.currentTimeMillis();
 
     StreamServerStressToolLongRun longRun = new StreamServerStressToolLongRun();
 
@@ -158,6 +160,9 @@ public class StreamServerStressToolLongRun {
 
     M3Stats.closeDefaultScope();
 
+    ts = System.currentTimeMillis() - ts;
+    System.out.println("TS:" + ts / 1000);
+    
     logger.info(String.format("%s finished", StreamServerStressToolLongRun.class.getSimpleName()));
   }
 }

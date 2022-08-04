@@ -109,7 +109,7 @@ public class UploadServerHandler {
     executor.writeData(new com.uber.rss.execution.ShuffleDataWrapper(
         appShuffleId, shuffleDataWrapper.getTaskAttemptId(),
         shuffleDataWrapper.getPartitionId(),
-        Unpooled.wrappedBuffer(shuffleDataWrapper.getBytes())));
+        shuffleDataWrapper.getBytes()));
   }
 
   public void finishUpload(long taskAttemptId) {
