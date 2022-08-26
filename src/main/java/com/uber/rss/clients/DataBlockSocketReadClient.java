@@ -1,10 +1,13 @@
 /*
- * Copyright (c) 2020 Uber Technologies, Inc.
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -15,53 +18,28 @@
 package com.uber.rss.clients;
 
 import com.uber.m3.tally.Stopwatch;
-import com.uber.rss.common.AppShufflePartitionId;
-import com.uber.rss.common.Compression;
-import com.uber.rss.common.FixedLengthInputStream;
-import com.uber.rss.common.MapTaskCommitStatus;
-import com.uber.rss.common.DataBlock;
-import com.uber.rss.common.DataBlockHeader;
-import com.uber.rss.exceptions.RssEndOfStreamException;
-import com.uber.rss.exceptions.ExceptionWrapper;
-import com.uber.rss.exceptions.RssInvalidDataException;
-import com.uber.rss.exceptions.RssInvalidStateException;
-import com.uber.rss.exceptions.RssMissingShuffleWriteConfigException;
-import com.uber.rss.exceptions.RssShuffleStageNotStartedException;
-import com.uber.rss.exceptions.RssException;
-import com.uber.rss.exceptions.RssShuffleCorruptedException;
-import com.uber.rss.exceptions.RssShuffleDataNotAvailableException;
-import com.uber.rss.exceptions.RssStreamReadException;
-import com.uber.rss.messages.ConnectDownloadRequest;
-import com.uber.rss.messages.GetDataAvailabilityRequest;
-import com.uber.rss.messages.MessageConstants;
-import com.uber.rss.messages.ConnectDownloadResponse;
-import com.uber.rss.messages.GetDataAvailabilityResponse;
+import com.uber.rss.common.*;
+import com.uber.rss.exceptions.*;
+import com.uber.rss.messages.*;
+import com.uber.rss.util.*;
+import com.uber.rss.common.*;
 import com.uber.rss.metrics.M3Stats;
 import com.uber.rss.metrics.ReadClientMetrics;
 import com.uber.rss.metrics.ReadClientMetricsKey;
-import com.uber.rss.util.ByteBufUtils;
-import com.uber.rss.util.ObjectWrapper;
-import com.uber.rss.util.RetryUtils;
-import com.uber.rss.util.StreamUtils;
-import com.uber.rss.util.StringUtils;
+import com.uber.rss.exceptions.*;
+import com.uber.rss.messages.*;
+import com.uber.rss.util.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /***
  * Shuffle read client to download data (data blocks) from shuffle server.
  */
-public class DataBlockSocketReadClient extends com.uber.rss.clients.ClientBase {
+public class DataBlockSocketReadClient extends ClientBase {
   private static final Logger logger =
       LoggerFactory.getLogger(DataBlockSocketReadClient.class);
 
@@ -85,7 +63,10 @@ public class DataBlockSocketReadClient extends com.uber.rss.clients.ClientBase {
   private int totalReadDataBlocks = 0;
   private FixedLengthInputStream fixedLengthInputStream;
 
-  public DataBlockSocketReadClient(String host, int port, int timeoutMillis, String user, AppShufflePartitionId appShufflePartitionId, Collection<Long> fetchTaskAttemptIds, long dataAvailablePollInterval, long dataAvailableWaitTime) {
+  public DataBlockSocketReadClient(String host, int port, int timeoutMillis, String user,
+                                   AppShufflePartitionId appShufflePartitionId,
+                                   Collection<Long> fetchTaskAttemptIds,
+                                   long dataAvailablePollInterval, long dataAvailableWaitTime) {
     super(host, port, timeoutMillis);
     this.user = user;
     this.appShufflePartitionId = appShufflePartitionId;
@@ -93,7 +74,8 @@ public class DataBlockSocketReadClient extends com.uber.rss.clients.ClientBase {
     this.dataAvailablePollInterval = dataAvailablePollInterval;
     this.dataAvailableWaitTime = dataAvailableWaitTime;
 
-    this.metrics = new ReadClientMetrics(new ReadClientMetricsKey(this.getClass().getSimpleName(), user));
+    this.metrics = new ReadClientMetrics(
+        new ReadClientMetricsKey(this.getClass().getSimpleName(), user));
   }
 
   public ConnectDownloadResponse connect() {
@@ -107,7 +89,8 @@ public class DataBlockSocketReadClient extends com.uber.rss.clients.ClientBase {
 
   private ConnectDownloadResponse connectImpl() {
     if (socket != null) {
-      throw new RssInvalidStateException(String.format("Already connected to server, cannot connect again: %s", connectionInfo));
+      throw new RssInvalidStateException(String.format(
+          "Already connected to server, cannot connect again: %s", connectionInfo));
     }
 
     logger.debug("Connecting to server: {}", connectionInfo);
@@ -117,33 +100,42 @@ public class DataBlockSocketReadClient extends com.uber.rss.clients.ClientBase {
     write(MessageConstants.DOWNLOAD_UPLINK_MAGIC_BYTE);
     write(MessageConstants.DOWNLOAD_UPLINK_VERSION_3);
 
-    ConnectDownloadRequest connectRequest = new ConnectDownloadRequest(user, appShufflePartitionId, fetchTaskAttemptIds);
+    ConnectDownloadRequest connectRequest = new ConnectDownloadRequest(user,
+        appShufflePartitionId, fetchTaskAttemptIds);
 
 
     ExceptionWrapper<RssException> exceptionWrapper = new ExceptionWrapper<>();
 
-    Boolean succeeded = RetryUtils.retryUntilNotNull(dataAvailablePollInterval, dataAvailablePollInterval * POLL_INTERVAL_MAX_MULTIPLIER, dataAvailableWaitTime, () -> {
-      try {
-        writeControlMessageAndWaitResponseStatus(connectRequest);
-        return Boolean.TRUE;
-      } catch (RssShuffleCorruptedException ex) {
-        throw new RssShuffleCorruptedException("Shuffle data corrupted for: " + appShufflePartitionId, ex);
-      } catch (RssMissingShuffleWriteConfigException | RssShuffleStageNotStartedException ex) {
-        exceptionWrapper.setException(ex);
-        logger.warn(String.format("Did not find data in server side, server may not run fast enough to get data from client or server hits some issue, %s", appShufflePartitionId), ex);
-        return null;
-      }
-    });
+    Boolean succeeded = RetryUtils.retryUntilNotNull(dataAvailablePollInterval,
+        dataAvailablePollInterval * POLL_INTERVAL_MAX_MULTIPLIER,
+        dataAvailableWaitTime, () -> {
+          try {
+            writeControlMessageAndWaitResponseStatus(connectRequest);
+            return Boolean.TRUE;
+          } catch (RssShuffleCorruptedException ex) {
+            throw new RssShuffleCorruptedException(
+                "Shuffle data corrupted for: " + appShufflePartitionId, ex);
+          } catch (RssMissingShuffleWriteConfigException | RssShuffleStageNotStartedException ex) {
+            exceptionWrapper.setException(ex);
+            logger.warn(String.format(
+                "Did not find data in server side, server may not run fast enough to get data from" +
+                    " client or server hits some issue, %s",
+                appShufflePartitionId), ex);
+            return null;
+          }
+        });
 
     if (succeeded == null || !succeeded.booleanValue()) {
       if (exceptionWrapper.getException() != null) {
         throw exceptionWrapper.getException();
       } else {
-        throw new RssInvalidStateException(String.format("Failed to connect to server %s, %s", connectionInfo, appShufflePartitionId));
+        throw new RssInvalidStateException(String.format(
+            "Failed to connect to server %s, %s", connectionInfo, appShufflePartitionId));
       }
     }
 
-    ConnectDownloadResponse connectDownloadResponse = readResponseMessage(MessageConstants.MESSAGE_ConnectDownloadResponse, ConnectDownloadResponse::deserialize);
+    ConnectDownloadResponse connectDownloadResponse = readResponseMessage(
+        MessageConstants.MESSAGE_ConnectDownloadResponse, ConnectDownloadResponse::deserialize);
 
     logger.info("Connected to server: {}, response: {}", connectionInfo, connectDownloadResponse);
 
@@ -154,7 +146,7 @@ public class DataBlockSocketReadClient extends com.uber.rss.clients.ClientBase {
       if (this.commitMapTaskCommitStatus == null) {
         throw new RssInvalidDataException("MapTaskCommitStatus should not be null");
       }
-      this.commitTaskAttemptIds = new HashSet<>(this.commitMapTaskCommitStatus.getTaskAttemptIds().values());
+      this.commitTaskAttemptIds = this.commitMapTaskCommitStatus.getTaskAttemptIds();
       if (!this.commitTaskAttemptIds.containsAll(fetchTaskAttemptIds)) {
         throw new RssInvalidDataException(String.format(
             "Task attempt ids not matched, committed: %s, fetching: %s",
@@ -176,40 +168,49 @@ public class DataBlockSocketReadClient extends com.uber.rss.clients.ClientBase {
 
 
     Stopwatch reducerWaitTimeStopwatch = metrics.getReducerWaitTime().start();
-    final ObjectWrapper<GetDataAvailabilityResponse> getDataAvailabilityRetryLastResult = new ObjectWrapper<>();
+    final ObjectWrapper<GetDataAvailabilityResponse> getDataAvailabilityRetryLastResult
+        = new ObjectWrapper<>();
     try {
-      RetryUtils.retryUntilNotNull(dataAvailablePollInterval, dataAvailablePollInterval * POLL_INTERVAL_MAX_MULTIPLIER, dataAvailableWaitTime, () -> {
-        GetDataAvailabilityResponse getDataAvailabilityResponse = getDataAvailability();
-        getDataAvailabilityRetryLastResult.setObject(getDataAvailabilityResponse);
-        if (getDataAvailabilityResponse.isDataAvailable()) {
-          return getDataAvailabilityResponse;
-        } else {
-          return null;
-        }
-      });
+      RetryUtils.retryUntilNotNull(dataAvailablePollInterval,
+          dataAvailablePollInterval * POLL_INTERVAL_MAX_MULTIPLIER, dataAvailableWaitTime, () -> {
+            GetDataAvailabilityResponse getDataAvailabilityResponse = getDataAvailability();
+            getDataAvailabilityRetryLastResult.setObject(getDataAvailabilityResponse);
+            if (getDataAvailabilityResponse.isDataAvailable()) {
+              return getDataAvailabilityResponse;
+            } else {
+              return null;
+            }
+          });
     } finally {
       reducerWaitTimeStopwatch.stop();
     }
 
     logger.info("Finished waiting for all mappers to finish, partition: {}, duration: {} seconds",
-        appShufflePartitionId, (System.currentTimeMillis() - startTime)/1000);
+        appShufflePartitionId, (System.currentTimeMillis() - startTime) / 1000);
 
-    GetDataAvailabilityResponse getDataAvailabilityRetryResult = getDataAvailabilityRetryLastResult.getObject();
+    GetDataAvailabilityResponse getDataAvailabilityRetryResult =
+        getDataAvailabilityRetryLastResult.getObject();
 
     // Throw exception if not get the status which indicating all mappers are finished
-    if (getDataAvailabilityRetryResult == null || !getDataAvailabilityRetryResult.isDataAvailable()) {
-      // get task attempt ids from GetDataAvailabilityResponse and put them into the exception to help debugging
+    if (getDataAvailabilityRetryResult == null
+        || !getDataAvailabilityRetryResult.isDataAvailable()) {
+      // get task attempt ids from GetDataAvailabilityResponse and put them into the exception
+      // to help debugging
       String taskAttemptIdInfo = "";
-      if (getDataAvailabilityRetryResult != null && getDataAvailabilityRetryResult.getMapTaskCommitStatus() != null) {
-        MapTaskCommitStatus mapTaskCommitStatus = getDataAvailabilityRetryResult.getMapTaskCommitStatus();
+      if (getDataAvailabilityRetryResult != null
+          && getDataAvailabilityRetryResult.getMapTaskCommitStatus() != null) {
+        MapTaskCommitStatus mapTaskCommitStatus =
+            getDataAvailabilityRetryResult.getMapTaskCommitStatus();
         if (mapTaskCommitStatus.getTaskAttemptIds().isEmpty()) {
           taskAttemptIdInfo = String.format("no task attempt committed");
         } else {
-          List<Long> taskAttemptIds = mapTaskCommitStatus.getTaskAttemptIds().values().stream().collect(Collectors.toList());
+          List<Long> taskAttemptIds = mapTaskCommitStatus.getTaskAttemptIds()
+              .stream().collect(Collectors.toList());
           Collections.sort(taskAttemptIds);
           taskAttemptIdInfo = String.format("committed task ids: %s, fetching tasks: %s",
-              StringUtils.toString4SortedIntList(taskAttemptIds),
-              StringUtils.toString4SortedIntList(fetchTaskAttemptIds.stream().sorted().collect(Collectors.toList())));
+              StringUtils.toString4SortedNumberList(taskAttemptIds),
+              StringUtils.toString4SortedNumberList(fetchTaskAttemptIds
+                  .stream().sorted().collect(Collectors.toList())));
         }
       }
       throw new RssShuffleDataNotAvailableException(String.format(
@@ -221,7 +222,7 @@ public class DataBlockSocketReadClient extends com.uber.rss.clients.ClientBase {
     if (this.commitMapTaskCommitStatus == null) {
       throw new RssInvalidDataException("MapTaskCommitStatus should not be null");
     }
-    this.commitTaskAttemptIds = new HashSet<>(this.commitMapTaskCommitStatus.getTaskAttemptIds().values());
+    this.commitTaskAttemptIds = this.commitMapTaskCommitStatus.getTaskAttemptIds();
     if (!this.commitTaskAttemptIds.containsAll(fetchTaskAttemptIds)) {
       throw new RssInvalidDataException(String.format(
           "Task attempt ids not matched, committed: %s, fetching: %s",
@@ -251,8 +252,9 @@ public class DataBlockSocketReadClient extends com.uber.rss.clients.ClientBase {
       if (fixedLengthInputStream != null) {
         throw new RssStreamReadException(
             String.format(
-            "Bad data stream, total expected bytes: %s, remaining unread bytes: %s, %s",
-            fixedLengthInputStream.getLength(), fixedLengthInputStream.getRemaining(), connectionInfo)
+                "Bad data stream, total expected bytes: %s, remaining unread bytes: %s, %s",
+                fixedLengthInputStream.getLength(), fixedLengthInputStream.getRemaining(),
+                connectionInfo)
             , ex);
       } else {
         throw ex;
@@ -300,7 +302,9 @@ public class DataBlockSocketReadClient extends com.uber.rss.clients.ClientBase {
   private GetDataAvailabilityResponse getDataAvailability() {
     GetDataAvailabilityRequest request = new GetDataAvailabilityRequest();
     writeControlMessageAndWaitResponseStatus(request);
-    GetDataAvailabilityResponse getDataAvailabilityResponse = readResponseMessage(MessageConstants.MESSAGE_GetDataAvailabilityResponse, GetDataAvailabilityResponse::deserialize);
+    GetDataAvailabilityResponse getDataAvailabilityResponse =
+        readResponseMessage(MessageConstants.MESSAGE_GetDataAvailabilityResponse,
+            GetDataAvailabilityResponse::deserialize);
     return getDataAvailabilityResponse;
   }
 
@@ -315,11 +319,13 @@ public class DataBlockSocketReadClient extends com.uber.rss.clients.ClientBase {
     }
 
     if (commitTaskAttemptIds == null) {
-      throw new RssInvalidStateException(String.format("commitTaskAttemptIds is null, %s", connectionInfo));
+      throw new RssInvalidStateException(
+          String.format("commitTaskAttemptIds is null, %s", connectionInfo));
     }
 
     if (commitTaskAttemptIds.isEmpty()) {
-      throw new RssInvalidStateException(String.format("commitTaskAttemptIds is empty, %s", connectionInfo));
+      throw new RssInvalidStateException(
+          String.format("commitTaskAttemptIds is empty, %s", connectionInfo));
     }
 
     DataBlockHeader header = readDataBlockHeader(inputStream);
@@ -338,17 +344,20 @@ public class DataBlockSocketReadClient extends com.uber.rss.clients.ClientBase {
   private void startDownload() {
     byte[] bytes = StreamUtils.readBytes(inputStream, Long.BYTES);
     if (bytes == null) {
-      throw new RssEndOfStreamException(String.format("Hit unexpected end of stream: %s", connectionInfo));
+      throw new RssEndOfStreamException(
+          String.format("Hit unexpected end of stream: %s", connectionInfo));
     }
     dataLength = ByteBufUtils.readLong(bytes, 0);
     if (dataLength < 0) {
-      throw new RssInvalidDataException(String.format("Invalid data length: %s, %s", dataLength, connectionInfo));
+      throw new RssInvalidDataException(
+          String.format("Invalid data length: %s, %s", dataLength, connectionInfo));
     }
     logger.info("Data length to read: {}", dataLength);
     fixedLengthInputStream = new FixedLengthInputStream(inputStream, dataLength);
     inputStream = fixedLengthInputStream;
 
-    InputStream decompressedStream = Compression.decompressStream(inputStream, fileCompressionCodec);
+    InputStream decompressedStream =
+        Compression.decompressStream(inputStream, fileCompressionCodec);
     if (decompressedStream != inputStream) {
       inputStream = decompressedStream;
       logger.info("Switched to compressing stream {}, {}", appShufflePartitionId, connectionInfo);
