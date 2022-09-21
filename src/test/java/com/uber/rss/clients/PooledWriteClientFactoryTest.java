@@ -1,10 +1,13 @@
 /*
- * Copyright (c) 2020 Uber Technologies, Inc.
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -30,9 +33,10 @@ public class PooledWriteClientFactoryTest {
 
   @Test
   public void writeAndReadRecords() {
-    int[] shuffleIdTestValues = new int[] {1, 7};
+    int[] shuffleIdTestValues = new int[]{1, 7};
 
-    PooledWriteClientFactory writeClientFactory = new PooledWriteClientFactory(TestConstants.CONNECTION_IDLE_TIMEOUT_MILLIS);
+    PooledWriteClientFactory writeClientFactory =
+        new PooledWriteClientFactory(TestConstants.CONNECTION_IDLE_TIMEOUT_MILLIS);
 
     TestStreamServer testServer1 = TestStreamServer.createRunningServer();
 
@@ -49,9 +53,13 @@ public class PooledWriteClientFactoryTest {
         int numPartitions = 10;
         int mapId = 2;
         long taskAttemptId = taskAttemptIdTestValue++;
-        AppTaskAttemptId appTaskAttemptId = new AppTaskAttemptId(appId, appAttempt, shuffleId, mapId, taskAttemptId);
+        AppTaskAttemptId appTaskAttemptId =
+            new AppTaskAttemptId(appId, appAttempt, shuffleId, mapId, taskAttemptId);
 
-        try (ShuffleDataSyncWriteClient writeClient = writeClientFactory.getOrCreateClient("localhost", testServer1.getShufflePort(), TestConstants.NETWORK_TIMEOUT, true, "user1", appId, appAttempt, new ShuffleWriteConfig(numSplits))) {
+        try (ShuffleDataSyncWriteClient writeClient = writeClientFactory
+            .getOrCreateClient("localhost", testServer1.getShufflePort(),
+                TestConstants.NETWORK_TIMEOUT, true, "user1", appId, appAttempt,
+                new ShuffleWriteConfig(numSplits))) {
           writeClient.startUpload(appTaskAttemptId, numMaps, numPartitions);
 
           writeClient.writeDataBlock(1, null);
@@ -73,8 +81,12 @@ public class PooledWriteClientFactoryTest {
           writeClient.finishUpload();
         }
 
-        AppShufflePartitionId appShufflePartitionId = new AppShufflePartitionId(appId, appAttempt, shuffleId, 1);
-        try (PlainShuffleDataSocketReadClient readClient = new PlainShuffleDataSocketReadClient("localhost", testServer1.getShufflePort(), TestConstants.NETWORK_TIMEOUT, "user1", appShufflePartitionId, Arrays.asList(appTaskAttemptId.getTaskAttemptId()), TestConstants.DATA_AVAILABLE_POLL_INTERVAL, TestConstants.DATA_AVAILABLE_TIMEOUT)) {
+        AppShufflePartitionId appShufflePartitionId =
+            new AppShufflePartitionId(appId, appAttempt, shuffleId, 1);
+        try (PlainShuffleDataSocketReadClient readClient = new PlainShuffleDataSocketReadClient(
+            "localhost", testServer1.getShufflePort(), TestConstants.NETWORK_TIMEOUT, "user1",
+            appShufflePartitionId, Arrays.asList(appTaskAttemptId.getTaskAttemptId()),
+            TestConstants.DATA_AVAILABLE_POLL_INTERVAL, TestConstants.DATA_AVAILABLE_TIMEOUT)) {
           readClient.connect();
           TaskDataBlock record = readClient.readDataBlock();
           Assert.assertNotNull(record);
@@ -106,7 +118,10 @@ public class PooledWriteClientFactoryTest {
         }
 
         appShufflePartitionId = new AppShufflePartitionId(appId, appAttempt, shuffleId, 2);
-        try (PlainShuffleDataSocketReadClient readClient = new PlainShuffleDataSocketReadClient("localhost", testServer1.getShufflePort(), TestConstants.NETWORK_TIMEOUT, "user1", appShufflePartitionId, Arrays.asList(appTaskAttemptId.getTaskAttemptId()), TestConstants.DATA_AVAILABLE_POLL_INTERVAL, TestConstants.DATA_AVAILABLE_TIMEOUT)) {
+        try (PlainShuffleDataSocketReadClient readClient = new PlainShuffleDataSocketReadClient(
+            "localhost", testServer1.getShufflePort(), TestConstants.NETWORK_TIMEOUT, "user1",
+            appShufflePartitionId, Arrays.asList(appTaskAttemptId.getTaskAttemptId()),
+            TestConstants.DATA_AVAILABLE_POLL_INTERVAL, TestConstants.DATA_AVAILABLE_TIMEOUT)) {
           readClient.connect();
           TaskDataBlock record = readClient.readDataBlock();
           Assert.assertNotNull(record);
@@ -118,7 +133,10 @@ public class PooledWriteClientFactoryTest {
         }
 
         appShufflePartitionId = new AppShufflePartitionId(appId, appAttempt, shuffleId, 3);
-        try (PlainShuffleDataSocketReadClient readClient = new PlainShuffleDataSocketReadClient("localhost", testServer1.getShufflePort(), TestConstants.NETWORK_TIMEOUT, "user1", appShufflePartitionId, Arrays.asList(appTaskAttemptId.getTaskAttemptId()), TestConstants.DATA_AVAILABLE_POLL_INTERVAL, TestConstants.DATA_AVAILABLE_TIMEOUT)) {
+        try (PlainShuffleDataSocketReadClient readClient = new PlainShuffleDataSocketReadClient(
+            "localhost", testServer1.getShufflePort(), TestConstants.NETWORK_TIMEOUT, "user1",
+            appShufflePartitionId, Arrays.asList(appTaskAttemptId.getTaskAttemptId()),
+            TestConstants.DATA_AVAILABLE_POLL_INTERVAL, TestConstants.DATA_AVAILABLE_TIMEOUT)) {
           readClient.connect();
           TaskDataBlock record = readClient.readDataBlock();
           Assert.assertNotNull(record);
@@ -163,9 +181,13 @@ public class PooledWriteClientFactoryTest {
         int numPartitions = 10;
         int mapId = 2;
         long taskAttemptId = taskAttemptIdTestValue++;
-        AppTaskAttemptId appTaskAttemptId = new AppTaskAttemptId(appId, appAttempt, shuffleId, mapId, taskAttemptId);
+        AppTaskAttemptId appTaskAttemptId =
+            new AppTaskAttemptId(appId, appAttempt, shuffleId, mapId, taskAttemptId);
 
-        try (ShuffleDataSyncWriteClient writeClient = writeClientFactory.getOrCreateClient("localhost", testServer1.getShufflePort(), TestConstants.NETWORK_TIMEOUT, true, "user1", appId, appAttempt, TestConstants.SHUFFLE_WRITE_CONFIG)) {
+        try (ShuffleDataSyncWriteClient writeClient = writeClientFactory
+            .getOrCreateClient("localhost", testServer1.getShufflePort(),
+                TestConstants.NETWORK_TIMEOUT, true, "user1", appId, appAttempt,
+                TestConstants.SHUFFLE_WRITE_CONFIG)) {
           writeClient.startUpload(appTaskAttemptId, numMaps, numPartitions);
 
           writeClient.writeDataBlock(1, null);
@@ -187,8 +209,12 @@ public class PooledWriteClientFactoryTest {
           writeClient.finishUpload();
         }
 
-        AppShufflePartitionId appShufflePartitionId = new AppShufflePartitionId(appId, appAttempt, shuffleId, 1);
-        try (PlainShuffleDataSocketReadClient readClient = new PlainShuffleDataSocketReadClient("localhost", testServer1.getShufflePort(), TestConstants.NETWORK_TIMEOUT, "user1", appShufflePartitionId, Arrays.asList(appTaskAttemptId.getTaskAttemptId()), TestConstants.DATA_AVAILABLE_POLL_INTERVAL, TestConstants.DATA_AVAILABLE_TIMEOUT)) {
+        AppShufflePartitionId appShufflePartitionId =
+            new AppShufflePartitionId(appId, appAttempt, shuffleId, 1);
+        try (PlainShuffleDataSocketReadClient readClient = new PlainShuffleDataSocketReadClient(
+            "localhost", testServer1.getShufflePort(), TestConstants.NETWORK_TIMEOUT, "user1",
+            appShufflePartitionId, Arrays.asList(appTaskAttemptId.getTaskAttemptId()),
+            TestConstants.DATA_AVAILABLE_POLL_INTERVAL, TestConstants.DATA_AVAILABLE_TIMEOUT)) {
           readClient.connect();
           TaskDataBlock record = readClient.readDataBlock();
           Assert.assertNotNull(record);
@@ -220,7 +246,10 @@ public class PooledWriteClientFactoryTest {
         }
 
         appShufflePartitionId = new AppShufflePartitionId(appId, appAttempt, shuffleId, 2);
-        try (PlainShuffleDataSocketReadClient readClient = new PlainShuffleDataSocketReadClient("localhost", testServer1.getShufflePort(), TestConstants.NETWORK_TIMEOUT, "user1", appShufflePartitionId, Arrays.asList(appTaskAttemptId.getTaskAttemptId()), TestConstants.DATA_AVAILABLE_POLL_INTERVAL, TestConstants.DATA_AVAILABLE_TIMEOUT)) {
+        try (PlainShuffleDataSocketReadClient readClient = new PlainShuffleDataSocketReadClient(
+            "localhost", testServer1.getShufflePort(), TestConstants.NETWORK_TIMEOUT, "user1",
+            appShufflePartitionId, Arrays.asList(appTaskAttemptId.getTaskAttemptId()),
+            TestConstants.DATA_AVAILABLE_POLL_INTERVAL, TestConstants.DATA_AVAILABLE_TIMEOUT)) {
           readClient.connect();
           TaskDataBlock record = readClient.readDataBlock();
           Assert.assertNotNull(record);
@@ -232,7 +261,10 @@ public class PooledWriteClientFactoryTest {
         }
 
         appShufflePartitionId = new AppShufflePartitionId(appId, appAttempt, shuffleId, 3);
-        try (PlainShuffleDataSocketReadClient readClient = new PlainShuffleDataSocketReadClient("localhost", testServer1.getShufflePort(), TestConstants.NETWORK_TIMEOUT, "user1", appShufflePartitionId, Arrays.asList(appTaskAttemptId.getTaskAttemptId()), TestConstants.DATA_AVAILABLE_POLL_INTERVAL, TestConstants.DATA_AVAILABLE_TIMEOUT)) {
+        try (PlainShuffleDataSocketReadClient readClient = new PlainShuffleDataSocketReadClient(
+            "localhost", testServer1.getShufflePort(), TestConstants.NETWORK_TIMEOUT, "user1",
+            appShufflePartitionId, Arrays.asList(appTaskAttemptId.getTaskAttemptId()),
+            TestConstants.DATA_AVAILABLE_POLL_INTERVAL, TestConstants.DATA_AVAILABLE_TIMEOUT)) {
           readClient.connect();
           TaskDataBlock record = readClient.readDataBlock();
           Assert.assertNotNull(record);
@@ -245,7 +277,9 @@ public class PooledWriteClientFactoryTest {
       }
 
       // wait sometime so the background thread could close idle clients
-      boolean noIdleClient = RetryUtils.retryUntilTrue(idleTimeout, idleTimeout * 10, ()->{return writeClientFactory.getNumIdleClients() == 0;});
+      boolean noIdleClient = RetryUtils.retryUntilTrue(idleTimeout, idleTimeout * 10, () -> {
+        return writeClientFactory.getNumIdleClients() == 0;
+      });
       Assert.assertTrue(noIdleClient);
       Assert.assertEquals(writeClientFactory.getNumCreatedClients(), numApps);
     } finally {
