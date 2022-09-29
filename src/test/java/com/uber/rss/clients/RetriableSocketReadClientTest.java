@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2020 Uber Technologies, Inc.
+ * This file is copied from Uber Remote Shuffle Service
+ * (https://github.com/uber/RemoteShuffleService) and modified.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,7 +37,7 @@ public class RetriableSocketReadClientTest {
 
   @DataProvider(name = "data-provider")
   public Object[][] dataProviderMethod() {
-    return new Object[][] { { false }, { true } };
+    return new Object[][]{{false}, {true}};
   }
 
   @Test(dataProvider = "data-provider")
@@ -51,10 +52,13 @@ public class RetriableSocketReadClientTest {
       int numPartitions = 10;
       int mapId = 2;
       long taskAttemptId = 3;
-      AppTaskAttemptId appTaskAttemptId = new AppTaskAttemptId(appId, appAttempt, shuffleId, mapId, taskAttemptId);
+      AppTaskAttemptId appTaskAttemptId =
+          new AppTaskAttemptId(appId, appAttempt, shuffleId, mapId, taskAttemptId);
 
-      try (ShuffleDataSyncWriteClient writeClient = UnpooledWriteClientFactory.getInstance().getOrCreateClient(
-          "localhost", testServer1.getShufflePort(), TestConstants.NETWORK_TIMEOUT, finishUploadAck, "user1", "app1", appAttempt, TestConstants.SHUFFLE_WRITE_CONFIG)) {
+      try (ShuffleDataSyncWriteClient writeClient = UnpooledWriteClientFactory.getInstance()
+          .getOrCreateClient(
+              "localhost", testServer1.getShufflePort(), TestConstants.NETWORK_TIMEOUT,
+              finishUploadAck, "user1", "app1", appAttempt, TestConstants.SHUFFLE_WRITE_CONFIG)) {
         writeClient.connect();
         writeClient.startUpload(appTaskAttemptId, numMaps, numPartitions);
 
@@ -77,10 +81,15 @@ public class RetriableSocketReadClientTest {
         writeClient.finishUpload();
       }
 
-      AppShufflePartitionId appShufflePartitionId = new AppShufflePartitionId(appId, appAttempt, shuffleId, 1);
-      ServerDetail serverDetail = new ServerDetail(testServer1.getServerId(), testServer1.getRunningVersion(), testServer1.getShuffleConnectionString());
-      ClientRetryOptions clientRetryOptions = new ClientRetryOptions(10, TestConstants.NETWORK_TIMEOUT, serverId->serverDetail);
-      ReadClientDataOptions readClientDataOptions = new ReadClientDataOptions(Arrays.asList(appTaskAttemptId.getTaskAttemptId()), TestConstants.DATA_AVAILABLE_POLL_INTERVAL, TestConstants.DATA_AVAILABLE_TIMEOUT);
+      AppShufflePartitionId appShufflePartitionId =
+          new AppShufflePartitionId(appId, appAttempt, shuffleId, 1);
+      ServerDetail serverDetail =
+          new ServerDetail(testServer1.getServerId(), testServer1.getShuffleConnectionString());
+      ClientRetryOptions clientRetryOptions =
+          new ClientRetryOptions(10, TestConstants.NETWORK_TIMEOUT);
+      ReadClientDataOptions readClientDataOptions =
+          new ReadClientDataOptions(Arrays.asList(appTaskAttemptId.getTaskAttemptId()),
+              TestConstants.DATA_AVAILABLE_POLL_INTERVAL, TestConstants.DATA_AVAILABLE_TIMEOUT);
       try (RetriableSocketReadClient readClient = new RetriableSocketReadClient(serverDetail,
           TestConstants.NETWORK_TIMEOUT,
           clientRetryOptions,
@@ -117,278 +126,6 @@ public class RetriableSocketReadClientTest {
       }
     } finally {
       testServer1.shutdown();
-    }
-  }
-
-  @Test(dataProvider = "data-provider")
-  public void serverRestartAndRefreshServerConnection(boolean finishUploadAck) throws IOException {
-    String rootDir = Files.createTempDirectory("StreamServer_").toString();
-    Consumer<StreamServerConfig> configModifier = config -> config.setRootDirectory(rootDir);
-
-    TestStreamServer testServer1 = TestStreamServer.createRunningServer(configModifier);
-    TestStreamServer testServer2 = null;
-
-    try {
-      String appId = "app1";
-      String appAttempt = "attempt1";
-      int shuffleId = 1;
-      int numMaps = 1;
-      int numPartitions = 10;
-      int mapId = 2;
-      long taskAttemptId = 3;
-      AppTaskAttemptId appTaskAttemptId = new AppTaskAttemptId(appId, appAttempt, shuffleId, mapId, taskAttemptId);
-
-      try (ShuffleDataSyncWriteClient writeClient = UnpooledWriteClientFactory.getInstance().getOrCreateClient(
-          "localhost", testServer1.getShufflePort(), TestConstants.NETWORK_TIMEOUT, finishUploadAck, "user1", "app1", appAttempt, TestConstants.SHUFFLE_WRITE_CONFIG)) {
-        writeClient.connect();
-        writeClient.startUpload(appTaskAttemptId, numMaps, numPartitions);
-
-        writeClient.writeDataBlock(1, null);
-        writeClient.writeDataBlock(1,
-            ByteBuffer.wrap(new byte[0]));
-        writeClient.writeDataBlock(1,
-            ByteBuffer.wrap("".getBytes(StandardCharsets.UTF_8)));
-        writeClient.writeDataBlock(1,
-            ByteBuffer.wrap("value1".getBytes(StandardCharsets.UTF_8)));
-        writeClient.writeDataBlock(1,
-            ByteBuffer.wrap("value1".getBytes(StandardCharsets.UTF_8)));
-
-        writeClient.writeDataBlock(2,
-            ByteBuffer.wrap(new byte[0]));
-
-        writeClient.writeDataBlock(3,
-            ByteBuffer.wrap("value1".getBytes(StandardCharsets.UTF_8)));
-
-        writeClient.finishUpload();
-      }
-
-      AppShufflePartitionId appShufflePartitionId = new AppShufflePartitionId(appId, appAttempt, shuffleId, 1);
-      ServerDetail serverDetail = new ServerDetail(testServer1.getServerId(), testServer1.getRunningVersion(), testServer1.getShuffleConnectionString());
-      ClientRetryOptions clientRetryOptions = new ClientRetryOptions(10, TestConstants.NETWORK_TIMEOUT, serverId->serverDetail);
-      ReadClientDataOptions readClientDataOptions = new ReadClientDataOptions(Arrays.asList(appTaskAttemptId.getTaskAttemptId()), TestConstants.DATA_AVAILABLE_POLL_INTERVAL, TestConstants.DATA_AVAILABLE_TIMEOUT);
-      try (RetriableSocketReadClient readClient = new RetriableSocketReadClient(serverDetail,
-          TestConstants.NETWORK_TIMEOUT,
-          clientRetryOptions,
-          "user1", appShufflePartitionId,
-          readClientDataOptions)) {
-        readClient.connect();
-        TaskDataBlock record = readClient.readDataBlock();
-        Assert.assertNotNull(record);
-      }
-
-      testServer1.shutdown();
-      testServer1 = null;
-
-      testServer2 = TestStreamServer.createRunningServer(configModifier);
-
-      ServerDetail serverDetail2 = new ServerDetail(testServer2.getServerId(), testServer2.getRunningVersion(), testServer2.getShuffleConnectionString());
-      ClientRetryOptions clientRetryOptions2 = new ClientRetryOptions(10, TestConstants.NETWORK_TIMEOUT, serverId->serverDetail2);
-      try (RetriableSocketReadClient readClient = new RetriableSocketReadClient(serverDetail,
-          TestConstants.NETWORK_TIMEOUT,
-          clientRetryOptions2,
-          "user1", appShufflePartitionId,
-          readClientDataOptions)) {
-        readClient.connect();
-        TaskDataBlock record = readClient.readDataBlock();
-        Assert.assertNotNull(record);
-
-        Assert.assertEquals(record.getPayload(), new byte[0]);
-
-        record = readClient.readDataBlock();
-        Assert.assertNotNull(record);
-
-        Assert.assertEquals(record.getPayload(), new byte[0]);
-
-        record = readClient.readDataBlock();
-        Assert.assertNotNull(record);
-
-        Assert.assertEquals(new String(record.getPayload(), StandardCharsets.UTF_8), "");
-
-        record = readClient.readDataBlock();
-        Assert.assertNotNull(record);
-
-        Assert.assertEquals(new String(record.getPayload(), StandardCharsets.UTF_8), "value1");
-
-        record = readClient.readDataBlock();
-        Assert.assertNotNull(record);
-
-        Assert.assertEquals(new String(record.getPayload(), StandardCharsets.UTF_8), "value1");
-
-        record = readClient.readDataBlock();
-        Assert.assertNull(record);
-      }
-
-      // test another retry scenario, first retry still uses old server connection and second retry uses new server connection
-      ClientRetryOptions clientRetryOptions3 = new ClientRetryOptions(10, TestConstants.NETWORK_TIMEOUT, new ServerConnectionRefresher() {
-        private int count = 0;
-        @Override
-        public ServerDetail refreshConnection(ServerDetail serverDetail) {
-          if (count++ == 0) {
-            return serverDetail;
-          } else {
-            return serverDetail2;
-          }
-        }
-      });
-
-      try (RetriableSocketReadClient readClient = new RetriableSocketReadClient(serverDetail,
-          TestConstants.NETWORK_TIMEOUT,
-          clientRetryOptions3,
-          "user1", appShufflePartitionId,
-          readClientDataOptions)) {
-        readClient.connect();
-        TaskDataBlock record = readClient.readDataBlock();
-        Assert.assertNotNull(record);
-
-        Assert.assertEquals(record.getPayload(), new byte[0]);
-
-        record = readClient.readDataBlock();
-        Assert.assertNotNull(record);
-
-        Assert.assertEquals(record.getPayload(), new byte[0]);
-
-        record = readClient.readDataBlock();
-        Assert.assertNotNull(record);
-
-        Assert.assertEquals(new String(record.getPayload(), StandardCharsets.UTF_8), "");
-
-        record = readClient.readDataBlock();
-        Assert.assertNotNull(record);
-
-        Assert.assertEquals(new String(record.getPayload(), StandardCharsets.UTF_8), "value1");
-
-        record = readClient.readDataBlock();
-        Assert.assertNotNull(record);
-
-        Assert.assertEquals(new String(record.getPayload(), StandardCharsets.UTF_8), "value1");
-
-        record = readClient.readDataBlock();
-        Assert.assertNull(record);
-      }
-    } finally {
-      if (testServer1 != null) {
-        testServer1.shutdown();
-      }
-      if (testServer2 != null) {
-        testServer2.shutdown();
-      }
-    }
-  }
-
-  @Test(dataProvider = "data-provider")
-  public void serverRestartAndRefreshServerConnectionWithUnknownHostFirst(boolean finishUploadAck) throws IOException {
-    String rootDir = Files.createTempDirectory("StreamServer_").toString();
-    Consumer<StreamServerConfig> configModifier = config -> config.setRootDirectory(rootDir);
-
-    TestStreamServer testServer1 = TestStreamServer.createRunningServer(configModifier);
-    TestStreamServer testServer2 = null;
-
-    try {
-      String appId = "app1";
-      String appAttempt = "attempt1";
-      int shuffleId = 1;
-      int numMaps = 1;
-      int numPartitions = 10;
-      int mapId = 2;
-      long taskAttemptId = 3;
-      AppTaskAttemptId appTaskAttemptId = new AppTaskAttemptId(appId, appAttempt, shuffleId, mapId, taskAttemptId);
-
-      try (ShuffleDataSyncWriteClient writeClient = UnpooledWriteClientFactory.getInstance().getOrCreateClient(
-          "localhost", testServer1.getShufflePort(), TestConstants.NETWORK_TIMEOUT, finishUploadAck, "user1", "app1", appAttempt, TestConstants.SHUFFLE_WRITE_CONFIG)) {
-        writeClient.connect();
-        writeClient.startUpload(appTaskAttemptId, numMaps, numPartitions);
-
-        writeClient.writeDataBlock(1, null);
-        writeClient.writeDataBlock(1,
-            ByteBuffer.wrap(new byte[0]));
-        writeClient.writeDataBlock(1,
-            ByteBuffer.wrap("".getBytes(StandardCharsets.UTF_8)));
-        writeClient.writeDataBlock(1,
-            ByteBuffer.wrap("value1".getBytes(StandardCharsets.UTF_8)));
-        writeClient.writeDataBlock(1,
-            ByteBuffer.wrap("value1".getBytes(StandardCharsets.UTF_8)));
-
-        writeClient.writeDataBlock(2,
-            ByteBuffer.wrap(new byte[0]));
-
-        writeClient.writeDataBlock(3,
-            ByteBuffer.wrap("value1".getBytes(StandardCharsets.UTF_8)));
-
-        writeClient.finishUpload();
-      }
-
-      AppShufflePartitionId appShufflePartitionId = new AppShufflePartitionId(appId, appAttempt, shuffleId, 1);
-      ServerDetail serverDetail = new ServerDetail(testServer1.getServerId(), testServer1.getRunningVersion(), testServer1.getShuffleConnectionString());
-      ClientRetryOptions clientRetryOptions = new ClientRetryOptions(10, TestConstants.NETWORK_TIMEOUT, serverId->serverDetail);
-      ReadClientDataOptions readClientDataOptions = new ReadClientDataOptions(Arrays.asList(appTaskAttemptId.getTaskAttemptId()), TestConstants.DATA_AVAILABLE_POLL_INTERVAL, TestConstants.DATA_AVAILABLE_TIMEOUT);
-      try (RetriableSocketReadClient readClient = new RetriableSocketReadClient(serverDetail,
-          TestConstants.NETWORK_TIMEOUT,
-          clientRetryOptions,
-          "user1", appShufflePartitionId,
-          readClientDataOptions)) {
-        readClient.connect();
-        TaskDataBlock record = readClient.readDataBlock();
-        Assert.assertNotNull(record);
-      }
-
-      testServer1.shutdown();
-      testServer1 = null;
-
-      testServer2 = TestStreamServer.createRunningServer(configModifier);
-
-      ServerDetail serverDetail2 = new ServerDetail(testServer2.getServerId(), testServer2.getRunningVersion(), testServer2.getShuffleConnectionString());
-      ClientRetryOptions clientRetryOptions2 = new ClientRetryOptions(10, TestConstants.NETWORK_TIMEOUT, new ServerConnectionRefresher() {
-        private int count = 0;
-        @Override
-        public ServerDetail refreshConnection(ServerDetail serverDetail) {
-          if (count++ == 0) {
-            return new ServerDetail(serverDetail.getServerId(), serverDetail.getRunningVersion(), "invalid_not_existing_server:9123");
-          } else {
-            return serverDetail2;
-          }
-        }
-      });
-
-      try (RetriableSocketReadClient readClient = new RetriableSocketReadClient(serverDetail,
-          10,
-          clientRetryOptions2,
-          "user1", appShufflePartitionId,
-          readClientDataOptions)) {
-        readClient.connect();
-        TaskDataBlock record = readClient.readDataBlock();
-        Assert.assertNotNull(record);
-
-
-        record = readClient.readDataBlock();
-        Assert.assertNotNull(record);
-
-        Assert.assertEquals(record.getPayload(), new byte[0]);
-
-        record = readClient.readDataBlock();
-        Assert.assertNotNull(record);
-
-        Assert.assertEquals(new String(record.getPayload(), StandardCharsets.UTF_8), "");
-
-        record = readClient.readDataBlock();
-        Assert.assertNotNull(record);
-
-        Assert.assertEquals(new String(record.getPayload(), StandardCharsets.UTF_8), "value1");
-
-        record = readClient.readDataBlock();
-        Assert.assertNotNull(record);
-
-        Assert.assertEquals(new String(record.getPayload(), StandardCharsets.UTF_8), "value1");
-
-        record = readClient.readDataBlock();
-        Assert.assertNull(record);
-      }
-    } finally {
-      if (testServer1 != null) {
-        testServer1.shutdown();
-      }
-      if (testServer2 != null) {
-        testServer2.shutdown();
-      }
     }
   }
 
@@ -411,10 +148,13 @@ public class RetriableSocketReadClientTest {
       int numPartitions = 10;
       int mapId = 2;
       long taskAttemptId = 3;
-      AppTaskAttemptId appTaskAttemptId = new AppTaskAttemptId(appId, appAttempt, shuffleId, mapId, taskAttemptId);
+      AppTaskAttemptId appTaskAttemptId =
+          new AppTaskAttemptId(appId, appAttempt, shuffleId, mapId, taskAttemptId);
 
-      try (ShuffleDataSyncWriteClient writeClient = UnpooledWriteClientFactory.getInstance().getOrCreateClient(
-          "localhost", testServer1.getShufflePort(), TestConstants.NETWORK_TIMEOUT, finishUploadAck, "user1", "app1", appAttempt, TestConstants.SHUFFLE_WRITE_CONFIG)) {
+      try (ShuffleDataSyncWriteClient writeClient = UnpooledWriteClientFactory.getInstance()
+          .getOrCreateClient(
+              "localhost", testServer1.getShufflePort(), TestConstants.NETWORK_TIMEOUT,
+              finishUploadAck, "user1", "app1", appAttempt, TestConstants.SHUFFLE_WRITE_CONFIG)) {
         writeClient.connect();
         writeClient.startUpload(appTaskAttemptId, numMaps, numPartitions);
 
@@ -437,10 +177,14 @@ public class RetriableSocketReadClientTest {
         writeClient.finishUpload();
       }
 
-      AppShufflePartitionId appShufflePartitionId = new AppShufflePartitionId(appId, appAttempt, shuffleId, 1);
-      ServerDetail serverDetail = new ServerDetail(testServer1.getServerId(), testServer1.getRunningVersion(), testServer1.getShuffleConnectionString());
-      ClientRetryOptions clientRetryOptions = new ClientRetryOptions(10, 1000, serverId->serverDetail);
-      ReadClientDataOptions readClientDataOptions = new ReadClientDataOptions(Arrays.asList(appTaskAttemptId.getTaskAttemptId()), TestConstants.DATA_AVAILABLE_POLL_INTERVAL, TestConstants.DATA_AVAILABLE_TIMEOUT);
+      AppShufflePartitionId appShufflePartitionId =
+          new AppShufflePartitionId(appId, appAttempt, shuffleId, 1);
+      ServerDetail serverDetail =
+          new ServerDetail(testServer1.getServerId(), testServer1.getShuffleConnectionString());
+      ClientRetryOptions clientRetryOptions = new ClientRetryOptions(10, 1000);
+      ReadClientDataOptions readClientDataOptions =
+          new ReadClientDataOptions(Arrays.asList(appTaskAttemptId.getTaskAttemptId()),
+              TestConstants.DATA_AVAILABLE_POLL_INTERVAL, TestConstants.DATA_AVAILABLE_TIMEOUT);
       try (RetriableSocketReadClient readClient = new RetriableSocketReadClient(serverDetail,
           TestConstants.NETWORK_TIMEOUT,
           clientRetryOptions,
