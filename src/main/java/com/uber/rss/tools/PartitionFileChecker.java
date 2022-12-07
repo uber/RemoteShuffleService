@@ -14,8 +14,13 @@
 
 package com.uber.rss.tools;
 
+import com.github.luben.zstd.Zstd;
+import com.github.luben.zstd.ZstdInputStream;
+import com.uber.rss.common.Compression;
+import com.uber.rss.exceptions.RssInvalidDataException;
 import com.uber.rss.util.ByteBufUtils;
 import com.uber.rss.util.StreamUtils;
+import io.airlift.compress.zstd.ZstdDecompressor;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import net.jpountz.lz4.LZ4BlockInputStream;
@@ -30,8 +35,8 @@ import java.io.InputStream;
  */
 public class PartitionFileChecker {
   private String filePath;
-  private String fileCompressCodec = "lz4";
-  private String blockCompressCodec = "lz4";
+  private String fileCompressCodec = Compression.COMPRESSION_CODEC_LZ4;
+  private String blockCompressCodec = Compression.COMPRESSION_CODEC_LZ4;
 
   public void run() {
     ByteBuf dataBlockStreamData = Unpooled.buffer(1000);
@@ -40,8 +45,10 @@ public class PartitionFileChecker {
     // Read data block stream from file
     try (FileInputStream fileInputStream = new FileInputStream(filePath)) {
       InputStream inputStream = fileInputStream;
-      if (fileCompressCodec.equals("lz4")) {
+      if (fileCompressCodec.equals(Compression.COMPRESSION_CODEC_LZ4)) {
         inputStream = new LZ4BlockInputStream(fileInputStream);
+      } else if (fileCompressCodec.equals(Compression.COMPRESSION_CODEC_ZSTD)) {
+        inputStream = new ZstdInputStream(fileInputStream);
       }
       while (true) {
         byte[] bytes = StreamUtils.readBytes(inputStream, Long.BYTES);
@@ -59,7 +66,7 @@ public class PartitionFileChecker {
       throw new RuntimeException(e);
     }
 
-    if (blockCompressCodec.equals("lz4")) {
+    if (blockCompressCodec.equals(Compression.COMPRESSION_CODEC_LZ4)) {
       dataBlockStreamUncompressedData = Unpooled.buffer(1000);
 
       LZ4FastDecompressor decompressor = LZ4Factory.fastestInstance().fastDecompressor();
@@ -71,6 +78,20 @@ public class PartitionFileChecker {
         byte[] uncompressedBytes = new byte[uncompressedLen];
         dataBlockStreamData.readBytes(compressedBytes);
         decompressor.decompress(compressedBytes, uncompressedBytes);
+        dataBlockStreamUncompressedData.writeBytes(uncompressedBytes);
+      }
+    } else if (blockCompressCodec.equals(Compression.COMPRESSION_CODEC_ZSTD)) {
+      dataBlockStreamUncompressedData = Unpooled.buffer(1000);
+      while (dataBlockStreamData.readableBytes() > 0) {
+        int compressedLen = dataBlockStreamData.readInt();
+        int uncompressedLen = dataBlockStreamData.readInt();
+        byte[] compressedBytes = new byte[compressedLen];
+        byte[] uncompressedBytes = new byte[uncompressedLen];
+        dataBlockStreamData.readBytes(compressedBytes);
+        long decompressResult = Zstd.decompress(compressedBytes, uncompressedBytes);
+        if (Zstd.isError(decompressResult)) {
+          throw new RssInvalidDataException("Failed to decompress zstd data, returned value: " + decompressResult);
+        }
         dataBlockStreamUncompressedData.writeBytes(uncompressedBytes);
       }
     }
