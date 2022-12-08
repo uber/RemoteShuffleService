@@ -30,7 +30,7 @@ import org.apache.commons.lang3.StringUtils
 import org.apache.spark.executor.{ShuffleWriteMetrics, TaskMetrics}
 import org.apache.spark.internal.Logging
 import org.apache.spark.serializer.KryoSerializer
-import org.apache.spark.shuffle.{MockTaskContext, RssOpts, RssShuffleReader, RssShuffleWriter}
+import org.apache.spark.shuffle.{CompressionOptions, MockTaskContext, RssOpts, RssShuffleReader, RssShuffleWriter}
 import org.apache.spark.{HashPartitioner, MapOutputTrackerMaster, ShuffleDependency, SparkConf, SparkContext, SparkEnv}
 
 import scala.collection.JavaConverters._
@@ -323,6 +323,7 @@ class RssStressTool extends Logging {
       mapInfo = new AppTaskAttemptId(appMapId, taskAttemptId),
       numMaps = numMaps,
       serializer = new KryoSerializer(sparkConf),
+      compressionOptions = CompressionOptions(),
       compression = Compression.COMPRESSION_CODEC_LZ4,
       bufferOptions = BufferManagerOptions(writerBufferSize, 256 * 1024 * 1024, writerBufferSpill),
       shuffleDependency = shuffleDependency,

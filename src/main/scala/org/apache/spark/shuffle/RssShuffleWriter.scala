@@ -30,6 +30,8 @@ import org.apache.spark.scheduler.MapStatus
 import org.apache.spark.serializer.Serializer
 import org.apache.spark.shuffle.rss.{BufferManagerOptions, RssUtils, WriteBufferManager, WriterAggregationManager, WriterNoAggregationManager}
 
+case class CompressionOptions(level: Int=1)
+
 class RssShuffleWriter[K, V, C](
                                  user: String,
                                  rssServers: ServerList,
@@ -38,6 +40,7 @@ class RssShuffleWriter[K, V, C](
                                  numMaps: Int,
                                  serializer: Serializer,
                                  compression: String,
+                                 compressionOptions: CompressionOptions,
                                  bufferOptions: BufferManagerOptions,
                                  shuffleDependency: ShuffleDependency[K, V, C],
                                  stageMetrics: ShuffleClientStageMetrics,
@@ -212,7 +215,7 @@ class RssShuffleWriter[K, V, C](
     var compressedByteCount: Int = 0
     if (Compression.COMPRESSION_CODEC_ZSTD.equals(compression)) {
       compressedBuffer = new Array[Byte](uncompressedByteCount)
-      val n = Zstd.compress(compressedBuffer, buffer, 3)
+      val n = Zstd.compress(compressedBuffer, buffer, compressionOptions.level)
       if (Zstd.isError(n)) {
         throw new RssInvalidStateException(s"Failed to run zstd compress for data block, zstd returned value: $compressedByteCount")
       }
