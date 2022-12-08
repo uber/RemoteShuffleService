@@ -15,9 +15,10 @@
 package org.apache.spark.shuffle.rss
 
 import java.util.concurrent.TimeUnit
-
 import com.esotericsoftware.kryo.io.Input
+import com.github.luben.zstd.Zstd
 import com.uber.rss.clients.{ShuffleDataReader, TaskDataBlock}
+import com.uber.rss.common.Compression
 import com.uber.rss.exceptions.{RssInvalidDataException, RssInvalidStateException}
 import com.uber.rss.metrics.M3Stats
 import com.uber.rss.util.{ByteBufUtils, ExceptionUtils}
@@ -31,10 +32,15 @@ class BlockDownloaderPartitionRecordIterator[K, C](
                                                     shuffleId: Int,
                                                     partition: Int,
                                                     serializer: Serializer,
+                                                    decompression: String,
                                                     downloader: ShuffleDataReader,
                                                     shuffleReadMetrics: ShuffleReadMetrics) extends Iterator[Product2[K, C]] with Logging {
 
-  private val decompressor: LZ4FastDecompressor = LZ4Factory.fastestInstance.fastDecompressor()
+  private val lz4Decompressor: LZ4FastDecompressor = if (Compression.COMPRESSION_CODEC_ZSTD.equals(decompression)) {
+    null
+  } else {
+    LZ4Factory.fastestInstance.fastDecompressor()
+  }
 
   private var downloaderEof = false
 
@@ -164,12 +170,20 @@ class BlockDownloaderPartitionRecordIterator[K, C](
     val compressedLen = ByteBufUtils.readInt(bytes, 0)
     val uncompressedLen = ByteBufUtils.readInt(bytes, Integer.BYTES)
     val uncompressedBytes = new Array[Byte](uncompressedLen)
-    val count = decompressor.decompress(bytes, Integer.BYTES + Integer.BYTES, uncompressedBytes, 0, uncompressedLen)
-    decompressTime += (System.nanoTime() - decompressStartTime)
-    if (count != compressedLen) {
-      throw new RssInvalidDataException(
-        s"Data corrupted for shuffle $shuffleId partition $partition, expected compressed length: $compressedLen, but it is: $count, " + String.valueOf(downloader))
+    if (Compression.COMPRESSION_CODEC_ZSTD.equals(decompression)) {
+      val n = Zstd.decompress(uncompressedBytes, bytes)
+      if (Zstd.isError(n)) {
+        throw new RssInvalidDataException(
+          s"Data corrupted for shuffle $shuffleId partition $partition, failed to decompress zstd, decompress returned: $n, " + String.valueOf(downloader))
+      }
+    } else {
+      val count = lz4Decompressor.decompress(bytes, Integer.BYTES + Integer.BYTES, uncompressedBytes, 0, uncompressedLen)
+      if (count != compressedLen) {
+        throw new RssInvalidDataException(
+          s"Data corrupted for shuffle $shuffleId partition $partition, expected compressed length: $compressedLen, but it is: $count, " + String.valueOf(downloader))
+      }
     }
+    decompressTime += (System.nanoTime() - decompressStartTime)
 
     deserializationInput = new Input(uncompressedBytes, 0, uncompressedLen)
     deserializationStream = serializerInstance.deserializeStream(deserializationInput)

@@ -177,4 +177,9 @@ object RssOpts {
       .doc("Create lazy connections from mappers to RSS servers just before sending the shuffle data")
       .booleanConf
       .createWithDefault(true)
+  val compression: ConfigEntry[String] =
+    ConfigBuilder("spark.shuffle.rss.compress")
+      .doc("type of compression for shuffle data, supported: lz4, zstd")
+      .stringConf
+      .createWithDefault("lz4")
 }
