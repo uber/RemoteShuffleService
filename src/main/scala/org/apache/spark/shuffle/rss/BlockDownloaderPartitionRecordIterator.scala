@@ -28,6 +28,8 @@ import org.apache.spark.internal.Logging
 import org.apache.spark.serializer.{DeserializationStream, Serializer}
 import org.apache.spark.shuffle.FetchFailedException
 
+import java.util
+
 class BlockDownloaderPartitionRecordIterator[K, C](
                                                     shuffleId: Int,
                                                     partition: Int,
@@ -171,7 +173,10 @@ class BlockDownloaderPartitionRecordIterator[K, C](
     val uncompressedLen = ByteBufUtils.readInt(bytes, Integer.BYTES)
     val uncompressedBytes = new Array[Byte](uncompressedLen)
     if (Compression.COMPRESSION_CODEC_ZSTD.equals(decompression)) {
-      val n = Zstd.decompress(uncompressedBytes, bytes)
+      // TODO Zstd in Spark 2.4 does not support decompress method with a range from source byte array
+      // Better to use Zstd.decompressByteArray for Spark version higher than 2.4 to avoid copying bytes
+      val sourceBytes = util.Arrays.copyOfRange(bytes, Integer.BYTES + Integer.BYTES, bytes.length)
+      val n = Zstd.decompress(uncompressedBytes, sourceBytes)
       if (Zstd.isError(n)) {
         throw new RssInvalidDataException(
           s"Data corrupted for shuffle $shuffleId partition $partition, failed to decompress zstd, decompress returned: $n, " + String.valueOf(downloader))
