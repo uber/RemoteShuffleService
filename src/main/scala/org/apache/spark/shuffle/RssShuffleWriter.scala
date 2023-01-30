@@ -14,10 +14,12 @@
 
 package org.apache.spark.shuffle
 
+import com.github.luben.zstd.Zstd
+
 import java.nio.ByteBuffer
 import java.util.concurrent.{CompletableFuture, TimeUnit}
 import com.uber.rss.clients.ShuffleDataWriter
-import com.uber.rss.common.{AppTaskAttemptId, ServerList}
+import com.uber.rss.common.{AppTaskAttemptId, Compression, ServerList}
 import com.uber.rss.exceptions.RssInvalidStateException
 import com.uber.rss.metrics.ShuffleClientStageMetrics
 import net.jpountz.lz4.LZ4Factory
@@ -28,6 +30,8 @@ import org.apache.spark.scheduler.MapStatus
 import org.apache.spark.serializer.Serializer
 import org.apache.spark.shuffle.rss.{BufferManagerOptions, RssUtils, WriteBufferManager, WriterAggregationManager, WriterNoAggregationManager}
 
+case class CompressionOptions(level: Int=1)
+
 class RssShuffleWriter[K, V, C](
                                  user: String,
                                  rssServers: ServerList,
@@ -35,6 +39,8 @@ class RssShuffleWriter[K, V, C](
                                  mapInfo: AppTaskAttemptId,
                                  numMaps: Int,
                                  serializer: Serializer,
+                                 compression: String,
+                                 compressionOptions: CompressionOptions,
                                  bufferOptions: BufferManagerOptions,
                                  shuffleDependency: ShuffleDependency[K, V, C],
                                  stageMetrics: ShuffleClientStageMetrics,
@@ -71,7 +77,11 @@ class RssShuffleWriter[K, V, C](
 
   logInfo(s"Using ${writerManager.getClass} as the shuffle writer manager.")
 
-  private val compressor = LZ4Factory.fastestInstance.fastCompressor
+  private val compressor = if (Compression.COMPRESSION_CODEC_ZSTD.equals(compression)) {
+    null
+  } else {
+    LZ4Factory.fastestInstance.fastCompressor
+  }
 
   private def getPartition(key: K): Int = {
     if (shouldPartition) partitioner.getPartition(key) else 0
@@ -201,8 +211,19 @@ class RssShuffleWriter[K, V, C](
 
   private def createDataBlock(buffer: Array[Byte]): ByteBuffer = {
     val uncompressedByteCount = buffer.size
-    val compressedBuffer = new Array[Byte](compressor.maxCompressedLength(uncompressedByteCount))
-    val compressedByteCount = compressor.compress(buffer, compressedBuffer)
+    var compressedBuffer: Array[Byte] = null
+    var compressedByteCount: Int = 0
+    if (Compression.COMPRESSION_CODEC_ZSTD.equals(compression)) {
+      compressedBuffer = new Array[Byte](uncompressedByteCount)
+      val n = Zstd.compress(compressedBuffer, buffer, compressionOptions.level)
+      if (Zstd.isError(n)) {
+        throw new RssInvalidStateException(s"Failed to run zstd compress for data block, zstd returned value: $compressedByteCount")
+      }
+      compressedByteCount = n.toInt
+    } else {
+      compressedBuffer = new Array[Byte](compressor.maxCompressedLength(uncompressedByteCount))
+      compressedByteCount = compressor.compress(buffer, compressedBuffer)
+    }
     val dataBlockByteBuffer = ByteBuffer.allocate(Integer.BYTES + Integer.BYTES + compressedByteCount)
     dataBlockByteBuffer.putInt(compressedByteCount)
     dataBlockByteBuffer.putInt(uncompressedByteCount)

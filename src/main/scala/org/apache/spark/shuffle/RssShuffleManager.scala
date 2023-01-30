@@ -19,7 +19,7 @@ import java.util.Random
 import java.util.function.Supplier
 import com.uber.rss.{RssBuildInfo, StreamServerConfig}
 import com.uber.rss.clients.{LazyWriteClient, MultiServerAsyncWriteClient, MultiServerHeartbeatClient, MultiServerSyncWriteClient, MultiServerWriteClient, PooledWriteClientFactory, ServerConnectionCacheUpdateRefresher, ServerConnectionStringCache, ServerConnectionStringResolver, ServerReplicationGroupUtil, ShuffleWriteConfig}
-import com.uber.rss.common.{AppShuffleId, AppTaskAttemptId, ServerDetail, ServerList}
+import com.uber.rss.common.{AppShuffleId, AppTaskAttemptId, Compression, ServerDetail, ServerList}
 import com.uber.rss.exceptions.{RssException, RssInvalidStateException, RssNoServerAvailableException, RssServerResolveException}
 import com.uber.rss.metadata.{ServiceRegistry, ServiceRegistryUtils, StandaloneServiceRegistryClient, ZooKeeperServiceRegistry}
 import com.uber.rss.metrics.{M3Stats, ShuffleClientStageMetrics, ShuffleClientStageMetricsKey}
@@ -279,6 +279,12 @@ class RssShuffleManager(conf: SparkConf) extends ShuffleManager with Logging {
             try {
               writeClient.connect()
 
+              val compressionLevel = if (Compression.COMPRESSION_CODEC_ZSTD.equals(RssOpts.compression)) {
+                conf.get(RssOpts.zstdCompressionLevel)
+              } else {
+                0
+              }
+
               new RssShuffleWriter(
                 rssShuffleHandle.user,
                 new ServerList(rssShuffleHandle.rssServers.map(_.toServerDetail()).toArray),
@@ -286,6 +292,8 @@ class RssShuffleManager(conf: SparkConf) extends ShuffleManager with Logging {
                 mapInfo,
                 rssShuffleHandle.numMaps,
                 serializer,
+                conf.get(RssOpts.compression),
+                CompressionOptions(compressionLevel),
                 bufferOptions,
                 rssShuffleHandle.dependency,
                 shuffleClientStageMetrics,
@@ -332,6 +340,7 @@ class RssShuffleManager(conf: SparkConf) extends ShuffleManager with Logging {
       startPartition = startPartition,
       endPartition = endPartition,
       serializer = serializer,
+      decompression = conf.get(RssOpts.compression),
       context = context,
       shuffleDependency = rssShuffleHandle.dependency,
       numMaps = rssShuffleHandle.numMaps,
