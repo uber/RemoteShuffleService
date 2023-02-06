@@ -61,8 +61,12 @@ public class ServerDetailCollection {
 
         @Override
         public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
             DataCenterAndCluster that = (DataCenterAndCluster) o;
             return Objects.equals(dataCenter, that.dataCenter) &&
                     Objects.equals(cluster, that.cluster);

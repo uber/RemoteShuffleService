@@ -35,8 +35,12 @@ public class ShuffleClientStageMetricsKey {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
         ShuffleClientStageMetricsKey that = (ShuffleClientStageMetricsKey) o;
         return Objects.equals(user, that.user) &&
                 Objects.equals(queue, that.queue);

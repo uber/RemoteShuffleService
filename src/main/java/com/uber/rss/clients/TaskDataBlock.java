@@ -51,8 +51,12 @@ public class TaskDataBlock {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
         TaskDataBlock that = (TaskDataBlock) o;
         return taskAttemptId == that.taskAttemptId &&
             Arrays.equals(payload, that.payload);

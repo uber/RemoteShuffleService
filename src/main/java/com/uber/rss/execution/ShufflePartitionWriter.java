@@ -169,8 +169,12 @@ public class ShufflePartitionWriter {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
         ShufflePartitionWriter that = (ShufflePartitionWriter) o;
         return fileStartIndex == that.fileStartIndex &&
             Objects.equals(shufflePartitionId, that.shufflePartitionId) &&

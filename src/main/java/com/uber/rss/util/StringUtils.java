@@ -95,7 +95,7 @@ public class StringUtils {
             first = false;
             rangeStart = v;
           }
-        } else if (rangeEnd.longValue() == v.longValue() - 1){
+        } else if (rangeEnd.longValue() == v.longValue() - 1) {
           rangeEnd = v;
         } else {
           // got one range, put input StringBuilder

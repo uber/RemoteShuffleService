@@ -44,8 +44,12 @@ public class AppShuffleId {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
         AppShuffleId that = (AppShuffleId) o;
         return shuffleId == that.shuffleId &&
                 Objects.equals(appId, that.appId) &&
