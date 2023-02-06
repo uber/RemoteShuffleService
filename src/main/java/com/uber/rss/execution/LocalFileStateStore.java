@@ -171,7 +171,7 @@ public class LocalFileStateStore implements StateStore {
   private void createNewFileIfNecessary() {
     synchronized (this) {
       if (closed) {
-        logger.info(String.format("State store already closed, do not create new file, %s", this));
+        logger.info("State store already closed, do not create new file, {}", this);
         return;
       }
 
@@ -188,7 +188,7 @@ public class LocalFileStateStore implements StateStore {
               currentFileStream = new FileOutputStream(pathStr, true);
               currentFilePath = pathStr;
               currentFileCreateTime = System.currentTimeMillis();
-              logger.info(String.format("Created state file: %s", pathStr));
+              logger.info("Created state file: {}", pathStr);
               return;
             } catch (FileNotFoundException e) {
               throw new RssFileCorruptedException(String.format("Failed to create state file: %s", path));
@@ -205,7 +205,7 @@ public class LocalFileStateStore implements StateStore {
     try {
       FileUtils.cleanupOldFiles(stateDir, System.currentTimeMillis() - fileRetentionMillis);
     } catch (Throwable ex) {
-      logger.warn(String.format("Failed to clean up old state files in %s", stateDir), ex);
+      logger.warn("Failed to clean up old state files in {]", stateDir, ex);
     }
   }
 
@@ -233,7 +233,7 @@ public class LocalFileStateStore implements StateStore {
 
   private void closeFileNoLock() {
     if (currentFileStream != null) {
-      logger.info(String.format("Closing state file: %s", currentFilePath));
+      logger.info("Closing state file: {}", currentFilePath);
       try {
         currentFileStream.close();
         currentFileStream = null;

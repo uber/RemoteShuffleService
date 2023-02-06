@@ -114,7 +114,7 @@ public class FileUtils {
                     maxUsableSpace = storeUsableSpace;
                 }
             } catch (Throwable e) {
-                logger.warn(String.format("Failed to check file store size for %s", root), e);
+                logger.warn("Failed to check file store size for {}", root, e);
             }
         }
         return maxUsableSpace;

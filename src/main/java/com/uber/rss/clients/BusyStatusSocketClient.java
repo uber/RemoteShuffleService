@@ -36,7 +36,7 @@ public class BusyStatusSocketClient extends ClientBase {
 
   public GetBusyStatusResponse getBusyStatus() {
     if (socket == null) {
-      logger.debug(String.format("Connecting to server to get busy status: %s", connectionInfo));
+      logger.debug("Connecting to server to get busy status: {}", connectionInfo);
       connectSocket();
 
       write(MessageConstants.UPLOAD_UPLINK_MAGIC_BYTE);

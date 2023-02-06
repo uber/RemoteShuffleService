@@ -97,7 +97,7 @@ public class ServiceRegistryUtils {
             long requestLatency = System.currentTimeMillis() - startTime;
             return new ServerCandidate(t, requestLatency,getBusyStatusResponse.getMetrics().get(CONCURRENT_CONNS));
           } catch (Throwable ex) {
-            logger.warn(String.format("Detected unreachable host %s", host), ex);
+            logger.warn("Detected unreachable host {}", host, ex);
             unreachableHosts.add(host);
             return null;
           }

@@ -76,7 +76,7 @@ public class PooledWriteClientFactory implements WriteClientFactory {
    */
   public void returnClientToPool(PooledShuffleDataSyncWriteClient client) {
     if (!client.isReusable()) {
-      logger.info(String.format("Client %s is not reusable, will close it instead of reuse it", client));
+      logger.info("Client {} is not reusable, will close it instead of reuse it", client);
       client.closeWithoutReuse();
       return;
     }
@@ -84,7 +84,7 @@ public class PooledWriteClientFactory implements WriteClientFactory {
     ClientKey clientKey = new ClientKey(client);
     ClientPool pool = getPool(clientKey);
     pool.returnClientToPool(client);
-    logger.debug(String.format("Reuse client %s (%s)", client, clientKey));
+    logger.debug("Reuse client {} ({})", client, clientKey);
   }
 
   public int getNumIdleClients() {
@@ -107,7 +107,7 @@ public class PooledWriteClientFactory implements WriteClientFactory {
         try {
           clientAndState.closeClient();
         } catch (Throwable ex) {
-          logger.warn(String.format("Failed to close pooled client %s", clientAndState.client), ex);
+          logger.warn("Failed to close pooled client {}", clientAndState.client, ex);
         }
       }));
       pools.clear();
@@ -247,7 +247,7 @@ public class PooledWriteClientFactory implements WriteClientFactory {
     private PooledShuffleDataSyncWriteClient createClient(String host, int port, int timeoutMillis, boolean finishUploadAck, String user, String appId, String appAttempt, ShuffleWriteConfig shuffleWriteConfig) {
       ShuffleDataSyncWriteClient client;
       client = new PlainShuffleDataSyncWriteClient(host, port, timeoutMillis, finishUploadAck, user, appId, appAttempt, shuffleWriteConfig);
-      logger.info(String.format("Created new client: %s", client));
+      logger.info("Created new client: {}", client);
       return new PooledShuffleDataSyncWriteClient(client, PooledWriteClientFactory.this);
     }
   }
@@ -285,7 +285,7 @@ public class PooledWriteClientFactory implements WriteClientFactory {
         try {
           client.closeWithoutReuse();
         } catch (Throwable ex) {
-          logger.warn(String.format("Failed to close client: %s", client));
+          logger.warn("Failed to close client: {}", client);
         }
       }
     }

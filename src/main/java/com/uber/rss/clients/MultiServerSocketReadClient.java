@@ -138,7 +138,7 @@ public class MultiServerSocketReadClient implements MultiServerReadClient {
     }
 
     ServerReplicationGroup serverReplicationGroup = servers.get(nextClientIndex);
-    logger.info(String.format("Fetching data from server: %s (%s out of %s), partition: %s", serverReplicationGroup, nextClientIndex + 1, servers.size(), appShufflePartitionId));
+    logger.info("Fetching data from server: {} ({} out of {}), partition: {}", serverReplicationGroup, nextClientIndex + 1, servers.size(), appShufflePartitionId);
 
     ExceptionWrapper<Throwable> exceptionWrapper = new ExceptionWrapper<>();
     String failMsg = String.format("Failed to connect to server: %s, partition: %s", serverReplicationGroup, appShufflePartitionId);
@@ -184,7 +184,7 @@ public class MultiServerSocketReadClient implements MultiServerReadClient {
         client.close();
       }
     } catch (Throwable ex) {
-      logger.warn(String.format("Failed to close client %s", client));
+      logger.warn("Failed to close client {}", client, ex);
     }
   }
 }

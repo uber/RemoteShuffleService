@@ -113,7 +113,7 @@ public class ScheduledMetricCollector {
                     }
                     unreachableHosts.update(unreachableHostList.size());
                     if (!unreachableHostList.isEmpty()) {
-                        logger.warn(String.format("Detected unreachable hosts: %s", StringUtils.join(unreachableHostList, ",")));
+                        logger.warn("Detected unreachable hosts: {}", String.join(",", unreachableHostList));
                     }
                     unreachableHostsCheckLatency.update(System.currentTimeMillis() - startTime);
                 }

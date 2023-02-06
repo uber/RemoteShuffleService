@@ -125,7 +125,7 @@ public class MultiServerHeartbeatClient implements AutoCloseable {
       try {
         sendHeartbeat(serverDetail);
       } catch (Throwable ex) {
-        logger.warn(String.format("Failed to send RSS heartbeat to %s", serverDetail), ex);
+        logger.warn("Failed to send RSS heartbeat to {}", serverDetail, ex);
       }
     }
   }
@@ -138,7 +138,7 @@ public class MultiServerHeartbeatClient implements AutoCloseable {
       client.sendHeartbeat();
       logger.info("Sent RSS heartbeat to {}, duration millis: {}", serverDetail, System.currentTimeMillis() - startTime);
     } catch (Throwable ex) {
-      logger.warn(String.format("Failed to send RSS heartbeat to %s", serverDetail), ex);
+      logger.warn("Failed to send RSS heartbeat to {}", serverDetail, ex);
       if (serverConnectionRefresher != null) {
         ServerDetail refreshedServerDetail = serverConnectionRefresher.refreshConnection(serverDetail);
         if (refreshedServerDetail != null) {

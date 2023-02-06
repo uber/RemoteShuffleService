@@ -147,10 +147,8 @@ public class ReplicatedReadClient implements MultiServerReadClient {
         if (currentTime + sleepMillis - startTime > maxRetryTimeoutMillis) {
           throw ex;
         } else {
-          logger.warn(String.format(
-              "Failed to initialize, will wait %s millis and retry to connect to server replication group: %s",
-              sleepMillis, serverReplicationGroup),
-              ex);
+          logger.warn("Failed to initialize, will wait {} millis and retry to connect to server replication group: {}",
+              sleepMillis, serverReplicationGroup, ex);
           resetClientInstances();
           try {
             Thread.sleep(sleepMillis);
@@ -293,7 +291,7 @@ public class ReplicatedReadClient implements MultiServerReadClient {
     boolean succeeded = false;
     for (; currentClientIndex < clients.length; currentClientIndex++) {
       try {
-        logger.info(String.format("Trying to connect to server: %s", clients[currentClientIndex]));
+        logger.info("Trying to connect to server: {}", clients[currentClientIndex]);
         clients[currentClientIndex].connect();
         clientsInitialized[currentClientIndex] = true;
         resetReadRecords();

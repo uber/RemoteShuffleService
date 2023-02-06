@@ -55,7 +55,7 @@ public class ShuffleDataSocketReadClient implements AutoCloseable, SingleServerR
       downloadServerVerboseInfo.setMapTaskCommitStatus(connectDownloadResponse.getMapTaskCommitStatus());
       return downloadServerVerboseInfo;
     } catch (RuntimeException ex) {
-      logger.warn(String.format("Failed to connect %s", this), ex);
+      logger.warn("Failed to connect {}", this, ex);
       close();
       throw ex;
     }
@@ -66,7 +66,7 @@ public class ShuffleDataSocketReadClient implements AutoCloseable, SingleServerR
     try {
       dataBlockSocketReadClient.close();
     } catch (Throwable ex) {
-      logger.warn(String.format("Failed to close %s", this), ex);
+      logger.warn("Failed to close {}", this, ex);
     }
 
     closeMetrics();
@@ -82,7 +82,7 @@ public class ShuffleDataSocketReadClient implements AutoCloseable, SingleServerR
       shuffleReadBytes += DataBlockHeader.NUM_BYTES + dataBlock.getPayload().length;
       return new TaskDataBlock(dataBlock.getPayload(), dataBlock.getHeader().getTaskAttemptId());
     } catch (RuntimeException ex) {
-      logger.warn(String.format("Failed to read shuffle data %s", this), ex);
+      logger.warn("Failed to read shuffle data {}", this, ex);
       close();
       throw ex;
     }
@@ -108,7 +108,7 @@ public class ShuffleDataSocketReadClient implements AutoCloseable, SingleServerR
       }
     } catch (Throwable e) {
       M3Stats.addException(e, this.getClass().getSimpleName());
-      logger.warn(String.format("Failed to close metrics: %s", this), e);
+      logger.warn("Failed to close metrics: {}", this, e);
     }
   }
 }

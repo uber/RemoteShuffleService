@@ -50,7 +50,7 @@ public class NotifyClient extends com.uber.rss.clients.ClientBase {
       throw new RssInvalidStateException(String.format("Already connected to server, cannot connect again: %s", connectionInfo));
     }
 
-    logger.debug(String.format("Connecting to server: %s", connectionInfo));
+    logger.debug("Connecting to server: {}", connectionInfo);
 
     connectSocket();
 
@@ -63,7 +63,7 @@ public class NotifyClient extends com.uber.rss.clients.ClientBase {
 
     ConnectNotifyResponse connectResponse = readResponseMessage(MessageConstants.MESSAGE_ConnectNotifyResponse, ConnectNotifyResponse::deserialize);
 
-    logger.info(String.format("Connected to server: %s, response: %s", connectionInfo, connectResponse));
+    logger.info("Connected to server: {}, response: {}", connectionInfo, connectResponse);
 
     return connectResponse;
   }
@@ -94,7 +94,7 @@ public class NotifyClient extends com.uber.rss.clients.ClientBase {
       }
     } catch (Throwable e) {
       M3Stats.addException(e, this.getClass().getSimpleName());
-      logger.warn(String.format("Failed to close metrics: %s", connectionInfo), e);
+      logger.warn("Failed to close metrics: {}", connectionInfo, e);
     }
   }
 

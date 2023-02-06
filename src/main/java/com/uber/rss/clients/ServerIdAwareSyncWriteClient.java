@@ -129,9 +129,9 @@ public class ServerIdAwareSyncWriteClient implements SingleServerWriteClient {
             if (refresher == null) {
                 throw ex;
             } else {
-                logger.warn(String.format("Failed to connect, retrying: %s", serverDetail), ex);
+                logger.warn("Failed to connect, retrying: {}", serverDetail, ex);
                 ServerDetail newServerDetail = refresher.refreshConnection(serverDetail);
-                logger.info(String.format("Retry with %s for %s", newServerDetail, serverDetail));
+                logger.info("Retry with {} for {}", newServerDetail, serverDetail);
                 return connectImpl(newServerDetail, null, finishUploadAck);
             }
         } catch (Throwable ex) {
