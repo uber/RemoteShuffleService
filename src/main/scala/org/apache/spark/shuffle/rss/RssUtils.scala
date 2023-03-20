@@ -14,13 +14,6 @@
 
 package org.apache.spark.shuffle.rss
 
-import java.util
-import java.util.function.Supplier
-
-import com.uber.rss.clients._
-import com.uber.rss.common.{MapTaskRssInfo, ServerDetail, ServerList, ServerReplicationGroup}
-import com.uber.rss.exceptions.{RssException, RssInvalidMapStatusException}
-import com.uber.rss.util.RetryUtils
 import org.apache.spark.SparkEnv
 import org.apache.spark.internal.Logging
 import org.apache.spark.storage.BlockManagerId
@@ -133,5 +126,9 @@ object RssUtils extends Logging {
     val dummyHost = "dummy_host"
     val dummyPort = 99999
     BlockManagerId(s"reduce_${shuffleId}_$partition", dummyHost, dummyPort, None)
+  }
+
+  def isUsingRSSForShuffle(shuffleHandle: ShuffleHandle, conf: SparkConf): Boolean = {
+    shuffleHandle.getClass.getName.equals("org.apache.spark.shuffle.RssShuffleHandle")
   }
 }

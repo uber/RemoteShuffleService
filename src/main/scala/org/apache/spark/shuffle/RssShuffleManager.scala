@@ -301,6 +301,21 @@ class RssShuffleManager(conf: SparkConf) extends ShuffleManager with Logging {
                 conf)
             } catch {
               case ex: Throwable => {
+                ex match {
+                  case e: FetchFailedException =>
+                    // Executor's task manager needs FetchFailed variable to be set within the TaskContext apart from
+                    // throwing the FetchFailedException to treat exception as FetchFailedException. This variable is
+                    // set when the FetchFailedException object is initialised.
+                    // A Java parallel stream is used to connect with the RSS servers and the FetchFailedException
+                    // gets thrown during this phase if one of the RSS server is not available. Java parallelStream()
+                    // uses a fork join pool with number of threads equal to number of available cores by default.
+                    // So if the FetchFailedException is thrown from one of the threads in the fork join pool,
+                    // main task thread will not have it set and driver will instead categories this as Exception
+                    // Failure rather than FetchFailure and not retry the stage.
+                    // So explicitly set the fetchFailed variable in the task context.
+                    Option(TaskContext.get()).map(_.setFetchFailed(e))
+                  case _ =>
+                }
                 ExceptionUtils.closeWithoutException(writeClient)
                 throw ex
               }
