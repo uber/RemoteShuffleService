@@ -162,4 +162,20 @@ object RssOpts {
       .doc("the server hosts to exclude, separated by comma.")
       .stringConf
       .createWithDefault("")
+  val initialMemoryThresholdInBytes: ConfigEntry[Long] =
+    ConfigBuilder("spark.shuffle.rss.mapSideAggregation.initialMemoryThresholdInBytes")
+      .doc("Initial memory to allocate each mapper for performing map side aggregation")
+      .longConf
+      .createWithDefault(5 * 1024 * 1024L)
+  val enableBufferMapperRecordCountCheck: ConfigEntry[Boolean] =
+    ConfigBuilder("spark.shuffle.rss.buffer.enableRecordCountCheck")
+      .doc("Enable check for equality of number of records read and written by default buffer mapper")
+      .booleanConf
+      .createWithDefault(false)
+  val useUnsafeShuffleWriter: ConfigEntry[Boolean] =
+    ConfigBuilder("spark.shuffle.rss.useUnsafeWriter")
+      .doc("Use unsafe shuffle writer as the shuffle write manager")
+      .booleanConf
+      .createWithDefault(true)
+
 }

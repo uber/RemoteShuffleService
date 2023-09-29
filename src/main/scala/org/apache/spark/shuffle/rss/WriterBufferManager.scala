@@ -15,9 +15,11 @@
 package org.apache.spark.shuffle.rss
 
 import com.esotericsoftware.kryo.io.Output
-import com.uber.rss.exceptions.RssInvalidDataException
-import org.apache.spark.internal.Logging
-import org.apache.spark.serializer.{SerializationStream, Serializer, SerializerInstance}
+import com.uber.rss.exceptions.{RssInvalidDataException, RssMapperDataMismatchException}
+
+import org.apache.spark.SparkConf
+import org.apache.spark.serializer.{SerializationStream, Serializer}
+import org.apache.spark.shuffle.RssOpts
 
 import scala.collection.mutable
 import scala.collection.mutable.Map
@@ -26,34 +28,58 @@ case class BufferManagerOptions(individualBufferSize: Int, individualBufferMax: 
 
 case class WriterBufferManagerValue(serializeStream: SerializationStream, output: Output)
 
-class WriteBufferManager(serializer: Serializer,
-                               bufferSize: Int,
-                               maxBufferSize: Int,
-                               spillSize: Int) extends Logging {
-  private val map: Map[Int, WriterBufferManagerValue] = Map()
+class WriterBufferManager[K, V, C](shuffleWriteCurator: ShuffleWriteCurator,
+                                   serializer: Serializer,
+                                   bufferSize: Int,
+                                   maxBufferSize: Int,
+                                   spillSize: Int,
+                                   confOpt: Option[SparkConf]=None)
+  extends RssShuffleWriteManager[K, V, C](shuffleWriteCurator) {
 
+  def this(shuffleWriteCurator: ShuffleWriteCurator, serializer: Serializer,
+           bufferOptions: BufferManagerOptions, confOpt: Option[SparkConf]) {
+    this(shuffleWriteCurator, serializer, bufferOptions.individualBufferSize, bufferOptions.individualBufferMax,
+      bufferOptions.bufferSpillThreshold, confOpt)
+  }
+
+  def this(shuffleWriteCurator: ShuffleWriteCurator, serializer: Serializer, bufferOptions: BufferManagerOptions) {
+    this(shuffleWriteCurator, serializer, bufferOptions.individualBufferSize, bufferOptions.individualBufferMax,
+      bufferOptions.bufferSpillThreshold)
+  }
+
+  private var recordsReadCount: Int = 0
+  private var recordsWrittenCount: Int = 0
+  private var totalSerializationTime: Long = 0l
+  private var totalMemoryFetchWaitTime: Long = 0l
+  // Total size of serialized data stored in the map
   private var totalBytes = 0
 
   private val serializerInstance = serializer.newInstance()
+  private val map: Map[Int, WriterBufferManagerValue] = Map()
+  private val partitionIdsToSpill: mutable.Set[Int] = mutable.Set[Int]()
+  private val enableRecordCountMatchCheck =
+    confOpt.map(conf => conf.get(RssOpts.enableBufferMapperRecordCountCheck)).getOrElse(false)
 
-  def addRecord(partitionId: Int, record: Product2[Any, Any]): Seq[(Int, Array[Byte])] = {
-    var result: mutable.Buffer[(Int, Array[Byte])] = null
-    map.get(partitionId) match {
+  override def addRecord(partitionId: Int, record: Product2[K, V]): Unit = {
+    recordsReadCount += 1
+    addRecordImpl(partitionId, record)
+  }
+
+  private[rss] def addRecordImpl(partitionId: Int, record: Product2[Any, Any]): Unit = {
+    val serStartTime = System.nanoTime()
+    val shuffleDataForPartition = map.get(partitionId)
+    shuffleDataForPartition match {
       case Some(v) =>
         val stream = v.serializeStream
         val oldSize = v.output.position()
         stream.writeKey(record._1)
         stream.writeValue(record._2)
+        recordsWrittenCount += 1
         val newSize = v.output.position()
+        totalSerializationTime += System.nanoTime() - serStartTime
         if (newSize >= bufferSize) {
-          // partition buffer is full, add it to the result as spill data
-          if (result == null) {
-            result = mutable.Buffer[(Int, Array[Byte])]()
-          }
-          v.serializeStream.flush()
-          result.append((partitionId, v.output.toBytes))
-          v.serializeStream.close()
-          map.remove(partitionId)
+          // partition buffer is full, add it to the partition to be spilled
+          partitionIdsToSpill.add(partitionId)
           totalBytes -= oldSize
         } else {
           totalBytes += (newSize - oldSize)
@@ -65,39 +91,82 @@ class WriteBufferManager(serializer: Serializer,
         stream.writeValue(record._2)
         val newSize = output.position()
         if (newSize >= bufferSize) {
-          // partition buffer is full, add it to the result as spill data
-          if (result == null) {
-            result = mutable.Buffer[(Int, Array[Byte])]()
-          }
+          totalSerializationTime += System.nanoTime() - serStartTime
+          // Size of single record exceeds the spill threshold. Directly send this record to server
+          // to avoid copying to the map
           stream.flush()
-          result.append((partitionId, output.toBytes))
+          shuffleWriteCurator.sendDataBlocks(singlePartitionCollectionIterator(partitionId, output.toBytes))
           stream.close()
+          recordsWrittenCount += 1
+          return
         } else {
           map.put(partitionId, WriterBufferManagerValue(stream, output))
+          recordsWrittenCount += 1
           totalBytes = totalBytes + newSize
         }
     }
 
     if (totalBytes >= spillSize) {
-      // data for all partitions exceeds threshold, add all data to the result as spill data
-      if (result == null) {
-        result = mutable.Buffer[(Int, Array[Byte])]()
-      }
-      map.values.foreach(_.serializeStream.flush())
-      result.appendAll(map.map(t=>(t._1, t._2.output.toBytes)))
-      map.foreach(t => t._2.serializeStream.close())
-      map.clear()
+      // data for all partitions exceeds threshold, add all partitions to be spilled to the result as spill data
+      partitionIdsToSpill ++= map.keys
       totalBytes = 0
     }
 
-    if (result == null) {
-      Nil
-    } else {
-      result
+    if (partitionIdsToSpill.nonEmpty) {
+      shuffleWriteCurator.sendDataBlocks(
+        multiPartitionCollectionIterator(map, partitionIdsToSpill.toSeq))
+      partitionIdsToSpill.clear()
     }
   }
 
-  def filledBytes = {
+  /**
+   * Returns an iterator over single serialized record of give partition ID
+   */
+  def singlePartitionCollectionIterator(partitionId: Int,
+                                        data: Array[Byte]): Iterator[(Int, Array[Byte], Int)] = {
+    new Iterator[(Int, Array[Byte], Int)] {
+
+      private var isLastRecord = false
+
+      override def hasNext: Boolean = !isLastRecord
+
+      override def next(): (Int, Array[Byte], Int) = {
+        isLastRecord = true
+        val fetchStartTime = System.nanoTime()
+        val output = (partitionId, data, -1)
+        totalMemoryFetchWaitTime += System.nanoTime() - fetchStartTime
+        output
+      }
+    }
+  }
+
+  def multiPartitionCollectionIterator(mapRef: Map[Int, WriterBufferManagerValue],
+                                       partitionIdsToSpill: Seq[Int]): Iterator[(Int, Array[Byte], Int)] = {
+    new Iterator[(Int, Array[Byte], Int)] {
+
+      var currentPartitionIndex = 0
+
+      override def hasNext: Boolean = currentPartitionIndex < partitionIdsToSpill.size
+
+      override def next(): (Int, Array[Byte], Int) = {
+        val memoryFetchStartTime = System.nanoTime()
+
+        if (!hasNext) {
+          throw new NoSuchElementException
+        }
+        val partitionId = partitionIdsToSpill(currentPartitionIndex)
+        mapRef(partitionId).serializeStream.flush()
+        val elem = (partitionId, mapRef(partitionId).output.toBytes, -1)
+        mapRef(partitionId).serializeStream.close()
+        mapRef.remove(partitionId)
+        currentPartitionIndex += 1
+        totalMemoryFetchWaitTime += System.nanoTime() - memoryFetchStartTime
+        elem
+      }
+    }
+  }
+
+  override def collectionSizeInBytes: Int = {
     map.values.foreach(t => flushStream(t.serializeStream, t.output))
     val sum = map.map(_._2.output.position()).sum
     if (sum != totalBytes) {
@@ -106,13 +175,15 @@ class WriteBufferManager(serializer: Serializer,
     totalBytes
   }
 
-  def clear(): Seq[(Int, Array[Byte])] = {
-    map.values.foreach(_.serializeStream.flush())
-    val result = map.map(t=>(t._1, t._2.output.toBytes)).toSeq
-    map.values.foreach(_.serializeStream.close())
-    map.clear()
-    totalBytes = 0
-    result
+  override def finish(): Unit = {
+    if (!map.isEmpty) {
+      totalBytes = 0
+      shuffleWriteCurator.sendDataBlocks(
+        multiPartitionCollectionIterator(map, map.keys.toSeq))
+    }
+    if (recordsReadCount != recordsWrittenCount && enableRecordCountMatchCheck) {
+      throw new RssMapperDataMismatchException(recordsReadCount, recordsWrittenCount, this.getClass.getSimpleName)
+    }
   }
 
   private def flushStream(serializeStream: SerializationStream, output: Output) = {
@@ -120,5 +191,15 @@ class WriteBufferManager(serializer: Serializer,
     serializeStream.flush()
     val numBytes = output.position() - oldPosition
     totalBytes += numBytes
+  }
+
+  override def getShuffleWriteTimeMetadata(): ShuffleWriteTimeMetadata = {
+    ShuffleWriteTimeMetadata(totalSerializationTime, shuffleWriteCurator.totalCompressionTime,
+      shuffleWriteCurator.totalUploadTime, totalMemoryFetchWaitTime)
+  }
+
+  override def getShuffleWriteMetadata(): ShuffleWriteMetadata = {
+    ShuffleWriteMetadata(recordsReadCount, recordsWrittenCount, shuffleWriteCurator.numberOfSpills,
+      shuffleWriteCurator.partitionLengths, 0.0, shuffleWriteCurator.numberOfNetworkWrites)
   }
 }
