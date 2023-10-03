@@ -295,7 +295,7 @@ class RssShuffleManager(conf: SparkConf) extends ShuffleManager with Logging {
 
   // This method is called in Spark executor, getting information from Spark driver via the ShuffleHandle.
   override def getReader[K, C](handle: ShuffleHandle, startMapIndex: Int, endMapIndex: Int, startPartition: Int, endPartition: Int, context: TaskContext, metrics: ShuffleReadMetricsReporter): ShuffleReader[K, C] = {
-    getReaderForRange(handle, 0, Integer.MAX_VALUE, startPartition, endPartition, context, metrics)
+    getReaderForRange(handle, startMapIndex, endMapIndex, startPartition, endPartition, context, metrics)
   }
 
   def getReaderForRange[K, C](handle: ShuffleHandle, startMapIndex: Int, endMapIndex: Int, startPartition: Int, endPartition: Int, context: TaskContext, metrics: ShuffleReadMetricsReporter): ShuffleReader[K, C] = {
